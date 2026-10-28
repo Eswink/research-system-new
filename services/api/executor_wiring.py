@@ -63,16 +63,33 @@ def experiment_task_for(  # noqa: PLR0913 - 装配面：Port 就这几件（齐�
     )
 
 
-def report_task_for(*, artifacts: Any, ledger: Any, review_findings: Any) -> Any:
+def report_task_for(
+    *,
+    artifacts: Any,
+    ledger: Any,
+    review_findings: Any,
+    manuscript: bool = True,
+) -> Any:
     """报告缝：契约声明了 `report` 的任务由**既有**汇编器按持久事实汇出（不建会话）。
 
     叙述者（`narrator`）**不接**：接它要模型端点 + 凭据引用的解析，属装配方的显式决策
     （`report_support.narrative_runner` 留作另接）⇒ 缺省走**确定性汇编**，与
     `report_task_runner(narrator=None)` 的既有语义逐字一致。
+
+    `manuscript`（GOAL-20261028-099）：装配面**同时**汇出投稿形状的 `manuscript.md`。
+    缺省开 —— 否则手稿只有测试能产出（GOAL-097 EC-02 的教训：测试全绿 ≠ 产品能用）。
+    它**不是**无条件产出：本 run 没有 `manuscript_narrative` 制品（即没走手稿相）⇒
+    装配面返回 `None`，`research_report.md` 与它的元数据**逐字节不变**（出厂七份协议
+    全都不产出该制品 ⇒ 对它们零影响）。开成显式参数是为了让这份决策在装配面可读、可关。
     """
     from services.api.report_support import report_task_runner
 
-    return report_task_runner(artifacts=artifacts, ledger=ledger, review_findings=review_findings)
+    return report_task_runner(
+        artifacts=artifacts,
+        ledger=ledger,
+        review_findings=review_findings,
+        manuscript=manuscript,
+    )
 
 
 def sqlite_executor_seams(faces: Any, ports: Any, providers: dict[str, Any]) -> dict[str, Any]:

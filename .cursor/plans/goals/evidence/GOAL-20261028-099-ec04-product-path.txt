@@ -1,0 +1,33 @@
+GOAL-20261028-099 EC-04: manuscript assembled THROUGH THE PRODUCT ENTRY
+command: uv run --frozen --no-sync python -B -m pytest \
+           tests/e2e/test_direction_to_manuscript_product_path.py -q
+result: 7 passed
+
+What the judges observed (all via TestClient(create_app(deps)) + existing read routes,
+no test-only seam added):
+- POST /projects/example-project/runs {protocol_path: direction_to_manuscript_v1.yaml}
+  -> run SUCCEEDED; all eight phase artifacts present, including
+     manuscript_narrative (session output) and manuscript.md (assembled).
+- GET /artifacts/<id>/content for manuscript.md: IMRaD headings in document order,
+  References lines carry the real author / journal / year from the persisted
+  tool-result bytes (Hoffmann C / Nat Commun / 2024), no dict-repr, no placeholders.
+- Prose between '## Abstract' and '### Table 1.' contains no digit once [n] marks
+  are stripped; the data table under Results carries '| 类别 | 名称 | 值 | 来源 |'
+  plus the measured metric rows.
+- Artifact created_by reads 'model_assisted:<agent>' and the header records the
+  assembly state (no claim that a model wrote the numbers).
+- With the assembly switch off, manuscript.md is absent while research_report.md is
+  still produced; the report's headings / metric name set / metric readings / verdict
+  are identical between the two runs.
+
+Boundary recorded honestly (NOT counted as this round's regression):
+Two separate runs cannot be byte-identical, for two pre-existing reasons:
+  (1) the report header carries the run id and each source line carries a per-run
+      evidence uuid;
+  (2) multi-arm metric ROWS are ordered by experiment_run_id, which is a random uuid
+      (report_facts.metrics_of -> _metric_rows sorts by it), so the same fixture
+      alternates between 178.5-first and 7990.0-first row order across runs.
+Both are properties of the existing deterministic assembler, not of the manuscript
+seam. The literal byte-for-byte arm is therefore judged on a SINGLE run id in
+tests/application/test_manuscript_assembly.py::
+test_the_report_is_byte_identical_with_and_without_the_manuscript (5 passed).

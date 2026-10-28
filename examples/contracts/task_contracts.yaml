@@ -927,3 +927,81 @@ task_contracts:
     retry_policy:
       max_attempts: 1
       retryable_categories: []
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # GOAL-20261028-099 EC-01/EC-02：**投稿形状的手稿**（投稿层 ≠ 报告层）。
+  #
+  # 与 `research_report_deliverable` 的差别（两份并存、互不替代）：
+  #
+  #   报告契约（`report: {}`）  ⇒ **确定性汇编**，执行体不建会话、不读声明输入；
+  #   本契约（**不声明** `report:`）⇒ **会话相**：模型写下 Abstract 与六个 IMRaD 节的正文。
+  #
+  # 为什么必须分成两相而不是给报告契约加个开关：`protocol_compile/cross_phase_inputs.py`
+  # 的 `_executor_consumes_declared_inputs` 对**声明了 `report:`** 的相位一律返回 False
+  # ⇒ 那样的相若写 `inputs:` 会在**编译期**被判 `CROSS_PHASE_INPUT_INVALID`。而手稿的
+  # Related Work 必须读到本 run 的检索产物、Methods 必须读到立题产物 ⇒ 它**必须**是会话相。
+  #
+  # **数字在哪**：手稿正文（模型写的）**不得出现任何 Unicode 十进制数位**（引用标记
+  # `[n]` 除外）—— 写了就被**点名拒绝**，不静默抽掉。数字只出现在汇编器写的
+  # 「图表数据表」（Results 之下）与 References 的年份里；两者都由
+  # `deliverable/manuscript.py` / `deliverable/references.py` 从落盘字节逐字取值。
+  #
+  # **引用编号**：模型只写 `[1]`…`[n]`（它不知道编号指向哪篇 —— 来源标识本身是数字串，
+  # 发给它等于请它违规）；编号↔条目映射由汇编器保证，且**双向闭合**（越界引用 / 从不被
+  # 引用的条目各自点名拒绝）。
+  research_manuscript:
+    version: 1.0.0
+    purpose: >
+      TASK — write the body of a submission-shaped research manuscript. The run has
+      already retrieved real literature records, taken a position on what is new, planned
+      a controlled experiment and run it, and been reviewed; that material is listed for
+      you before this task text. Reply directly with the prose — there is nothing to
+      install and nothing to run in this phase.
+
+      Reply with a fenced JSON block named `manuscript_narrative`, exactly in this shape:
+
+          {"manuscript_narrative": {"title": "<the paper's title>",
+                                    "abstract": "<one paragraph>",
+                                    "introduction": "<what the question is and why it matters>",
+                                    "related_work": "<against the closest retrieved work>",
+                                    "methods": "<the arms and parameters the study ran>",
+                                    "results": "<what the measured facts show, by name>",
+                                    "discussion": "<what it means and what is weak>",
+                                    "conclusion": "<one short paragraph>"}}
+
+      All eight keys are required and none may be empty.
+
+      HARD RULE 1 — no numbers in the prose. The body must contain NO digits at all,
+      except single citation marks such as [1] or [2]. Every quantity is published in a
+      separate, machine-assembled data table under Results; refer to quantities by name
+      only. A numeral anywhere else is refused by name, not silently removed.
+
+      HARD RULE 2 — citations close in both directions. The records you were given appear
+      under "RETRIEVED SOURCES" as a list; a record retrieved more than once appears there
+      more than once, and it counts **once** (mark = its position among the distinct
+      records, in order of first appearance). The assembled reference list uses that same
+      order, so [1] is the first distinct record you were shown. Cite every distinct record
+      at least once. A mark beyond the number of distinct records, and a record you never
+      cite, are each refused by name (the body is not assembled at all). If no records are
+      listed, this run retrieved nothing citable: write the body without citation marks and
+      state in Related Work that no prior record was available — do not invent one.
+
+      Write Related Work against the specific retrieved record(s) you were given and say
+      what they leave open. Write Methods against the arms and parameters the study
+      actually ran. Do not invent results: state only what the named facts support, and
+      say plainly what is missing and why it matters.
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - deliverable.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: manuscript_narrative
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+        minimum_retrieved_sources: 1
+    timeout_seconds: 300
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []

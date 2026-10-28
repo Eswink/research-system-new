@@ -42,6 +42,7 @@ def report_task_runner(
     ledger: Any,
     review_findings: Any,
     narrator: Any | None = None,
+    manuscript: bool = False,
 ) -> Callable[[ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult]:
     """构造可直接放进 `PhaseRunnerDeps.report_task` 的派发器。
 
@@ -50,9 +51,18 @@ def report_task_runner(
 
     `narrator`（GOAL-20261022-062）：接上了 ⇒ 正文由模型撰写（数字留在确定性事实表）；
     缺省 `None` ⇒ 逐字回到确定性汇编。**装配方必须显式选**，不由本函数猜。
+
+    `manuscript`（GOAL-20261028-099）：开了 ⇒ 同一相**另外**汇出 `manuscript.md`
+    （正文来自本 run 的 `manuscript_narrative` 制品；没有该制品 ⇒ 不产出，既有报告
+    逐字节不变）。它**不是** `narrator` 的替代品：`narrator` 写的是报告第 1…4 节，
+    手稿正文是另一个相的产物。
     """
     deps = ReportTaskDeps(
-        artifacts=artifacts, ledger=ledger, reviews=review_findings, narrator=narrator
+        artifacts=artifacts,
+        ledger=ledger,
+        reviews=review_findings,
+        narrator=narrator,
+        manuscript=manuscript,
     )
 
     def run(

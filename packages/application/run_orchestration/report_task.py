@@ -42,6 +42,10 @@ from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.run_orchestration.acceptance_observation import (
     record_acceptance_evaluation,
 )
+from packages.application.run_orchestration.manuscript_assembly import (
+    assembled_message,
+    maybe_assemble_manuscript,
+)
 from packages.application.run_orchestration.report_facts import (
     evidence_of_run,
     report_inputs,
@@ -104,6 +108,11 @@ class ReportTaskDeps:
     reviews: Any | None = None
     actor: str = "system:report-assembler"
     narrator: Any | None = None
+    #: GOAL-20261028-099：**同时汇编投稿形状的手稿**（`manuscript.md`）。
+    #: 缺省 `False` ⇒ 既有报告路径**逐字节不变**（不读、不写、不登记任何手稿面）。
+    #: 开它也不保证产出：本 run 没有 `manuscript_narrative` 制品 ⇒ 返回 `None`
+    #: （这次 run 没走手稿相 ⇒ 无手稿是**正确**读数，不是失败）。
+    manuscript: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,7 +174,10 @@ def execute_report_task(
         )
         report, narrative = _body(deps, inputs)
         admission = _admit(deps, task, inputs, report, narrative)
+        manuscript = maybe_assemble_manuscript(deps, task, spec_context)
     except NarrativeError as error:
+        # `ManuscriptError` 是 `NarrativeError` 的子类 ⇒ 手稿的每一种点名拒绝
+        # （缺键 / 正文含数字 / 引用不闭合）都经这里以 `EXECUTION_FAILURE` 收敛。
         return _failed(
             task,
             f"narrative for run {task.run_id.value} is unusable: {error}",
@@ -182,7 +194,7 @@ def execute_report_task(
         outcome="SUCCEEDED",
         report_outcome=admission,
         attempts=task.attempt,
-        message=f"report {admission.artifact.id} assembled (digest {admission.artifact.digest})",
+        message=assembled_message(admission, manuscript),
     )
 
 

@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261028-099](tasks/PLAN-20261028-099-goal-099-submission-shaped-manuscript.md) | DONE |
 | [x] | [PLAN-20261027-098](tasks/PLAN-20261027-098-goal-098-independent-novelty-and-derived-experiment.md) | DONE |
 | [x] | [PLAN-20261026-097](tasks/PLAN-20261026-097-goal-097-productive-entry-and-novelty.md) | DONE |
 | [x] | [PLAN-20261024-096](tasks/PLAN-20261024-096-goal-096-direction-to-report-in-one-run.md) | DONE |

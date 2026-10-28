@@ -1,0 +1,24 @@
+GOAL-20261028-099 EC-03: metadata census over persisted tool-result bytes
+command: uv run --frozen --no-sync python -B (inline script, see PLAN-20261028-099 WP-1)
+tool-result artifact files scanned: 17
+distinct records (pmid-or-doi deduplicated): 10
+author shape distribution (has authors::list, has authorString::str):
+  authors=False author_string=True -> 4 record(s)
+  authors=True author_string=False -> 6 record(s)
+missing-field counts: {} (none)
+records with no author metadata at all: 0/10
+journal/year/title missing rate: 0/30 field(s)
+
+READING (recorded honestly, not rounded up):
+- Both author shapes occur in REAL persisted bytes: 6 records carry authors[] (NCBI efetch),
+  4 carry authorString (Europe PMC search). A renderer that handles only one shape would
+  silently lose the author on 40-60% of records while looking correct on the other shape.
+- Missing metadata rate measured here is 0/10 records on journal/year/title and 0/10 on
+  authors. SAMPLE BOUNDARY: 10 distinct records from the tool results persisted in this
+  working tree only (not a census of the upstream services). The 0% is therefore not a
+  licence to assume completeness: the renderer still names every missing field by
+  identifier rather than filling a placeholder, and the absent-authors path is proven on
+  a controlled fixture (tests/application/test_manuscript_references.py).
+- retmax is hard-coded to 3 in services/api/retrieval_wiring.py:86 with no config surface,
+  so a real run yields ~3 search hits per query: the reference list of a real manuscript
+  is short by construction. This is recorded as a real boundary, not as a literature review.
