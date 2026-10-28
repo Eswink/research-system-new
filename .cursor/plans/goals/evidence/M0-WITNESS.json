@@ -1776,11 +1776,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261027-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "14bf9c9cb6c7ce83a5adffa311b5d75017d98d3d"
+        "sha256": "5e36d0a67255dc251182cdd9913d56a58704249d"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "c008c38b2bf6dca43a09b69cd6e4ad6b9a46603a"
+        "sha256": "0652e4f6ec268abbbbb0eade83b19c61d113e0c7"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -1945,6 +1945,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-23-progress-095-only.md",
         "sha256": "5ca423cde0c809cdf5e15850cc16010ce710a537"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-23-revisions-63-only.md",
+        "sha256": "002eec5abbe07433d27f9671630949f0aa02abaa"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-25-progress-096-only.md",
+        "sha256": "f83fbe51baae39e93466b831bf816cfa36e660d6"
       },
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-26-revisions-65-only.md",
@@ -18659,7 +18667,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "fbde73f297c075140f80da5f90f5e5bfc2ec8950"
+    "head": "11e2b976fcdd791be9521c8883463cb72ffa7c06"
   },
   "fingerprint_before": {
     "files": [
@@ -20437,11 +20445,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261027-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "14bf9c9cb6c7ce83a5adffa311b5d75017d98d3d"
+        "sha256": "5e36d0a67255dc251182cdd9913d56a58704249d"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "c008c38b2bf6dca43a09b69cd6e4ad6b9a46603a"
+        "sha256": "0652e4f6ec268abbbbb0eade83b19c61d113e0c7"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -20606,6 +20614,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-23-progress-095-only.md",
         "sha256": "5ca423cde0c809cdf5e15850cc16010ce710a537"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-23-revisions-63-only.md",
+        "sha256": "002eec5abbe07433d27f9671630949f0aa02abaa"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-25-progress-096-only.md",
+        "sha256": "f83fbe51baae39e93466b831bf816cfa36e660d6"
       },
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-26-revisions-65-only.md",
@@ -37320,11 +37336,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "fbde73f297c075140f80da5f90f5e5bfc2ec8950"
+    "head": "11e2b976fcdd791be9521c8883463cb72ffa7c06"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "fbde73f297c075140f80da5f90f5e5bfc2ec8950",
+  "ran_at_head": "11e2b976fcdd791be9521c8883463cb72ffa7c06",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
