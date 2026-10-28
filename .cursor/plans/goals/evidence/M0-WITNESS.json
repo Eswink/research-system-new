@@ -1352,7 +1352,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "2d733ed9360fad5d29eb6e52c8c6bac0906a997f"
+        "sha256": "6ef658632af434ba1e22d9f73ada44821243cf6f"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1776,11 +1776,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261027-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "5e36d0a67255dc251182cdd9913d56a58704249d"
+        "sha256": "f73d71647affa469bc2c987c272c5d334eee4f85"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261028-099-submission-shaped-manuscript.md",
+        "sha256": "d4b840738846a7c58a0edcdcaf9b05a16494c0cc"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "0652e4f6ec268abbbbb0eade83b19c61d113e0c7"
+        "sha256": "cc46a184fa1b203fc1614be86b4d97c05266c547"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -2709,6 +2713,14 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261027-098-verdict-current.txt",
         "sha256": "5166ea59e212e6b37e047f49e42187206724aedd"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261028-099-ec03-metadata-census.txt",
+        "sha256": "2831882c7c0dedf633c964fd75c2558db12a817a"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261028-099-ec04-product-path.txt",
+        "sha256": "b4b008dce504f43dc3dd6ac6048797428461cafc"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -4171,6 +4183,10 @@
         "sha256": "be228804a2558fe5aa3da7126cefb0488172c28b"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261028-099-goal-099-submission-shaped-manuscript.md",
+        "sha256": "4d86b1bdcd735e0b42db26782472a4adc9c8fa7c"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5557,6 +5573,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261027-098-goal-098-independent-novelty-and-derived-experiment.md",
         "sha256": "674c8f84fee5fb77b09879682f7e468913e3f9f1"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261028-099-goal-099-submission-shaped-manuscript.md",
+        "sha256": "742425447c1557046027e85bf94c060c59c96e5a"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -12704,7 +12724,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "a5d19846d7a6bd8f385abf5d1ade5e14c6e21e69"
+        "sha256": "9cbe790f2d0ab072d60cc1783ad1479f3c8dddb2"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -12781,6 +12801,10 @@
       {
         "path": "examples/protocols/cross_run_knowledge_v1.yaml",
         "sha256": "1514076c75925799f7f873582d83874400a5c77c"
+      },
+      {
+        "path": "examples/protocols/direction_to_manuscript_v1.yaml",
+        "sha256": "8b91025edf97208f942d54a0a850aded2cd5928e"
       },
       {
         "path": "examples/protocols/direction_to_question_v1.yaml",
@@ -12937,6 +12961,14 @@
       {
         "path": "packages/application/deliverable/builder.py",
         "sha256": "4606d321985fa5a406cbbfe39dcf94dbcfaef6fd"
+      },
+      {
+        "path": "packages/application/deliverable/manuscript.py",
+        "sha256": "502b44bd4176edd3a88a92707155be12e7092b44"
+      },
+      {
+        "path": "packages/application/deliverable/references.py",
+        "sha256": "9df38460731d5531512bb798960d269f6f1819d4"
       },
       {
         "path": "packages/application/deliverable/report_narrative.py",
@@ -13611,6 +13643,14 @@
         "sha256": "3a1b7222c566cfd2695f3eccf13170390907f056"
       },
       {
+        "path": "packages/application/run_orchestration/manuscript_assembly.py",
+        "sha256": "4c5a2b2be90b37133a82d75a4e809582beaad6aa"
+      },
+      {
+        "path": "packages/application/run_orchestration/manuscript_facts.py",
+        "sha256": "5c892cfaa249df0043a084093e3074986bd9a9d2"
+      },
+      {
         "path": "packages/application/run_orchestration/memory_promotion.py",
         "sha256": "2b5ff58d1ad0c4dda2a4fde2bcf159e9e01c034a"
       },
@@ -13696,7 +13736,7 @@
       },
       {
         "path": "packages/application/run_orchestration/report_task.py",
-        "sha256": "7b0103f4e32ee2f32bbfbbaf68826d5f3c5162c2"
+        "sha256": "8bbacdf948dc7f9d8c0c3d94c6dfadd3b512cd06"
       },
       {
         "path": "packages/application/run_orchestration/result_handler.py",
@@ -14340,7 +14380,7 @@
       },
       {
         "path": "services/api/executor_wiring.py",
-        "sha256": "a9d385e7c103f56b1fcd20ff69ddb79f2def1fe1"
+        "sha256": "6068547d7ef910b156f4c19929e43d6f9e014df8"
       },
       {
         "path": "services/api/experiment_factories.py",
@@ -14448,7 +14488,7 @@
       },
       {
         "path": "services/api/report_support.py",
-        "sha256": "cefc16f1f0621e7648923adc42f77096474675d6"
+        "sha256": "c08fd9b9d5030f04e210b6b20dfaef2dd5028928"
       },
       {
         "path": "services/api/retrieval_context_support.py",
@@ -15983,6 +16023,22 @@
         "sha256": "8b69f6596ec6dd1aea723e20d5f61668d9c3dfd3"
       },
       {
+        "path": "tests/application/test_manuscript_assembler.py",
+        "sha256": "ae3b6cc99777ae06b46b12e91bb5b58276c3c91e"
+      },
+      {
+        "path": "tests/application/test_manuscript_assembly.py",
+        "sha256": "9f15f00d589233c9ebdfe7c5a17fec7c3bd1c74e"
+      },
+      {
+        "path": "tests/application/test_manuscript_reference_order.py",
+        "sha256": "20c6a8f1a7f42839ad597373cb90cfacaf5d0616"
+      },
+      {
+        "path": "tests/application/test_manuscript_references.py",
+        "sha256": "fc2c0dcab44eb82457e7138634697706e85032cd"
+      },
+      {
         "path": "tests/application/test_model_eligibility.py",
         "sha256": "9cd222674db816bb6e50b7d78066eaf5fcd2c84a"
       },
@@ -16419,6 +16475,10 @@
         "sha256": "b8c38b0cb467a8b481012ee479fa6f5e00410ae0"
       },
       {
+        "path": "tests/contracts/test_direction_to_manuscript_protocol.py",
+        "sha256": "45fb4f9f09e0db187053ea39e77f0f07c07aaaad"
+      },
+      {
         "path": "tests/contracts/test_direction_to_question_protocol.py",
         "sha256": "55ce7d0f2d94772240f65d764e1edf3f52e4b47e"
       },
@@ -16759,6 +16819,10 @@
         "sha256": "4c38183ee92acbc8fa28b49da9754754a1d86947"
       },
       {
+        "path": "tests/e2e/direction_to_manuscript_support.py",
+        "sha256": "7d0894c0d2d87d4136b02f8c9a851fab19725c79"
+      },
+      {
         "path": "tests/e2e/direction_to_report_live_support.py",
         "sha256": "41ef689b5c2abbcfb4bbafeba0d88ea1b066924d"
       },
@@ -16845,6 +16909,10 @@
       {
         "path": "tests/e2e/test_dead_letter_run_coordination_matrix.py",
         "sha256": "b2d385a62dd94b06ed12e77c81b5f235263350d5"
+      },
+      {
+        "path": "tests/e2e/test_direction_to_manuscript_product_path.py",
+        "sha256": "544bffc57c28d3760995b6263a46684f99b3ae71"
       },
       {
         "path": "tests/e2e/test_direction_to_question_to_retrieval.py",
@@ -17572,7 +17640,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "f2181c137408e219146497c30225ebab93b933f3"
+        "sha256": "59c92b677d150766de04d60302220caaa3ea1025"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -17597,6 +17665,10 @@
       {
         "path": "tests/tooling/test_goal028_ledger_covers_every_commit.py",
         "sha256": "15bfcae2170b0718ae3aa3683977d449fca062dd"
+      },
+      {
+        "path": "tests/tooling/test_goal099_closeout_verifier_goes_red.py",
+        "sha256": "7864e5e95e4ae2e1204957d452b9bc347bd4abdc"
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
@@ -17688,7 +17760,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "ce66cacef70517a42d4ecf28887b2b2e3106a34c"
+        "sha256": "8e54e01562d9a10e3412716afbaebcd9beae56f0"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -18231,6 +18303,10 @@
         "sha256": "e1572d6c519546fe44bdcf7d3824db9d3ca9be16"
       },
       {
+        "path": "tools/goal099_closeout_assertions.py",
+        "sha256": "791743ebafcdf54ce1ca6cdfdc28920f6a792d51"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -18663,11 +18739,15 @@
         "sha256": "08d84e6f330452a5bdbf9b7fef358273ffb19e97"
       },
       {
+        "path": "tools/verify_goal099_closeout.py",
+        "sha256": "471a77dc190e4c7118e0d28cbd9d9362098e875f"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "11e2b976fcdd791be9521c8883463cb72ffa7c06"
+    "head": "a3ac0e47a533dd6f73f41a1570a5e5940ee6d2ee"
   },
   "fingerprint_before": {
     "files": [
@@ -20021,7 +20101,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "2d733ed9360fad5d29eb6e52c8c6bac0906a997f"
+        "sha256": "6ef658632af434ba1e22d9f73ada44821243cf6f"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -20445,11 +20525,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261027-098-independent-novelty-and-derived-experiment.md",
-        "sha256": "5e36d0a67255dc251182cdd9913d56a58704249d"
+        "sha256": "f73d71647affa469bc2c987c272c5d334eee4f85"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261028-099-submission-shaped-manuscript.md",
+        "sha256": "d4b840738846a7c58a0edcdcaf9b05a16494c0cc"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "0652e4f6ec268abbbbb0eade83b19c61d113e0c7"
+        "sha256": "cc46a184fa1b203fc1614be86b4d97c05266c547"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -21378,6 +21462,14 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261027-098-verdict-current.txt",
         "sha256": "5166ea59e212e6b37e047f49e42187206724aedd"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261028-099-ec03-metadata-census.txt",
+        "sha256": "2831882c7c0dedf633c964fd75c2558db12a817a"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261028-099-ec04-product-path.txt",
+        "sha256": "b4b008dce504f43dc3dd6ac6048797428461cafc"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -22840,6 +22932,10 @@
         "sha256": "be228804a2558fe5aa3da7126cefb0488172c28b"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261028-099-goal-099-submission-shaped-manuscript.md",
+        "sha256": "4d86b1bdcd735e0b42db26782472a4adc9c8fa7c"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -24226,6 +24322,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261027-098-goal-098-independent-novelty-and-derived-experiment.md",
         "sha256": "674c8f84fee5fb77b09879682f7e468913e3f9f1"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261028-099-goal-099-submission-shaped-manuscript.md",
+        "sha256": "742425447c1557046027e85bf94c060c59c96e5a"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -31373,7 +31473,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "a5d19846d7a6bd8f385abf5d1ade5e14c6e21e69"
+        "sha256": "9cbe790f2d0ab072d60cc1783ad1479f3c8dddb2"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -31450,6 +31550,10 @@
       {
         "path": "examples/protocols/cross_run_knowledge_v1.yaml",
         "sha256": "1514076c75925799f7f873582d83874400a5c77c"
+      },
+      {
+        "path": "examples/protocols/direction_to_manuscript_v1.yaml",
+        "sha256": "8b91025edf97208f942d54a0a850aded2cd5928e"
       },
       {
         "path": "examples/protocols/direction_to_question_v1.yaml",
@@ -31606,6 +31710,14 @@
       {
         "path": "packages/application/deliverable/builder.py",
         "sha256": "4606d321985fa5a406cbbfe39dcf94dbcfaef6fd"
+      },
+      {
+        "path": "packages/application/deliverable/manuscript.py",
+        "sha256": "502b44bd4176edd3a88a92707155be12e7092b44"
+      },
+      {
+        "path": "packages/application/deliverable/references.py",
+        "sha256": "9df38460731d5531512bb798960d269f6f1819d4"
       },
       {
         "path": "packages/application/deliverable/report_narrative.py",
@@ -32280,6 +32392,14 @@
         "sha256": "3a1b7222c566cfd2695f3eccf13170390907f056"
       },
       {
+        "path": "packages/application/run_orchestration/manuscript_assembly.py",
+        "sha256": "4c5a2b2be90b37133a82d75a4e809582beaad6aa"
+      },
+      {
+        "path": "packages/application/run_orchestration/manuscript_facts.py",
+        "sha256": "5c892cfaa249df0043a084093e3074986bd9a9d2"
+      },
+      {
         "path": "packages/application/run_orchestration/memory_promotion.py",
         "sha256": "2b5ff58d1ad0c4dda2a4fde2bcf159e9e01c034a"
       },
@@ -32365,7 +32485,7 @@
       },
       {
         "path": "packages/application/run_orchestration/report_task.py",
-        "sha256": "7b0103f4e32ee2f32bbfbbaf68826d5f3c5162c2"
+        "sha256": "8bbacdf948dc7f9d8c0c3d94c6dfadd3b512cd06"
       },
       {
         "path": "packages/application/run_orchestration/result_handler.py",
@@ -33009,7 +33129,7 @@
       },
       {
         "path": "services/api/executor_wiring.py",
-        "sha256": "a9d385e7c103f56b1fcd20ff69ddb79f2def1fe1"
+        "sha256": "6068547d7ef910b156f4c19929e43d6f9e014df8"
       },
       {
         "path": "services/api/experiment_factories.py",
@@ -33117,7 +33237,7 @@
       },
       {
         "path": "services/api/report_support.py",
-        "sha256": "cefc16f1f0621e7648923adc42f77096474675d6"
+        "sha256": "c08fd9b9d5030f04e210b6b20dfaef2dd5028928"
       },
       {
         "path": "services/api/retrieval_context_support.py",
@@ -34652,6 +34772,22 @@
         "sha256": "8b69f6596ec6dd1aea723e20d5f61668d9c3dfd3"
       },
       {
+        "path": "tests/application/test_manuscript_assembler.py",
+        "sha256": "ae3b6cc99777ae06b46b12e91bb5b58276c3c91e"
+      },
+      {
+        "path": "tests/application/test_manuscript_assembly.py",
+        "sha256": "9f15f00d589233c9ebdfe7c5a17fec7c3bd1c74e"
+      },
+      {
+        "path": "tests/application/test_manuscript_reference_order.py",
+        "sha256": "20c6a8f1a7f42839ad597373cb90cfacaf5d0616"
+      },
+      {
+        "path": "tests/application/test_manuscript_references.py",
+        "sha256": "fc2c0dcab44eb82457e7138634697706e85032cd"
+      },
+      {
         "path": "tests/application/test_model_eligibility.py",
         "sha256": "9cd222674db816bb6e50b7d78066eaf5fcd2c84a"
       },
@@ -35088,6 +35224,10 @@
         "sha256": "b8c38b0cb467a8b481012ee479fa6f5e00410ae0"
       },
       {
+        "path": "tests/contracts/test_direction_to_manuscript_protocol.py",
+        "sha256": "45fb4f9f09e0db187053ea39e77f0f07c07aaaad"
+      },
+      {
         "path": "tests/contracts/test_direction_to_question_protocol.py",
         "sha256": "55ce7d0f2d94772240f65d764e1edf3f52e4b47e"
       },
@@ -35428,6 +35568,10 @@
         "sha256": "4c38183ee92acbc8fa28b49da9754754a1d86947"
       },
       {
+        "path": "tests/e2e/direction_to_manuscript_support.py",
+        "sha256": "7d0894c0d2d87d4136b02f8c9a851fab19725c79"
+      },
+      {
         "path": "tests/e2e/direction_to_report_live_support.py",
         "sha256": "41ef689b5c2abbcfb4bbafeba0d88ea1b066924d"
       },
@@ -35514,6 +35658,10 @@
       {
         "path": "tests/e2e/test_dead_letter_run_coordination_matrix.py",
         "sha256": "b2d385a62dd94b06ed12e77c81b5f235263350d5"
+      },
+      {
+        "path": "tests/e2e/test_direction_to_manuscript_product_path.py",
+        "sha256": "544bffc57c28d3760995b6263a46684f99b3ae71"
       },
       {
         "path": "tests/e2e/test_direction_to_question_to_retrieval.py",
@@ -36241,7 +36389,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "f2181c137408e219146497c30225ebab93b933f3"
+        "sha256": "59c92b677d150766de04d60302220caaa3ea1025"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -36266,6 +36414,10 @@
       {
         "path": "tests/tooling/test_goal028_ledger_covers_every_commit.py",
         "sha256": "15bfcae2170b0718ae3aa3683977d449fca062dd"
+      },
+      {
+        "path": "tests/tooling/test_goal099_closeout_verifier_goes_red.py",
+        "sha256": "7864e5e95e4ae2e1204957d452b9bc347bd4abdc"
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
@@ -36357,7 +36509,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "ce66cacef70517a42d4ecf28887b2b2e3106a34c"
+        "sha256": "8e54e01562d9a10e3412716afbaebcd9beae56f0"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -36900,6 +37052,10 @@
         "sha256": "e1572d6c519546fe44bdcf7d3824db9d3ca9be16"
       },
       {
+        "path": "tools/goal099_closeout_assertions.py",
+        "sha256": "791743ebafcdf54ce1ca6cdfdc28920f6a792d51"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -37332,15 +37488,19 @@
         "sha256": "08d84e6f330452a5bdbf9b7fef358273ffb19e97"
       },
       {
+        "path": "tools/verify_goal099_closeout.py",
+        "sha256": "471a77dc190e4c7118e0d28cbd9d9362098e875f"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "11e2b976fcdd791be9521c8883463cb72ffa7c06"
+    "head": "a3ac0e47a533dd6f73f41a1570a5e5940ee6d2ee"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "11e2b976fcdd791be9521c8883463cb72ffa7c06",
+  "ran_at_head": "a3ac0e47a533dd6f73f41a1570a5e5940ee6d2ee",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
