@@ -1788,7 +1788,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261029-100-submission-ready-and-citation-binding.md",
-        "sha256": "10d9bc2f51057097c4f118c201fc5961a68ff504"
+        "sha256": "de8edf755d33511a5f0d5e9c29d907d2eef9dca0"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -2745,6 +2745,14 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261028-099-two-tree-current.txt",
         "sha256": "9ff0fd6a600213190bddb797efeab552ca3de330"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261029-100-two-tree-clean.txt",
+        "sha256": "3396239733ac6ca7a1c62de01ad0a19db65310c8"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261029-100-two-tree-current.txt",
+        "sha256": "3396239733ac6ca7a1c62de01ad0a19db65310c8"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -18815,7 +18823,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "f90e4840e718bd2a8beaa1c980013fc18ceece44"
+    "head": "bbb8656bc2c7183e0667dbb725ac4b9197406feb"
   },
   "fingerprint_before": {
     "files": [
@@ -20605,7 +20613,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261029-100-submission-ready-and-citation-binding.md",
-        "sha256": "10d9bc2f51057097c4f118c201fc5961a68ff504"
+        "sha256": "de8edf755d33511a5f0d5e9c29d907d2eef9dca0"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -21562,6 +21570,14 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261028-099-two-tree-current.txt",
         "sha256": "9ff0fd6a600213190bddb797efeab552ca3de330"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261029-100-two-tree-clean.txt",
+        "sha256": "3396239733ac6ca7a1c62de01ad0a19db65310c8"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261029-100-two-tree-current.txt",
+        "sha256": "3396239733ac6ca7a1c62de01ad0a19db65310c8"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -37632,11 +37648,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "f90e4840e718bd2a8beaa1c980013fc18ceece44"
+    "head": "bbb8656bc2c7183e0667dbb725ac4b9197406feb"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "f90e4840e718bd2a8beaa1c980013fc18ceece44",
+  "ran_at_head": "bbb8656bc2c7183e0667dbb725ac4b9197406feb",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
