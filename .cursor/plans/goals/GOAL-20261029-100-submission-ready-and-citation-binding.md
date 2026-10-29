@@ -133,7 +133,7 @@ memory_entries: []
 | EC-02 | `scientific_editor` 被激活；决定词表进 domain 且四值可判；越界拒绝；非 accept 空改动判红 | `tests/application/test_editorial_decision.py`（19 条）+ 产品入口用例 | **PASS** |
 | EC-03 | `point_id` 显式化 + `author_response` 契约 + `response_letter.md`；漏答 / 编造 / 删答三条反证 | `tests/application/test_author_response.py`（26 条）+ 产品入口用例 | **PASS** |
 | EC-04 | `retmax` 可配、默认逐字段不变、改配置可证、非法值点名 | `tests/api/test_retmax_is_configurable.py`（11 条） | **PASS** |
-| EC-05 | 收口验证器 + 断言集 + 两处登记 + 判词跑通（含自指） | `tools/verify_goal100_closeout.py --root . --verdict-only` | **PASS** |
+| EC-05 | 收口验证器 + 断言集 + 两处登记 + 判词跑通（含自指） | `tools/verify_goal100_closeout.py --root . --verdict-only`（64 条判词）+ **TWO-TREE PASS**（两棵各 64 条、`sha256` 相同 `320054cf…`，判词归档 `evidence/GOAL-20261029-100-two-tree-{current,clean}.txt`） | **PASS** |
 | EC-06 | 序 68 / 阶梯「报告」行写本轮那一格 / 进展记录 3 行 / 修订行 5 格 + ALL_PLAN | 宪章四处 + `ALL_PLAN.md` | **PASS** |
 
 ## 循环入口协议
@@ -236,13 +236,15 @@ GOAL-20261028-099 返回 **`REFUSED RESIDUAL_EMPTY`**。理由（读判据源确
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `f15929e5` | （待登记：推送后回填） | （待登记） | **本轮交付**：EC-01…EC-06 六件（引用编号注入 / 编辑决定面 / 返修底座 / `retmax` 可配 / 收口资产 / 宪章记账）+ 五处实现缺陷修复 + **付清 GOAL-099 的两笔台账债**（`b0eb3ff2` / `29ed0d5f`）。本地 m0（记录落盘**之前**）：`PASS [` **23** 行、0 FAILED、`tree changed during the run: False`，仅 `test_goal_commit_chain_reaches_the_ledger` 因「本提交自身把前一条推离 HEAD」而红（结构事实，不是产品缺陷） |
+| `f15929e5` | [M0 40934404446](https://github.com/Eswink/research-system-new/actions/runs/40934404446) / [Push 40934403745](https://github.com/Eswink/research-system-new/actions/runs/40934403745) | Push 三条 Analyze 全 `success`；M0 **六 job `success`**、`quality-ubuntu-latest` 与 `quality-windows-latest` **failure**（原因见下，已由 `f90e4840` 之后的重封提交修复） | **本轮交付**：EC-01…EC-06 六件（引用编号注入 / 编辑决定面 / 返修底座 / `retmax` 可配 / 收口资产 / 宪章记账）+ 五处实现缺陷修复 + **付清 GOAL-099 的两笔台账债**（`b0eb3ff2` / `29ed0d5f`）。本地 m0（记录落盘**之前**）：`PASS [` **23** 行、0 FAILED、`tree changed during the run: False`，仅 `test_goal_commit_chain_reaches_the_ledger` 因「本提交自身把前一条推离 HEAD」而红（结构事实，不是产品缺陷） |
+
+> **`f15929e5` 的两个 `quality-*` 失败是真缺陷，已修**：`test_m0_witness_matches_the_tree` 判「见证覆盖的文件内容与当前树不一致」—— 原因是**跑完门之后又往树里加了文件**（两树判词归档 `evidence/GOAL-20261029-100-two-tree-*.txt`），于是那次 m0 的终态行失效（与 MEM「见证绑内容、先 add 受判文件再跑最后一次 m0」同一形态）。修法：把那两份归档**先放进树**，再跑一次全量 m0 重封见证，然后把归档 + 见证与台账一起提交。**判据没有放宽**：`tree changed during the run: False`、`PASS [` **24** 行、`PASS: profile=m0; 23 deterministic checks`。
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261029-100 | （待登记） | EC-01：8 条全过（含两条真文件按压，按压后 6 红、逐字节复原）；EC-02：19 条全过；EC-03：26 条全过；EC-04：11 条全过（含按压）；EC-05：判词 44 PASS / 0 FAIL（产品面）；套件 `tests/application + contracts + loaders + domain` **2608 passed / 73 skipped**、`tests/api + e2e manuscript` **737 passed / 4 skipped** | （待登记） | 修掉 5 处**实现**缺陷（不是判据）：① `editorial` 相只声明三条能力 ⇒ 另三件的 provider 排不出会话工具面 ⇒ 真实 run 点名 `ToolDefinition 'europe_pmc' is not registered`；② `review:review_decision` 作跨相 `inputs` 在评审面板下**恒 ambiguous**（两个任务）⇒ 改成经提示词那一段送；③ `wants_review_points` 读 `task.contract` 而 `ResearchTask` 只有 `contract_id` ⇒ 静默返回 False、点表从未进提示词；④ 已渲染的**字符串**被当点对象再渲染一次 ⇒ `-  (): ` 空行（与 MEM「已渲染的提示段被当视图再渲染」同一形态）；⑤ 应答信只 `put` 不 `register` ⇒ 读面 `GET /runs/{id}/artifacts` 看不到它 | `W-1`…`W-4` / `U-1`…`U-3` | ① 叙述质量口径（可机械判的形态）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ `retrieval_context` 去重（共用面） |
+| 1 | PLAN-20261029-100 | （待登记） | EC-01：8 条全过（含两条真文件按压，按压后 6 红、逐字节复原）；EC-02：19 条全过；EC-03：26 条全过；EC-04：11 条全过（含按压）；EC-05：判词 64 PASS / 0 FAIL；**TWO-TREE PASS**（两棵各 64 条、`sha256` 相同 `320054cf…`）；套件 `tests/application + contracts + loaders + domain` **2608 passed / 73 skipped**、`tests/api + e2e manuscript` **737 passed / 4 skipped** | （待登记） | 修掉 5 处**实现**缺陷（不是判据）：① `editorial` 相只声明三条能力 ⇒ 另三件的 provider 排不出会话工具面 ⇒ 真实 run 点名 `ToolDefinition 'europe_pmc' is not registered`；② `review:review_decision` 作跨相 `inputs` 在评审面板下**恒 ambiguous**（两个任务）⇒ 改成经提示词那一段送；③ `wants_review_points` 读 `task.contract` 而 `ResearchTask` 只有 `contract_id` ⇒ 静默返回 False、点表从未进提示词；④ 已渲染的**字符串**被当点对象再渲染一次 ⇒ `-  (): ` 空行（与 MEM「已渲染的提示段被当视图再渲染」同一形态）；⑤ 应答信只 `put` 不 `register` ⇒ 读面 `GET /runs/{id}/artifacts` 看不到它 | `W-1`…`W-4` / `U-1`…`U-3` | ① 叙述质量口径（可机械判的形态）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ `retrieval_context` 去重（共用面） |
 
 ## 状态历史
 
