@@ -236,7 +236,6 @@ GOAL-20261028-099 返回 **`REFUSED RESIDUAL_EMPTY`**。理由（读判据源确
 `cancelled` 与「同批推送被 GitHub 合并成一个 run」的 `无 run` 是两种形态，分别登记；
 后者用 `covered_by` 指名它被哪一条 run 覆盖。）
 
-
 > **`f15929e5` 的两个 `quality-*` 失败是真缺陷，已修**：`test_m0_witness_matches_the_tree` 判「见证覆盖的文件内容与当前树不一致」—— 原因是**跑完门之后又往树里加了文件**（两树判词归档 `evidence/GOAL-20261029-100-two-tree-*.txt`），于是那次 m0 的终态行失效（与 MEM「见证绑内容、先 add 受判文件再跑最后一次 m0」同一形态）。修法：把那两份归档**先放进树**，再跑一次全量 m0 重封见证，然后把归档 + 见证与台账一起提交。**判据没有放宽**：`tree changed during the run: False`、`PASS [` **24** 行、`PASS: profile=m0; 23 deterministic checks`。
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
@@ -244,13 +243,14 @@ GOAL-20261028-099 返回 **`REFUSED RESIDUAL_EMPTY`**。理由（读判据源确
 | `f90e4840` | 零 run（**`covered_by: 40946603366`**） | 覆盖：与 `1d94dcca` 同批推送，被合并进那一条 M0 run | **记录提交**（只改 `.cursor/`）：GOAL-100 台账行（`f15929e5` 的真实读数）+ **付清 GOAL-099 的 两笔 tip 债**（`b0eb3ff2` / `29ed0d5f`，债记在被点名的那本账上）+ 重封见证。本地 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False` |
 | `bbb8656b` | 零 run（**`covered_by: 40946603366`**） | 覆盖：同批推送 | **归档两树判词**（两份 64 条、`sha256` 相同 `320054cf…`）+ 台账补两树读数 + 重封见证。该提交的见证**仍被下一次编辑作废**（我在重封之后又改了 GOAL 正文）⇒ 见下一行 |
 | `1d94dcca` | [M0 40946603366](https://github.com/Eswink/research-system-new/actions/runs/40946603366) / [Push 40946602926](https://github.com/Eswink/research-system-new/actions/runs/40946602926) | **全 `success`**：M0 **八 job 全 success**（`eval-gate` / `quality-ubuntu-latest` / `quality-windows-latest` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `collector-quality` / `container-quality`）、Push 三条 Analyze 全 `success`；run 级 conclusion 也是 `success` | **收口 tip**（本提交即 HEAD）：**最后一次**重封见证 —— 顺序是「记录全部定稿 → 跑门 → 只提交见证 → 不再改树」。本地 m0（记录落盘**之后**）：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False`；`--verify-only` 报「覆盖成立：4705 个受判面文件」 |
-
 | `bce97c13` | [M0 40953804158](https://github.com/Eswink/research-system-new/actions/runs/40953804158) / [Push 40953804292](https://github.com/Eswink/research-system-new/actions/runs/40953804292) | **全 `success`**：M0 **八 job 全 success**、Push 三条 Analyze 全 `success`；run 级 conclusion 也是 `success` | **本 GOAL 的链在此收口**（本提交即 HEAD）：`status` 已置 `ACHIEVED`、台账收录本链全部提交、见证最后一次重封。本地 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 FAILED、`tree changed during the run: False`；`--verify-only` 报「覆盖成立：4705 个受判面文件」 |
+| `6b1a1a58` | 零 run（**`covered_by: <HEAD>`**） | 覆盖：同批推送 | **一次付清本链剩余的全部非 HEAD 提交**：`bce97c13`（收口提交）与本行自身不写 —— `goal_commit_chain` 按构造豁免 HEAD（一个提交装不下自己的哈希）。只改记录 + 见证 |
+
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261029-100 | `f15929e5` → `f90e4840` → `bbb8656b` → `1d94dcca` → `bce97c13`（本 GOAL 的链全部收录；`bce97c13` 自身即 HEAD —— 按 `goal_commit_chain` 的构造豁免）| EC-01：8 条全过（含两条真文件按压，按压后 6 红、逐字节复原）；EC-02：19 条全过；EC-03：26 条全过；EC-04：11 条全过（含按压）；EC-05：判词 64 PASS / 0 FAIL；**TWO-TREE PASS**（两棵各 64 条、`sha256` 相同 `320054cf…`）；套件 `tests/application + contracts + loaders + domain` **2608 passed / 73 skipped**、`tests/api + e2e manuscript` **737 passed / 4 skipped** | （待登记） | 修掉 5 处**实现**缺陷（不是判据）：① `editorial` 相只声明三条能力 ⇒ 另三件的 provider 排不出会话工具面 ⇒ 真实 run 点名 `ToolDefinition 'europe_pmc' is not registered`；② `review:review_decision` 作跨相 `inputs` 在评审面板下**恒 ambiguous**（两个任务）⇒ 改成经提示词那一段送；③ `wants_review_points` 读 `task.contract` 而 `ResearchTask` 只有 `contract_id` ⇒ 静默返回 False、点表从未进提示词；④ 已渲染的**字符串**被当点对象再渲染一次 ⇒ `-  (): ` 空行（与 MEM「已渲染的提示段被当视图再渲染」同一形态）；⑤ 应答信只 `put` 不 `register` ⇒ 读面 `GET /runs/{id}/artifacts` 看不到它 | `W-1`…`W-4` / `U-1`…`U-3` | ① 叙述质量口径（可机械判的形态）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ `retrieval_context` 去重（共用面） |
+| 1 | PLAN-20261029-100 | `f15929e5` → `f90e4840` → `bbb8656b` → `1d94dcca` → `bce97c13` → `6b1a1a58`（本 GOAL 的链全部收录；收尾时一次补完全部非 HEAD 提交，最后一个自身即 HEAD —— 按 `goal_commit_chain` 的构造豁免）| EC-01：8 条全过（含两条真文件按压，按压后 6 红、逐字节复原）；EC-02：19 条全过；EC-03：26 条全过；EC-04：11 条全过（含按压）；EC-05：判词 64 PASS / 0 FAIL；**TWO-TREE PASS**（两棵各 64 条、`sha256` 相同 `320054cf…`）；套件 `tests/application + contracts + loaders + domain` **2608 passed / 73 skipped**、`tests/api + e2e manuscript` **737 passed / 4 skipped** | （待登记） | 修掉 5 处**实现**缺陷（不是判据）：① `editorial` 相只声明三条能力 ⇒ 另三件的 provider 排不出会话工具面 ⇒ 真实 run 点名 `ToolDefinition 'europe_pmc' is not registered`；② `review:review_decision` 作跨相 `inputs` 在评审面板下**恒 ambiguous**（两个任务）⇒ 改成经提示词那一段送；③ `wants_review_points` 读 `task.contract` 而 `ResearchTask` 只有 `contract_id` ⇒ 静默返回 False、点表从未进提示词；④ 已渲染的**字符串**被当点对象再渲染一次 ⇒ `-  (): ` 空行（与 MEM「已渲染的提示段被当视图再渲染」同一形态）；⑤ 应答信只 `put` 不 `register` ⇒ 读面 `GET /runs/{id}/artifacts` 看不到它 | `W-1`…`W-4` / `U-1`…`U-3` | ① 叙述质量口径（可机械判的形态）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ `retrieval_context` 去重（共用面） |
 
 ## 状态历史
 
