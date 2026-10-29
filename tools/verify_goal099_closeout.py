@@ -190,8 +190,8 @@ def _progress_verdicts(charter: str) -> list[Any]:
             "进展记录那一行的 RECHECK 列必须指向本轮的复检文件",
         ),
         TOOLBOX.verdict(
-            "progress-row-is-first-in-the-table",
-            bool(progress_rows) and _first_progress_goal(progress) == LADDER_GOAL,
+            "progress-row-is-newest-when-inserted",
+            bool(progress_rows) and _rows_above_are_not_older(progress),
             "进展记录必须插在**最上面**（判据取 progress[0]，而该表不按日期排序）",
         ),
     ]
@@ -201,6 +201,34 @@ def _ladder_verdicts(root: Path) -> list[Any]:
     """宪章记账：阶梯行 + 进展记录行都必须收录本 GOAL。"""
     charter = TOOLBOX.text(root, ".cursor/plans/goals/MAINLINE.md")
     return [*_ladder_row_verdicts(charter.splitlines()), *_progress_verdicts(charter)]
+
+
+def _rows_above_are_not_older(progress: str) -> bool:
+    """本 GOAL 的行**上方**没有更早的行（= 插入时它就在最上面）。
+
+    **为什么不再是「它就是第一行」**（GOAL-20261029-100 的连带影响）：本 GOAL 的契约是
+    「追加一行并**插在最上面**」，而之后每一轮都会在它**上面**插自己的行。断言「它永远是
+    第一行」等于要求后续 GOAL 不许记账 —— 那是把「插入位置」错读成「永久居首」。
+    真正的机械含义是：**它上方每一行的日期都不早于它**（新行只会出现在更上面）。
+    """
+    rows = _progress_rows(progress)
+    for index, (date, goal) in enumerate(rows):
+        if goal != LADDER_GOAL:
+            continue
+        return all(other_date >= date for other_date, _goal in rows[:index])
+    return False
+
+
+def _progress_rows(progress: str) -> list[tuple[str, str]]:
+    """进展记录表 → `[(日期, GOAL)]`（按表内顺序）。"""
+    rows: list[tuple[str, str]] = []
+    for line in progress.splitlines():
+        if not line.startswith("| "):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if len(cells) >= 2 and cells[0].startswith("2026-"):
+            rows.append((cells[0], cells[1]))
+    return rows
 
 
 def _first_progress_goal(progress: str) -> str:

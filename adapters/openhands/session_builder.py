@@ -88,12 +88,14 @@ class SessionBuilder:
         # GOAL-20261019-089 EC-02：**方向那一段**在最前（「被要求研究什么」）。
         # GOAL-20261020-091 EC-02：**被评对象那一段**（评审者才挂；缺省无那段 ⇒ 逐字不变）。
         # GOAL-20261022-093：**上一轮评审结论那一段**（缺省无那段 ⇒ 逐字不变）。
+        # GOAL-20261029-100 EC-03：**本次评审的逐条点表那一段**（缺省无那段 ⇒ 逐字不变）。
         headline = compose_prompt(
             spec.task_contract.purpose,
             direction=spec.direction_prompt,
             prior_knowledge=spec.prior_knowledge_prompt,
             retrieval=spec.retrieval_prompt,
             review_outcome=spec.review_outcome_prompt,
+            review_points=spec.review_points_prompt,
             review_material=spec.review_material_prompt,
         )
         conversation.send_message(headline)

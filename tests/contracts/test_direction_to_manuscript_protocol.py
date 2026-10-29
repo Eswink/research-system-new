@@ -49,6 +49,12 @@ _PHASES = (
     "experiment",
     "review",
     "manuscript",
+    # GOAL-20261029-100 EC-02：新增第九相（投稿决策）。它在 `manuscript` 之后、
+    # `report` 之前 —— 编辑读的是「评审意见 + 已成稿的正文」，两者都在它之前在场。
+    "editorial",
+    # GOAL-20261029-100 EC-03：新增第十相（逐条应答）。它在 `editorial` 之后：编辑处置
+    # 的是「评审 + 成稿 + **作者的回应**」，回应不到位与稿件本身有问题要能分开判。
+    "revision",
     "report",
 )
 #: 本协议必须声明的跨相边（读取方 ← 产出方:产物名）。
@@ -62,6 +68,15 @@ _CROSS_PHASE_EDGES: tuple[tuple[str, str], ...] = (
     ("manuscript", "retrieval:retrieval_report"),
     ("manuscript", "novelty:novelty_claim"),
     ("manuscript", "plan:research_plan"),
+    # GOAL-20261029-100 EC-02：编辑决定唯一的一条跨相边（成稿是什么）。
+    # **不**声明 `review:review_decision`：`review` 相是**评审面板**（两个任务）⇒
+    # `producer_task_id` 按 `{run_id}:{phase}:` 前缀会命中两条 ⇒ 点名 `ambiguous` 失败
+    # （实测）。评审判词到会话的正确通道是提示词那一段（`PRIOR REVIEW`）。
+    ("editorial", "manuscript:manuscript_narrative"),
+    # GOAL-20261029-100 EC-03：应答相的一条跨相边（它回应的是这份成稿）。
+    # 评审点表经**提示词那一段**送到（`REVIEW POINTS`），不是跨相 `inputs` ——
+    # 与编辑相那一条同一条实测理由（`review` 是面板 ⇒ 解析 ambiguous）。
+    ("revision", "manuscript:manuscript_narrative"),
 )
 #: C-1：不消费声明输入的两个执行体，它们的相位**不得**声明跨相 `inputs`。
 _NON_CONSUMING_PHASES = ("experiment", "report")
@@ -83,8 +98,13 @@ def _compiled(name: str = _PROTOCOL) -> Any:
     return result
 
 
-def test_the_document_declares_eight_phases_in_order() -> None:
-    """(1) 文档自己写下八相，且顺序就是执行序（不靠产品代码转述）。"""
+def test_the_document_declares_ten_phases_in_order() -> None:
+    """(1) 文档自己写下十相，且顺序就是执行序（不靠产品代码转述）。
+
+    GOAL-20261029-100 把八相扩成十相：EC-02 新增 `editorial`（投稿决策），
+    EC-03 新增 `revision`（逐条应答）。本判据的受判面仍是**文档自己的相表**：
+    一相不多、一相不少、顺序即执行序。
+    """
     ids = tuple(str(phase["id"]) for phase in _raw()["phases"])
     assert ids == _PHASES, ids
     assert _raw()["id"] == _PROTOCOL_ID

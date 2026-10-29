@@ -61,6 +61,14 @@ class RetrievalEntry:
     shown: str
     #: 本条被截断过（`shown` 比原文短）—— 超限**点名**，不静默丢。
     truncated: bool
+    #: 本条**能否成为一条参考文献**（GOAL-20261029-100 EC-01）。
+    #:
+    #: `True` 只对工具结果的 `articles[]` 形状成立 —— 那是唯一带著录字段（作者 / 刊名 /
+    #: 年份）的形状，`references.reference_table` 只从它取条目。`ids[]` 形状（esearch 的
+    #: 命中列表）**没有元数据** ⇒ 它永远进不了 References ⇒ 若给它一个编号，其后每一条
+    #: 编号都会**整体错位**：模型写的 `[2]` 指到另一篇文献上，而没有任何判据会红。
+    #: 因此提示词只给**可引用**的条目编号；不可引用的逐条标注（可见，但不占编号）。
+    citable: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -139,6 +147,10 @@ def context_payload(run_id: str, entries: tuple[RetrievalEntry, ...]) -> dict[st
     条目**标注**出来（`[truncated]`），而载荷原本**不记**`truncated` ⇒ 读者拿读面**重建不出**
     「模型看到的到底是哪一行」（对未截条目无碍，对被截条目必然对不上）。⇒ 加这一列，
     使「模型拿到了什么」**逐字**可复核（少这一列时，那条判据只在**无截断**的夹具里假绿）。
+
+    **GOAL-20261029-100 EC-01 补一列 `citable`**（同一条纪律的延续）：提示词现在给
+    **可引用**的条目编号；读者要重建那一行就必须知道哪条占了编号。缺这一列 ⇒ 读面重建不出
+    `[n]`，而「提示词编号 == References 序号」这条判据会退化成只能对着渲染器自己比。
     """
     return {
         "run_id": run_id,
@@ -149,6 +161,7 @@ def context_payload(run_id: str, entries: tuple[RetrievalEntry, ...]) -> dict[st
                 "artifact_id": entry.artifact_id,
                 "shown": entry.shown,
                 "truncated": entry.truncated,
+                "citable": entry.citable,
             }
             for entry in entries
         ],
@@ -219,7 +232,7 @@ def _entries_for(
         return ()
     records = _records_of(payload)
     entries: list[RetrievalEntry] = []
-    for identifier, title in records:
+    for identifier, title, citable in records:
         shown, truncated = _clip(title, max_chars)
         entries.append(
             RetrievalEntry(
@@ -229,24 +242,29 @@ def _entries_for(
                 title=title,
                 shown=shown,
                 truncated=truncated,
+                citable=citable,
             )
         )
     return tuple(entries)
 
 
-def _records_of(payload: Mapping[str, Any]) -> tuple[tuple[str, str], ...]:
-    """工具结果内容 → `(标识, 标题)` 序列（两种既有形状都认）。"""
+def _records_of(payload: Mapping[str, Any]) -> tuple[tuple[str, str, bool], ...]:
+    """工具结果内容 → `(标识, 标题, 可引用)` 序列（两种既有形状都认）。
+
+    `可引用` 的判法见 `RetrievalEntry.citable`：只有 `articles[]`（带著录字段）那一形状能
+    成为参考文献；`ids[]` 只是一个标识，`references.reference_table` 明确跳过它。
+    """
     articles = payload.get("articles")
     if isinstance(articles, list):
         pairs = [
-            (_identifier_of(article), str(article.get("title") or ""))
+            (_identifier_of(article), str(article.get("title") or ""), True)
             for article in articles
             if isinstance(article, Mapping)
         ]
-        return tuple((identifier, title) for identifier, title in pairs if identifier)
+        return tuple((identifier, title, True) for identifier, title, _ in pairs if identifier)
     ids = payload.get("ids")
     if isinstance(ids, list):
-        return tuple((str(item), "") for item in ids if str(item))
+        return tuple((str(item), "", False) for item in ids if str(item))
     return ()
 
 

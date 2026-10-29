@@ -101,13 +101,22 @@ def prompt_lines_for(payload: dict[str, Any]) -> list[str]:
     """读面载荷 → 提示词那一段应有的**逐行**形态（与渲染器同一口径）。
 
     口径取自渲染器（`retrieval_prompt.render_retrieval_prompt`）**逐字**：
-    `- {identifier}{[truncated]}: {shown}`。判据侧把它**重写一遍**（不 import 渲染器
-    当预言机），这样「渲染器改了而判据没跟上」会被判红。
+    `- [n] {identifier}{[truncated]}: {shown}`（GOAL-20261029-100 EC-01 起带引用编号；
+    不可引用的条目是 `- [not citable] {identifier}…`）。判据侧把它**重写一遍**
+    （不 import 渲染器当预言机），这样「渲染器改了而判据没跟上」会被判红。
+
+    编号在这里**独立重算**（可引用条目的首次出现位置）—— 产品侧编号规则改了它会红。
     """
+    numbers: dict[str, int] = {}
+    for entry in payload.get("entries", ()):
+        if entry.get("citable", True):
+            numbers.setdefault(str(entry.get("identifier") or ""), len(numbers) + 1)
     lines: list[str] = []
     for entry in payload.get("entries", ()):
+        identifier = str(entry.get("identifier") or "")
+        prefix = f"[{numbers[identifier]}] " if identifier in numbers else "[not citable] "
         mark = " [truncated]" if entry.get("truncated") else ""
-        lines.append(f"- {entry['identifier']}{mark}: {entry['shown']}")
+        lines.append(f"- {prefix}{identifier}{mark}: {entry['shown']}")
     return lines
 
 

@@ -261,6 +261,51 @@ class QualityGateVerdict(StrEnum):
     BLOCK = "BLOCK"
 
 
+class EditorialDecision(StrEnum):
+    """**编辑决定**（GOAL-20261029-100 EC-02）：稿件该不该进下一轮，以及怎么进。
+
+    与 `QualityGateVerdict` 是**两个不同的面**（不要合并、不要互相改名）：
+
+    - `QualityGateVerdict` 是**验收门**的判词（`PASS` / `REJECT`）—— 判的是「这次任务
+      的交付物满不满足合约的 acceptance criteria」，是系统内部的机械裁决；
+    - `EditorialDecision` 是**投稿决策**（编辑读完评审意见后对稿件下的处置）—— 判的是
+      「这份稿件在期刊流程里下一步是什么」。它们可以不一致，而且**必须能**不一致：
+      一份通过了验收门的稿件完全可以被判 `major_revision`。
+
+    四个取值各有确切含义（判据按取值分派，不做同义词归并）：
+
+    - `ACCEPT`：可直接进入下一道工序，无需改动；
+    - `MINOR_REVISION`：需要有限改动，但不重做研究；
+    - `MAJOR_REVISION`：需要实质改动（补分析 / 重写论证 / 加证据）；
+    - `REJECT`：本刊/本流程不再处理此稿。
+
+    **为什么落进 domain 而不是自由字符串**：决定性词表的取值必须可枚举、可判越界；
+    自由字符串下「越界值」与「拼写错误」不可区分（GOAL-20261029-100 EC-02 的反证臂）。
+    """
+
+    ACCEPT = "accept"
+    MINOR_REVISION = "minor_revision"
+    MAJOR_REVISION = "major_revision"
+    REJECT = "reject"
+
+    @classmethod
+    def parse(cls, raw: object) -> "EditorialDecision":
+        """严格解析：越界值**点名拒绝**（列出合法取值），不静默回落。"""
+        text = str(raw or "").strip()
+        for member in cls:
+            if member.value == text:
+                return member
+        allowed = ", ".join(sorted(member.value for member in cls))
+        raise ValueError(
+            f"editorial decision {text!r} is not one of the four declared values ({allowed})"
+        )
+
+    @property
+    def requires_changes(self) -> bool:
+        """除 `ACCEPT` 之外都**必须**说要改什么（`required_changes` 不得为空）。"""
+        return self is not EditorialDecision.ACCEPT
+
+
 class MemoryTier(StrEnum):
     SESSION = "SESSION"
     RUN = "RUN"

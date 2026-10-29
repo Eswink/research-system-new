@@ -18,6 +18,7 @@
 | [MEM-20261024-230](entries/MEM-20261024-230-six-phase-chain-edges-cannot-be-written-in-the-protocol.md) | ACTIVE | repository | 0.95 | 2027-04-25 | PLAN-20261024-096 |
 | [MEM-20261026-231](entries/MEM-20261026-231-productive-entry-needs-three-things.md) | ACTIVE | repository | 0.95 | 2027-04-26 | PLAN-20261026-097 |
 | [MEM-20261028-232](entries/MEM-20261028-232-half-covered-judges-read-as-green.md) | ACTIVE | repository | 0.95 | 2027-04-28 | PLAN-20261027-098 |
+| [MEM-20261029-233](entries/MEM-20261029-233-shared-seams-fail-silently.md) | ACTIVE | repository | 0.95 | 2027-04-29 | PLAN-20261029-100 |
 | [MEM-20261022-228](entries/MEM-20261022-228-judge-inheritance-and-the-model-written-report.md) | ACTIVE | repository | 0.95 | 2027-04-22 | PLAN-20261022-094 |
 | [MEM-20261021-226](entries/MEM-20261021-226-the-next-round-charter-is-read-not-remembered.md) | ACTIVE | repository | 0.9 | 2027-04-21 | PLAN-20261021-092 |
 | [MEM-20261020-224](entries/MEM-20261020-224-a-witness-must-not-describe-itself.md) | ACTIVE | repository | 0.9 | 2027-04-20 | PLAN-20261020-090 |

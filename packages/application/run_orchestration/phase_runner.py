@@ -43,10 +43,9 @@ from packages.application.run_orchestration.review_panel_judging import (
     record_rejection,
     record_success,
 )
+from packages.application.run_orchestration.review_points import with_review_points
 from packages.application.run_orchestration.round_loop_runner import execute_rounds
-from packages.application.run_orchestration.run_completion_payload import (
-    run_completion_payload,
-)
+from packages.application.run_orchestration.run_completion_payload import run_completion_payload
 from packages.application.run_orchestration.session_carry import (
     SessionCarryInputs,
 )
@@ -354,10 +353,11 @@ def _run_group_task(
     spec_context = with_retrieval_context(deps, task, spec_context)
     # GOAL-20261018-082 EC-01：前序知识 → 同一 spec 的第二个槽位（与检索同一求值点）。
     spec_context = with_prior_knowledge(deps, task, spec_context)
-    # GOAL-20261020-091 EC-02：**被评对象** → 同一 spec 的第四槽位（只有评审者挂）。
+    # GOAL-20261020-091 EC-02：**被评对象** → 第四槽位（只有评审者挂）。
     spec_context = with_review_material(deps, task, spec_context)
-    # GOAL-20261022-093：**上一轮评审结论** → 同一 spec 的第五槽位（缺省不挂 ⇒ 逐字不变）。
+    # GOAL-20261022-093：**上一轮评审结论** → 第五槽位（缺省不挂 ⇒ 逐字不变）。
     spec_context = with_review_outcome(deps, task, spec_context)
+    spec_context = with_review_points(deps, task, spec_context)  # 100 EC-03: 逐条点表
     with operation(
         deps.telemetry,
         scope=OperationScope.TASK,

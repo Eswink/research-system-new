@@ -185,16 +185,107 @@ phases:
     outputs: [manuscript_narrative]
     timeout_seconds: 300
 
+  # ── GOAL-20261029-100 EC-02：投稿决策的那一格 ────────────────────────────
+  #
+  # **为什么它是会话相**：它要读 `review` 相的 `review_decision` 产物 —— 那是跨相
+  # `inputs`，而 `cross_phase_inputs._executor_consumes_declared_inputs` 对声明了
+  # `report:` / `experiment:` 的执行体一律返回 False ⇒ 只有会话相能合法声明它。
+  #
+  # **为什么要有这一格**（建档实测）：`scientific_editor` 角色在 `roles.yaml` 里早就
+  # 在（`ReviewPanelRole.WRITER`），但**从未被任何协议激活**；决定词表当时只有验收门的
+  # `PASS` / `REJECT` 两值 —— 那是「交付物满不满足合约」，不是「稿件下一步怎么办」。
+  # 本相产出**编辑决定**（四值闭集），与验收门**刻意分开**（见 `EditorialDecision`）。
+  #
+  # 位置：在 `manuscript` 之后（编辑读的是评审意见与已成稿的正文，两者都已在场），
+  # `report` 之前（汇编与收口要看编辑处置）。`report` **不**依赖它：汇总是既有行为，
+  # 编辑决定是**并列**的产物 —— 让 report 依赖它会把「决定」变成汇编的前置条件，
+  # 于是一份 `reject` 的稿件产不出报告，那是语义错误。
+  - id: editorial
+    name: Editorial Decision On The Reviewed Manuscript
+    strategy: single_agent
+    depends_on: [review, manuscript]
+    required_roles:
+      - {role: scientific_editor, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - deliverable.read
+      - literature.search
+      - literature.read
+      - workspace.read
+    # `run_chain`：本相不调工具（编辑读的是本 run 已落库的材料，由提示词那几段给到）
+    # ⇒ 会话工具面为空。
+    #
+    # **六条能力必须全部声明**（这一格是实测踩到的坑，值得写下来）：`run_chain` 只把
+    # 「本相 `tool_requirements` 里的 provider」从会话工具面**排除**，而 provider 是
+    # 按**能力**映射来的。只声明三条时，另三条能力对应的 provider（`europe_pmc` /
+    # `ncbi_eutils` / `openhands_workspace`）**没有**进本相的 tool_requirements ⇒
+    # 排不掉 ⇒ 它们留在会话工具面里、又没有 `session_tool_bindings` ⇒ 真实 run 在
+    # 建会话时点名失败（实测：`ToolDefinition 'europe_pmc' is not registered`，而
+    # 失败点是**手稿相之后**的编辑相）。这与 `manuscript` 相「六条全部声明」的理由同形。
+    capability_execution: run_chain
+    # 会话相才能声明跨相 `inputs`（见上）。
+    #
+    # **只声明 `manuscript` 一条**（实测踩到的第二个坑）：`review` 相是**评审面板**
+    # （`scientific_reviewer` + `novelty_reviewer` 两个任务）⇒
+    # `cross_phase_inputs.producer_task_id` 按 `{run_id}:{phase}:` 前缀解析会命中
+    # **两个**任务 ⇒ 点名 `ambiguous` 失败（实测消息：`cross-phase input from 'review'
+    # is ambiguous … ['35efdfa8…', '648ce258…']`）。评审判词到会话的正确通道是
+    # **提示词那一段**（`PRIOR REVIEW`，`review_outcome.with_review_outcome` 装的是
+    # 面板聚合判词，`manuscript` 相拿到的是同一段）—— 不是跨相 `inputs`。
+    inputs:
+      - manuscript:manuscript_narrative
+    task_contract: editorial_decision
+    outputs: [editorial_decision]
+    timeout_seconds: 180
+
+  # ── GOAL-20261029-100 EC-03：返修回路的**应答**那一格 ────────────────────
+  #
+  # **它补哪一格**（建档实测）：`rebuttal` 全仓零命中、`ReviewFinding.findings` 是扁平的
+  # 判据渲染串（没有可应答的条目 id）⇒「作者逐条回应、编辑据此核返修」在结构上不存在。
+  # 本相产出**逐条应答**（`author_responses`）；应答信 `response_letter.md` 由汇编器在
+  # `report` 相装配 —— 与手稿同一分工（模型写回应，汇编器写编号与格式）。
+  #
+  # **为什么在 `editorial` 之前**：编辑处置的是「评审 + 已成稿的正文 + **作者的回应**」——
+  # 回应不到位与稿件本身有问题，是两种不同的处置理由。放在它后面会让编辑看不到回应。
+  #
+  # **为什么也依赖 `review` 却只声明 `manuscript` 的跨相边**：评审点表经**提示词那一段**
+  # 送到（`REVIEW POINTS`，编号 `P1…Pn` 由 `author_response.points_of` 从本 run 已落库的
+  # 评审记录派生）。`review:review_decision` **不能**当跨相 `inputs` 用（`review` 是评审
+  # 面板、两个任务 ⇒ 解析 `ambiguous`，编辑相那一格已经实测过这条）。
+  - id: revision
+    name: Point By Point Response To The Review
+    strategy: single_agent
+    depends_on: [review, manuscript]
+    required_roles:
+      - {role: research_writer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - deliverable.read
+      - literature.search
+      - literature.read
+      - workspace.read
+    # `run_chain` + 六条能力全声明（与 `editorial` 那格同一条理由：少声明一条，它的
+    # provider 就排不出会话工具面 ⇒ 建会话时点名 `ToolDefinition … is not registered`）。
+    capability_execution: run_chain
+    inputs:
+      - manuscript:manuscript_narrative
+    task_contract: author_response
+    outputs: [author_responses]
+    timeout_seconds: 300
+
   - id: report
     name: Report And Manuscript Assembly
     strategy: deterministic
-    depends_on: [plan, novelty, experiment, review, manuscript]
+    depends_on: [plan, novelty, experiment, review, manuscript, revision]
     required_roles:
       - {role: research_writer, min_instances: 1, max_instances: 1}
     # C-1：report 执行体不消费声明输入 ⇒ 不声明跨相 `inputs`（同 experiment 相）。
     # 它经 canonical 读面读本 run 的全部持久事实，并在装配面**同时**汇出
     # `research_report.md`（既有产物，零回归）与 `manuscript.md`（本协议的新产物，
-    # 正文来自 `manuscript` 相的制品）。
+    # 正文来自 `manuscript` 相的制品），以及 `response_letter.md`（本 run 有应答产物时
+    # 才写：没做过返修就产出一封应答信，等于补造证据）。
     task_contract: research_report_deliverable
     outputs: [research_report.md, manuscript.md]
     timeout_seconds: 300

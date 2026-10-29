@@ -69,7 +69,15 @@ def _run_once(deps: Any, key: str) -> dict[str, Any]:
             str(item["id"]) for item in client.get(f"/runs/{run_id}/artifacts").json()
         ]
         run["experiments"] = client.get(f"/runs/{run_id}/experiments").json()
-        for name in ("manuscript.md", "research_report.md", "manuscript_narrative"):
+        for name in (
+            "manuscript.md",
+            "research_report.md",
+            "manuscript_narrative",
+            # GOAL-20261029-100 EC-02：编辑决定的正文也要读回来（判据要解它、不是只看 id）。
+            "editorial_decision",
+            # GOAL-20261029-100 EC-03：应答信由汇编器写；要判它就得读它的字节。
+            "response_letter.md",
+        ):
             run[f"body:{name}"] = _content_of(client, run["artifact_ids"], name)
     return run
 
@@ -86,7 +94,7 @@ def _content_of(client: Any, artifact_ids: list[str], name: str) -> str | None:
 
 class TestTheManuscriptComesOutOfTheProductEntry:
     def test_the_run_succeeds_and_every_declared_artifact_exists(self) -> None:
-        """(1) 八相全落库 + `SUCCEEDED`（手稿相真的被派发过，不是被跳过）。"""
+        """(1) 九相全落库 + `SUCCEEDED`（手稿相与编辑相真的被派发过，不是被跳过）。"""
         with ManuscriptRelayFixture() as relay:
             deps, offline = deps_for(relay, (VARIANT_A[1],), VARIANT_A[0])
             run = _run_once(deps, "goal099-manuscript-arc")
@@ -96,7 +104,65 @@ class TestTheManuscriptComesOutOfTheProductEntry:
             assert name in suffixes, (name, sorted(suffixes))
         assert run["experiments"]["experiments"], run["experiments"]
         assert offline.requests, "检索必须真的发生过（否则 References 无从谈起）"
-        assert len(PHASES) == 8
+        # GOAL-20261029-100：八相 → **十**相（EC-02 新增 `editorial`，EC-03 新增 `revision`）。
+        assert len(PHASES) == 10
+        assert "editorial" in PHASES and "revision" in PHASES
+
+    def test_the_editorial_decision_comes_out_of_the_product_entry(self) -> None:
+        """GOAL-20261029-100 EC-02：编辑决定**经产品入口**产出且四值之一可判。
+
+        判三件（都是结构事实）：
+        ① 制品在场（`editorial_decision` 落 canonical）；
+        ② 它的字节能解成已校验的决定 —— 取值在四值闭集内、理由非空、
+           非 `accept` 时 `required_changes` 非空（解析器**自己**会拒绝违者）；
+        ③ 被测的那份决定不是 `accept` —— 这样「要求返修要说改什么」那条判据在
+           **产品路径**上真的被走到过（夹具默认给 `minor_revision`）。
+        """
+        from packages.application.deliverable.editorial_decision import (
+            parse_editorial_decision,
+        )
+        from packages.domain.enums import EditorialDecision
+
+        with ManuscriptRelayFixture() as relay:
+            deps, _offline = deps_for(relay, (VARIANT_A[1],), VARIANT_A[0])
+            run = _run_once(deps, "goal100-editorial-decision")
+        body = run["body:editorial_decision"]
+        assert body, "产品入口跑完必须有 editorial_decision 制品"
+        outcome = parse_editorial_decision(body)
+        assert isinstance(outcome.decision, EditorialDecision)
+        assert outcome.decision is not EditorialDecision.ACCEPT, (
+            "夹具必须给一个**要求返修**的决定：accept 会让 required_changes 那条判据"
+            "在产品路径上从未被走到",
+            outcome.decision,
+        )
+        assert outcome.required_changes, outcome
+        assert outcome.rationale.strip(), outcome
+
+    def test_the_response_letter_answers_every_review_point(self) -> None:
+        """GOAL-20261029-100 EC-03：应答信**经产品入口**产出，且逐条对应评审点。
+
+        判四件（都是结构事实）：
+        ① `response_letter.md` 在库里；
+        ② 它按 `### P<n>` 逐条成段，条数 == 评审点条数；
+        ③ 每个点位都带着它对应的原意见（`> …` 引用行）；
+        ④ 应答信里**没有**任何未应答的编号 —— 漏答会让汇编器**拒绝**产出这封信
+           （所以「信在」这一件事本身已经蕴含「没有漏答」）。
+        """
+        with ManuscriptRelayFixture() as relay:
+            deps, _offline = deps_for(relay, (VARIANT_A[1],), VARIANT_A[0])
+            run = _run_once(deps, "goal100-response-letter")
+        letter = run["body:response_letter.md"]
+        assert letter, "产品入口跑完必须有 response_letter.md"
+        sections = [line for line in letter.splitlines() if line.startswith("### P")]
+        assert sections, letter[:400]
+        # 逐条成段且编号连续（P1…Pn，一个不跳）。
+        expected = [f"### P{index} (" for index in range(1, len(sections) + 1)]
+        assert all(section.startswith(marker) for section, marker in zip(sections, expected)), (
+            sections,
+        )
+        # 每个点位都引用出它对应的原意见（应答信必须能对着评审读）。
+        quotes = [line for line in letter.splitlines() if line.startswith("> ")]
+        assert len(quotes) == len(sections), (len(quotes), len(sections))
 
     def test_the_manuscript_is_imrad_with_a_real_reference_list(self) -> None:
         """(2) `manuscript.md` 是 IMRaD，且 References 是**真**Vancouver 行。

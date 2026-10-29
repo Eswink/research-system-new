@@ -73,6 +73,8 @@ PROTOCOL_PHASES: tuple[str, ...] = (
     "experiment",
     "review",
     "manuscript",
+    "editorial",  # GOAL-20261029-100 EC-02：投稿决策相。
+    "revision",  # GOAL-20261029-100 EC-03：逐条应答相。
     "report",
 )
 #: 手稿相必须声明的跨相边（读取方 ← 产出方:产物名）。

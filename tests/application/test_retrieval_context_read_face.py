@@ -119,6 +119,10 @@ class TestTheContextIsReadableAftheFact:
 
         本用例用一条**真被截**的条目（`max_chars` 调小 ⇒ 上游摘录点自己判 `truncated`）
         走完整条链，再按读面载荷重建「提示词那一行」，与真渲染结果**逐字**比。
+
+        GOAL-20261029-100 EC-01 让那一行多一个**编号前缀** ⇒ 载荷另补一列 `citable`，
+        读者仍能重建整行。这里**不 import** `numbered_records` 当预言机：判据自己按
+        「可引用条目里首次出现的位置」重算编号 —— 产品侧把编号规则改错时它会红。
         """
         from packages.application.run_orchestration.retrieval_prompt import (
             render_retrieval_prompt,
@@ -134,15 +138,24 @@ class TestTheContextIsReadableAftheFact:
         artifact_id = persist_retrieval_context(store, _TASK, view)
         payload = json.loads(store.get(artifact_id).decode("utf-8"))
 
+        seen: dict[str, int] = {}
+        for entry in payload["entries"]:
+            if entry.get("citable"):
+                seen.setdefault(str(entry["identifier"]), len(seen) + 1)
         rebuilt: list[str] = []
         for entry in payload["entries"]:
+            prefix = (
+                f"[{seen[str(entry['identifier'])]}] "
+                if str(entry["identifier"]) in seen
+                else "[not citable] "
+            )
             mark = " [truncated]" if entry.get("truncated") else ""
-            rebuilt.append(f"- {entry['identifier']}{mark}: {entry['shown']}")
+            rebuilt.append(f"- {prefix}{entry['identifier']}{mark}: {entry['shown']}")
         rendered = [
             line for line in render_retrieval_prompt(view).splitlines() if line.startswith("- ")
         ]
         assert rebuilt == rendered, (
-            "读面载荷必须能**逐字**重建提示词那一行（含截断标注）",
+            "读面载荷必须能**逐字**重建提示词那一行（含编号与截断标注）",
             rebuilt,
             rendered,
         )

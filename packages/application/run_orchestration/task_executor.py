@@ -149,6 +149,12 @@ class SessionSpecContext:
     #: 与另四段**并列**：那几段说「做什么 / 知道什么 / 取回什么 / 要判什么」，这一段说
     #: 「**上一轮被判成什么**」。缺省 `None` ⇒ 提示词逐字节等于既有形态。
     review_outcome: Any | None = None
+    #: GOAL-20261029-100 EC-03：**本 run 本次评审的逐条点表**
+    #: （`author_response.ReviewPoint` 元组）。
+    #: 与 `review_outcome` 是两件事（刻意分开）：那一段是「**上一轮**被判成什么」（跨 run
+    #: 搬运），这一段是「**这一轮**的评审提出了哪几条、编号是什么」（本 run 内）。
+    #: 缺省 `None` ⇒ 提示词逐字节等于既有形态（只有应答相需要它）。
+    review_points: Any | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -400,6 +406,8 @@ def _run_session(
         review_material_prompt=session_prompts.review_material_prompt(spec_context),
         # GOAL-20261022-093：**上一轮评审结论**那一段（缺省 None ⇒ 提示词逐字不变）。
         review_outcome_prompt=session_prompts.review_outcome_prompt(spec_context),
+        # GOAL-20261029-100 EC-03：**本次评审的逐条点表**那一段（缺省 None ⇒ 提示词逐字不变）。
+        review_points_prompt=session_prompts.review_points_prompt(spec_context),
         # GOAL-20261019-089 EC-02：**研究方向那一段**（缺省 None ⇒ 提示词逐字不变）。
         direction_prompt=session_prompts.direction_prompt(spec_context),
         endpoint=spec_context.endpoint,

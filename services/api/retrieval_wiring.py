@@ -25,6 +25,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 #: 出厂检索 provider 的 id（与 `examples/config/tool_providers.yaml` 逐字一致）。
@@ -48,6 +49,39 @@ RETRIEVAL_PHASE = "retrieval"
 #: （`input_material` 把跨相产物的内层对象挂在**产物名**下）。
 QUERY_PATH = ("research_question.query",)
 
+#: **出厂检索命中的默认条数**（GOAL-20261029-100 EC-04：由硬编码改成具名默认）。
+#:
+#: 此前它写死在 `retrieval_calls()` 的 `fixed_arguments` 里（`{"retmax": 3}`）—— 没有
+#: 配置面，于是 References 恒为 3 条上下、「Related Work」没有实质内容可写。现在它是本
+#: 模块的公开常量，`retrieval_calls(retmax=...)` 与 `RESEARCHOS_RETMAX` 都能改它；
+#: **默认值 3 逐字节不变**（不传参数、不设环境变量时生成的调用表与改动前逐字段相同）。
+DEFAULT_RETMAX = 3
+
+#: 配置面：环境变量名（产品组合根经 `retrieval_calls()` 读它）。
+RETMAX_ENV = "RESEARCHOS_RETMAX"
+
+#: 合法上界（`retmax` 是「一次取几条」，不是「翻多少页」：过大的值会拖垮一次 run）。
+MAX_RETMAX = 100
+
+
+def configured_retmax(environ: Any | None = None) -> int:
+    """配置面 → `retmax`（未设 / 空 ⇒ `DEFAULT_RETMAX`；非法 ⇒ **点名**拒绝）。
+
+    为什么非法值要抛而不是回落默认：静默回落会让「把条数调成 50」与「拼错了变量名」在
+    读数上不可区分 —— 那正是本仓反复修掉的那类含混。
+    """
+    raw = (environ if environ is not None else os.environ).get(RETMAX_ENV)
+    text = str(raw or "").strip()
+    if not text:
+        return DEFAULT_RETMAX
+    try:
+        value = int(text)
+    except ValueError as error:
+        raise ValueError(f"{RETMAX_ENV} must be an integer, got {text!r}") from error
+    if not 1 <= value <= MAX_RETMAX:
+        raise ValueError(f"{RETMAX_ENV} must be between 1 and {MAX_RETMAX}, got {value}")
+    return value
+
 
 def retrieval_providers(*, artifacts: Any, credentials: Any) -> dict[str, Any]:
     """出厂检索 provider 实例（**构造期零出网**；健康探测才触网）。
@@ -68,14 +102,22 @@ def retrieval_providers(*, artifacts: Any, credentials: Any) -> dict[str, Any]:
     }
 
 
-def retrieval_calls() -> tuple[Any, ...]:
+def retrieval_calls(retmax: int | None = None) -> tuple[Any, ...]:
     """出厂检索的两步链：检索（query 来自上游问题）→ 读取（ids 来自上一步结果）。
 
     与 `tests/e2e/literature_chain_support.europepmc_calls()` **同形**（那是判据侧对同一
     机制的第二份取证；两份都由各自的判据钉住 —— 本函数是**产品**声明，那一份是**判据**
     声明，不许一边改了另一边静默跟随）。
+
+    `retmax`（GOAL-20261029-100 EC-04）：**缺省 `None` ⇒ 读配置面**（未设环境变量时仍是
+    `DEFAULT_RETMAX` = 3，与改动前的字面量 `{"retmax": 3}` 逐字段相同）。显式传值优先于
+    配置面 —— 判据据此按压「改配置 ⇒ 调用参数变」。
     """
     from packages.application.run_orchestration.phase_capabilities import RunChainCall
+
+    hits = configured_retmax() if retmax is None else retmax
+    if not 1 <= hits <= MAX_RETMAX:
+        raise ValueError(f"retmax must be between 1 and {MAX_RETMAX}, got {hits}")
 
     return (
         RunChainCall(
@@ -83,7 +125,7 @@ def retrieval_calls() -> tuple[Any, ...]:
             tool_id=EUROPE_PMC_SEARCH_TOOL,
             capability="literature.search",
             arguments_from_input=QUERY_PATH,
-            fixed_arguments={"retmax": 3},
+            fixed_arguments={"retmax": hits},
             # **必须**标 phase：不标 ⇒ 每条调用在该 run 的**每一个** run_chain 相都会执行
             # （`planned_in_this_phase` 对 `phase_id is None` 一律返回 True）⇒ 问题相在
             # 上游产物还不存在时就去取 `research_question.query`，run 在检索前就失败。
@@ -100,9 +142,13 @@ def retrieval_calls() -> tuple[Any, ...]:
 
 
 __all__ = [
+    "DEFAULT_RETMAX",
     "EUROPE_PMC_ID",
+    "MAX_RETMAX",
     "NCBI_ID",
     "QUERY_PATH",
+    "RETMAX_ENV",
+    "configured_retmax",
     "retrieval_calls",
     "retrieval_providers",
 ]

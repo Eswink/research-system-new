@@ -73,6 +73,11 @@ class AgentSessionSpec:
     #: 要判什么」，这一段说「**上一轮被判成什么**」—— 下一轮据此修订。缺省 `None` ⇒
     #: 提示词逐字节等于既有形态。
     review_outcome_prompt: str | None = None
+    #: GOAL-20261029-100 EC-03：**本次评审的逐条点表那一段**（`P1…Pn` + 严重性 + 原文）。
+    #: 与 `review_outcome_prompt` **并列**且**不同**：那一段是「上一轮被判成什么」，
+    #: 这一段是「这一轮的评审提出了哪几条」—— 应答相要逐条回应就必须看到编号。
+    #: 缺省 `None` ⇒ 提示词逐字节等于既有形态。
+    review_points_prompt: str | None = None
     budget_reservation: BudgetReservation | None = None
     manifest_ref: str | None = None
     endpoint: LLMEndpoint | None = None

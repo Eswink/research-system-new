@@ -120,13 +120,17 @@ class TestTheBoundsAndTruncationAreVisible:
 
         本判据的构造性含义：渲染器**没有**第二次截断/放大 —— 上限属于**摘录点**
         （`retrieval_context`），本模块不再设界限（否则会有两份上限互相矛盾）。
+
+        逐字形态在 GOAL-20261029-100 EC-01 改了**前缀**：那一行现在以引用编号开头
+        （`- [1] 42781891: short shown`）。改的是前缀，`{identifier}: {shown}` 的后半段
+        逐字不变 —— 本判据仍然判「渲染器不放大」，并把编号一并钉住。
         """
         entry = _entry("42781891", "short shown")
         prompt = prompt_with_retrieval(_PURPOSE, _view((entry,)))
         assert "short shown" in prompt
         # 渲染器不引入超出条目字段的内容（逐字比对那一段里的条目行）
         line = next(item for item in prompt.splitlines() if "42781891" in item)
-        assert line.strip() == f"- {entry.identifier}: {entry.shown}", line
+        assert line.strip() == f"- [1] {entry.identifier}: {entry.shown}", line
 
     def test_the_bounds_live_in_the_excerpt_point_not_here(self) -> None:
         """上限常量**仍只在** `retrieval_context`（本模块不复制它们）。"""

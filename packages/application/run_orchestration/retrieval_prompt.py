@@ -29,8 +29,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from packages.application.deliverable.references import numbered_records
+
 #: 提示词里那一段的标题（**逐字**；判据按它定位）。
-PROMPT_SECTION_TITLE = "RETRIEVED SOURCES (system-fetched; cite these by identifier)"
+#: GOAL-20261029-100 EC-01 改字面（`cite these by number`）：编号现在**随行给到**，
+#: 模型不再需要自己数「这是第几条」。标题是契约的一部分 —— 改字 = 改契约，判据按它定位。
+PROMPT_SECTION_TITLE = "RETRIEVED SOURCES (system-fetched; cite these by number)"
 
 #: GOAL-20261018-082 EC-01：**前序知识**那一段的标题（与检索段**并列**，不替换）。
 PRIOR_SECTION_TITLE = "PRIOR KNOWLEDGE (from earlier runs in this project; build on it)"
@@ -46,10 +50,24 @@ REVIEW_MATERIAL_SECTION_TITLE = "UNDER REVIEW (the artifact you are asked to jud
 #: 判成什么**送达下一轮的会话**，模型据此决定这一轮改什么。
 REVIEW_OUTCOME_SECTION_TITLE = "PRIOR REVIEW (how the last round was judged; revise against it)"
 
+#: GOAL-20261029-100 EC-03：**本次评审的逐条点表**那一段的标题（与另五段**并列**）。
+#:
+#: 与 `REVIEW_OUTCOME_SECTION_TITLE` 是两件事（刻意分开）：那一段是「**上一轮**被判成
+#: 什么」（跨 run 搬运），这一段是「**这一轮的评审**提出了哪几条、编号是什么」（本 run 内）。
+#: 应答相要逐条回应，就必须看到编号 —— 否则它得自己数「这是第几条」，
+#: 与 GOAL-099 `W-1` 的引用编号是同一类缺陷。
+REVIEW_POINTS_SECTION_TITLE = "REVIEW POINTS (answer every id below, one entry each)"
+
 #: 被截断条目的标注（**逐字**；判据按它判「截断可见」）。
 TRUNCATED_MARK = "[truncated]"
 #: 待复核条目的标注（**逐字**）。
 REVIEW_DUE_MARK = "[review-due]"
+#: **不可引用**条目的标注（**逐字**；GOAL-20261029-100 EC-01）。
+#:
+#: 用于 `ids[]` 形状的记录：它没有著录字段（作者 / 刊名 / 年份）⇒ 进不了 References。
+#: 标注它而**不**给它编号，是为了让「这一条不占编号」在提示词里**可见** ——
+#: 静默略过会让模型以为列表少了一行。
+NOT_CITABLE_MARK = "[not citable]"
 
 
 def render_retrieval_prompt(view: Any) -> str:
@@ -59,16 +77,37 @@ def render_retrieval_prompt(view: Any) -> str:
     手上没有东西时**加一段说「没有」**会把「没检索」写进每一份提示词（既有行为里
     没有这种东西），而「没有检索」这件事的可判定性由**读面制品**（GOAL-078 EC-03：
     空集合也写盘、带 `reason`）承担 —— 两处各司其职，不互相冒充。
+
+    **GOAL-20261029-100 EC-01：每一行**以引用编号开头**（`- [1] 39284801: <excerpt>`）。
+    编号由 `references.numbered_records` 给出 —— 与 `## References` 的序号**同源**
+    （同一个函数、同一条规则：去重后首次出现顺序、从 1 起）。此前这里是裸标识，
+    模型必须自己数「这是第几条」；那个数错了没有任何判据会红（GOAL-099 `W-1`）。
+
+    **只给可引用的条目编号**（`entry.citable`）：`ids[]` 形状（esearch 的命中列表）没有
+    著录字段 ⇒ `reference_table` 永远跳过它 ⇒ 若它占了编号，其后每一条都会整体错位。
+    不可引用的条目仍然**逐条列出**（`[not citable]` 标注，见 `NOT_CITABLE_MARK`）——
+    「模型看到了什么」不变，变的只是「谁占了编号」。
     """
     entries = tuple(getattr(view, "entries", ()) or ())
     if not entries:
         return ""
+    numbered = numbered_records(
+        tuple(
+            str(getattr(entry, "identifier", "") or "")
+            for entry in entries
+            if getattr(entry, "citable", True)
+        )
+    )
+    numbers = {identifier: index for index, identifier in numbered}
     lines = [PROMPT_SECTION_TITLE, ""]
     for entry in entries:
         identifier = str(getattr(entry, "identifier", "") or "")
         shown = str(getattr(entry, "shown", "") or "")
+        # 前缀只是**编号**（不可引用时是标注）—— 标识与截断标记的相对位置逐字不变，
+        # 使读面按 `{identifier}{[truncated]}: {shown}` 重建那一行仍然成立。
+        prefix = f"[{numbers[identifier]}] " if identifier in numbers else f"{NOT_CITABLE_MARK} "
         mark = f" {TRUNCATED_MARK}" if getattr(entry, "truncated", False) else ""
-        lines.append(f"- {identifier}{mark}: {shown}")
+        lines.append(f"- {prefix}{identifier}{mark}: {shown}")
     lines.append("")
     return "\n".join(lines)
 
@@ -257,6 +296,44 @@ def _dissent_lines(dissent: tuple[Any, ...]) -> list[str]:
     return lines
 
 
+def render_review_points_prompt(points: Any) -> str:
+    """本 run 的**评审点表** → 提示词那一段（**空 ⇒ 空串**）。
+
+    逐条 `- P1 (must_fix): <text>`：编号在前、严重性在括号里、原文在后 —— 读者（与判据）
+    都能一眼核对「这条意见是第几条、有多要紧」。编号由 `author_response.points_of` 给出
+    （**唯一**构造点），本渲染器不再造第二套编号。
+    """
+    items = tuple(points or ())
+    if not items:
+        return ""
+    lines = [REVIEW_POINTS_SECTION_TITLE, ""]
+    for point in items:
+        point_id = str(getattr(point, "point_id", "") or "")
+        severity = str(getattr(point, "severity", "") or "")
+        text = str(getattr(point, "text", "") or "")
+        lines.append(f"- {point_id} ({severity}): {text}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def prompt_with_review_points(purpose: str, points: Any) -> str:
+    """合约 purpose + **评审点表**那一段（**无点 ⇒ 逐字返回 purpose**）。
+
+    **已渲染的 `str` 原样用**（与 `_section_of` 同一条缝、同一个理由）：会话创建点把
+    `session_prompts.review_points_prompt(...)` 的**返回值**（已是那段文本）放进
+    `AgentSessionSpec`，`compose_prompt` 又把它交回本函数 —— 若这里只按点对象渲染，
+    `render_review_points_prompt("<一段文本>")` 会去迭代字符串的**每个字符**、拿不到
+    `point_id` ⇒ 那一段变成 `-  (): ` 的空白行（本轮实测到的形态：19 行空点）。
+    """
+    if isinstance(points, str):
+        section = points
+    else:
+        section = render_review_points_prompt(points)
+    if not section:
+        return purpose
+    return f"{purpose}\n\n{section}"
+
+
 def prompt_with_review_outcome(purpose: str, view: Any) -> str:
     """合约 purpose + **上一轮评审结论**那一段（**无可搬运内容 ⇒ 逐字返回 purpose**）。"""
     section = _section_of(view, render_review_outcome_prompt)
@@ -265,7 +342,7 @@ def prompt_with_review_outcome(purpose: str, view: Any) -> str:
     return f"{purpose}\n\n{section}"
 
 
-def compose_prompt(  # noqa: PLR0913 - 提示词五段并列：少一个形参就得让所有调用点先拼对象
+def compose_prompt(  # noqa: PLR0913 - 提示词六段并列：少一个形参就得让所有调用点先拼对象
     purpose: str,
     *,
     direction: str | None = None,
@@ -273,25 +350,32 @@ def compose_prompt(  # noqa: PLR0913 - 提示词五段并列：少一个形参�
     retrieval: Any = None,
     review_material: Any = None,
     review_outcome: Any = None,
+    review_points: Any = None,
 ) -> str:
-    """合约 purpose + [方向] + [前序知识] + [检索摘录] + [上一轮评审] + [被评对象]。
+    """合约 purpose + [方向] + [前序知识] + [检索摘录] + [上一轮评审] + [评审点表] + [被评对象]。
 
-    **顺序 = 先方向、再前序、再检索、再上一轮评审、最后被评对象**：模型先知道**被要求
-    研究什么**，再知道自己**已经**知道什么（起点），再看到这一轮新取回的材料（对起点的
-    更新），再看到**上一轮被判成什么**（要改什么），最后看到**它这一轮要判的那件东西**
+    **顺序 = 先方向、再前序、再检索、再上一轮评审、再本次评审点表、最后被评对象**：
+    模型先知道**被要求研究什么**，再知道自己**已经**知道什么（起点），再看到这一轮新取回
+    的材料（对起点的更新），再看到**上一轮被判成什么**（要改什么），再看到**这一轮评审
+    提出了哪几条**（要逐条回应什么），最后看到**它这一轮要判的那件东西**
     （`GOAL-20261020-091 EC-02`）—— 被评对象放在最后读，紧贴它要给出的判词。
 
     **上一轮评审排在检索之后、被评对象之前**（`GOAL-20261022-093`）：它是「这一轮该改
     什么」的依据，而它依据的是**上一轮**的被评对象 —— 与被评对象段（**本轮**要判的东西）
     是两件事，故分列且先读评审结论（先知道要改什么，再读要判什么）。
 
-    **全缺 ⇒ 逐字返回 purpose**（五段各自的零回归口径在本函数里合成一条）。
+    **本次评审点表排在上一轮评审之后、被评对象之前**（`GOAL-20261029-100 EC-03`）：
+    它是「这一轮要**逐条回应**什么」，紧跟着「上一轮被改判成什么」读 —— 两者是同一条
+    返修线上的两个时点（上一轮的结论 / 这一轮的点表）。
+
+    **全缺 ⇒ 逐字返回 purpose**（六段各自的零回归口径在本函数里合成一条）。
     """
     text = prompt_with_direction(purpose, direction)
     for view, render in (
         (prior_knowledge, prompt_with_prior_knowledge),
         (retrieval, prompt_with_retrieval),
         (review_outcome, prompt_with_review_outcome),
+        (review_points, prompt_with_review_points),
         (review_material, prompt_with_review_material),
     ):
         if view is not None:
@@ -301,11 +385,13 @@ def compose_prompt(  # noqa: PLR0913 - 提示词五段并列：少一个形参�
 
 __all__ = [
     "DIRECTION_SECTION_TITLE",
+    "NOT_CITABLE_MARK",
     "PROMPT_SECTION_TITLE",
     "PRIOR_SECTION_TITLE",
     "REVIEW_DUE_MARK",
     "REVIEW_MATERIAL_SECTION_TITLE",
     "REVIEW_OUTCOME_SECTION_TITLE",
+    "REVIEW_POINTS_SECTION_TITLE",
     "TRUNCATED_MARK",
     "compose_prompt",
     "prompt_with_direction",
@@ -313,9 +399,11 @@ __all__ = [
     "prompt_with_retrieval",
     "prompt_with_review_material",
     "prompt_with_review_outcome",
+    "prompt_with_review_points",
     "render_direction_prompt",
     "render_prior_knowledge_prompt",
     "render_retrieval_prompt",
     "render_review_material_prompt",
     "render_review_outcome_prompt",
+    "render_review_points_prompt",
 ]

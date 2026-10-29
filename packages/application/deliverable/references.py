@@ -30,6 +30,7 @@ NCBI 解析出 `pmid/title/abstract/journal/year/authors`（`adapters/research_t
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -134,10 +135,9 @@ def reference_table(artifacts: Any, evidence: tuple[Any, ...]) -> ReferenceTable
     两处不合并成一个函数是有意的 —— 那边被既有判据逐字钉住（字形一变它先红），
     这边的字段集是本轮新增的；合并会让「改一处、两个面一起变」。
     """
-    entries: list[ReferenceEntry] = []
+    records: dict[str, Mapping[str, Any]] = {}
     problems: list[str] = []
     skipped = 0
-    seen: set[str] = set()
     for item in evidence:
         artifact_id = getattr(item, "artifact_id", None)
         if not artifact_id or not str(item.source_ref).startswith("tool:"):
@@ -147,13 +147,16 @@ def reference_table(artifacts: Any, evidence: tuple[Any, ...]) -> ReferenceTable
             if not identifier:
                 skipped += 1
                 continue
-            if identifier in seen:
-                continue
-            seen.add(identifier)
-            entry, missing = _entry_of(raw, identifier)
-            if missing:
-                problems.append(f"{identifier}: missing {', '.join(missing)}")
-            entries.append(entry)
+            records.setdefault(identifier, raw)
+    # **编号取自唯一权威**（`numbered_records`）—— 提示词那一侧调的是同一个函数。
+    # 这里若不调它、自己 `enumerate` 一遍，「编号规则」就又有两份实现：GOAL-099 `W-1`
+    # 的实测缺陷正是这个形态（规则只存在于汇编器一侧）。
+    entries: list[ReferenceEntry] = []
+    for _number, identifier in numbered_records(tuple(records)):
+        entry, missing = _entry_of(records[identifier], identifier)
+        if missing:
+            problems.append(f"{identifier}: missing {', '.join(missing)}")
+        entries.append(entry)
     return ReferenceTable(entries=tuple(entries), problems=tuple(problems), skipped=skipped)
 
 
@@ -265,15 +268,46 @@ def citation_mark(index: int) -> str:
     return f"{CITATION_MARK_OPEN}{index}{CITATION_MARK_CLOSE}"
 
 
+#: 一条来源在提示词里的**首列**形态（不带宽高、不带摘录）——**逐字**。
+#: 判据按它定位「这一行真的把编号交给模型了吗」，改字 = 改契约。
+PROMPT_NUMBER_TEMPLATE = "{mark} {identifier}"
+
+
+def numbered_records(identifiers: Sequence[str]) -> tuple[tuple[int, str], ...]:
+    """按标识序列 → `(编号, 标识)`，**去重后首次出现顺序、从 1 起**。
+
+    这是「模型看到的 `[n]`」与「References 第 n 条」的**唯一**编号权威
+    （GOAL-20261029-100 EC-01）。两处都调它、都不自己数：
+
+    - `reference_table`（汇编器侧：References 的第 n 条）；
+    - `render_retrieval_prompt`（提示词侧：那一行以 `[n]` 开头）。
+
+    为什么要单列成函数而不是两处各写一遍循环：GOAL-099 `W-1` 的实测缺陷正是
+    「编号规则存在，但只存在于汇编器那一侧」—— 模型看不到编号 ⇒ 它必须**自己数**
+    「这是第几条」。两处各写一遍去重循环能让判据在两边**都绿**而两边**不一致**
+    （重复项在一侧的过滤条件变化只影响那一侧）。同源之后，这条缝在结构上不存在。
+    """
+    numbered: list[tuple[int, str]] = []
+    seen: set[str] = set()
+    for identifier in identifiers:
+        if not identifier or identifier in seen:
+            continue
+        seen.add(identifier)
+        numbered.append((len(numbered) + 1, identifier))
+    return tuple(numbered)
+
+
 __all__ = [
     "CITATION_MARK_CLOSE",
     "CITATION_MARK_OPEN",
     "MAX_AUTHORS",
+    "PROMPT_NUMBER_TEMPLATE",
     "REQUIRED_FIELDS",
     "ReferenceEntry",
     "ReferenceError",
     "ReferenceTable",
     "citation_mark",
+    "numbered_records",
     "reference_table",
     "render_references",
 ]

@@ -412,7 +412,23 @@ roles:
     default_model_profile: research_fast
     activation_default: REQUIRED_BY_PROTOCOL
     review_panel_role: WRITER
+    # GOAL-20261029-100 EC-02：该角色首次被协议激活（`direction_to_manuscript_v1` 的
+    # `editorial` 相）。建档实测的能力面只有 `deliverable.read` + `deliverable.edit`，
+    # 而它**必须**能读评审判词与成稿正文 —— 能力面的缺口在预检上表现为三条
+    # `AGENT_PERMISSION_DENIED`（`agent editor requests capability claim.read /
+    # evidence.read / deliverable.write outside role scientific_editor capability surface`）。
+    #
+    # 本轮**只加三条只读/读面能力**（`claim.read` / `evidence.read` / `artifact.read`），
+    # 全部是既有 `allow` 放行的只读能力（不新增 policy 规则、不动 `default_effect`）；
+    # `deliverable.edit` 逐字保留。`deliverable.write` **不**加：编辑不写稿件正文，
+    # 那是 `research_writer` 的面 —— 加上它会让「谁写的」在产品上不可归因。
+    #
+    # `forbidden_capabilities` 四条逐字未动（写证据 / 跑实验 / 写实验计划 / 对外发布
+    # 仍然对它关闭）。
     requested_capabilities:
+    - claim.read
+    - evidence.read
+    - artifact.read
     - deliverable.read
     - deliverable.edit
     hard_model_capabilities:

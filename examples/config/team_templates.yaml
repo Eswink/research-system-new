@@ -40,6 +40,13 @@ team_templates:
       # `max_instances: 1` 是**语义**要求：作者与评审者要可区分，多个作者实例只会让
       # 「谁写的这条声明」在运行期重新变得不可判。
       novelty_author: {min_instances: 1, max_instances: 1}
+      # GOAL-20261029-100 EC-02：`scientific_editor` 进 **standard** 池。理由与上面
+      # `novelty_reviewer` / `novelty_author` 两行逐字同形：`project.yaml` 选的是
+      # `standard`，而 `direction_to_manuscript_v1` 的 `editorial` 相点名它 ⇒ 池里没有
+      # 就是编译期 `ROLE_CAPACITY` ERROR（实测消息：`team template cannot satisfy role
+      # scientific_editor minimum 1`）⇒ 预检 FAIL ⇒ run 起不来。
+      # 该角色此前**只**在 `rigorous` 里声明 ⇒「角色存在」与「角色可被激活」分叉。
+      scientific_editor: {min_instances: 1, max_instances: 1}
       evidence_reviewer: {min_instances: 1, max_instances: 1}
       methodology_reviewer: {min_instances: 1, max_instances: 1}
       meta_reviewer: {min_instances: 1, max_instances: 1}

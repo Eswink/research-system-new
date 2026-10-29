@@ -169,6 +169,9 @@ class TestTheDigestIsRecomputedFromContent:
                     # GOAL-20261016-081 EC-03：载荷新增这一列（读面必须能读出「被截过」，
                     # 否则提示词那行的 `[truncated]` 标注**重建不出来**）。
                     "truncated": entry.truncated,
+                    # GOAL-20261029-100 EC-01：载荷另补这一列（提示词那行现在带引用编号，
+                    # 读者要知道哪条占了编号才能重建整行）。
+                    "citable": entry.citable,
                 }
                 for entry in view.entries
             ],

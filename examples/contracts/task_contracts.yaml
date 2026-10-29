@@ -977,14 +977,16 @@ task_contracts:
       only. A numeral anywhere else is refused by name, not silently removed.
 
       HARD RULE 2 — citations close in both directions. The records you were given appear
-      under "RETRIEVED SOURCES" as a list; a record retrieved more than once appears there
-      more than once, and it counts **once** (mark = its position among the distinct
-      records, in order of first appearance). The assembled reference list uses that same
-      order, so [1] is the first distinct record you were shown. Cite every distinct record
-      at least once. A mark beyond the number of distinct records, and a record you never
-      cite, are each refused by name (the body is not assembled at all). If no records are
-      listed, this run retrieved nothing citable: write the body without citation marks and
-      state in Related Work that no prior record was available — do not invent one.
+      under "RETRIEVED SOURCES" with the citation number already written in front of each
+      one: "[1] 39284801: …". Use exactly those numbers. A record retrieved more than once
+      appears there more than once with the same number; records marked "[not citable]"
+      carry no number and cannot be cited (they have no bibliographic metadata, so they are
+      not in the reference list). The assembled reference list uses the same numbering, so
+      [1] is the record marked [1]. Cite every numbered record at least once. A mark beyond
+      the highest number you were given, and a numbered record you never cite, are each
+      refused by name (the body is not assembled at all). If no records are listed, this run
+      retrieved nothing citable: write the body without citation marks and state in Related
+      Work that no prior record was available — do not invent one.
 
       Write Related Work against the specific retrieved record(s) you were given and say
       what they leave open. Write Methods against the arms and parameters the study
@@ -1001,6 +1003,122 @@ task_contracts:
       - type: EVIDENCE_COVERAGE
         minimum_sources: 1
         minimum_retrieved_sources: 1
+    timeout_seconds: 300
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  # GOAL-20261029-100 EC-02：**投稿决策**的交付物契约（`editorial` 相）。
+  #
+  # 与 `multi_role_review` 的分工（**两个不同的面，刻意不合并**）：
+  #   `multi_role_review`      ⇒ 评审者说「这份稿子有什么问题」（`ReviewFinding`）；
+  #   本契约（`editorial_decision`）⇒ 编辑说「这份稿子在流程里下一步怎么办」（四值闭集）。
+  # 前者可以给出 `REJECT` 的验收判词而后者给 `minor_revision` —— 两者判的不是同一件事。
+  #
+  # 决定块的形状由 `deliverable/editorial_decision.py` 严判（取值闭集 / 非 accept 必须
+  # 说要改什么 / 理由不得为空）；契约这里只声明**产物必须存在**且覆盖里有一条来源 ——
+  # 与既有会话契约同一条判法（内容面由应用层按名字点名，不在契约里写正则）。
+  editorial_decision:
+    version: 1.0.0
+    purpose: >
+      TASK — act as the handling editor for this run's manuscript. You have been given the
+      independent review of the work and the manuscript body the authors wrote; those two
+      documents are listed for you before this task text. Decide what happens to this
+      manuscript next, and say why. Reply directly with the decision — there is nothing to
+      install and nothing to run in this phase.
+
+      Reply with a fenced JSON block named `editorial_decision`, exactly in this shape:
+
+          {"editorial_decision": {"decision": "accept | minor_revision | major_revision | reject",
+                                  "rationale": "<why this decision, in two or three sentences>",
+                                  "required_changes": ["<one specific change per entry>"]}}
+
+      The four decision values mean, and only mean:
+
+        accept          the manuscript can proceed as it stands;
+        minor_revision  limited edits are needed, but the study is not redone;
+        major_revision  substantive work is needed (more analysis, a rewritten argument,
+                        additional evidence);
+        reject          this venue/process will not carry the manuscript further.
+
+      HARD RULE 1 — one of those four strings, verbatim. Do not invent a fifth value, do not
+      translate it, do not change its case or spelling: an unrecognised value is refused by
+      name and the decision is not recorded at all.
+
+      HARD RULE 2 — a decision that asks for changes must say what they are. If `decision` is
+      anything other than "accept", `required_changes` must be a non-empty list, and each
+      entry must name a specific change an author could act on ("add a baseline comparison
+      for the second arm", not "improve the paper"). An instruction to revise that does not
+      say what to revise is refused by name.
+
+      HARD RULE 3 — the rationale must be non-empty. It is the sentence a reader uses to
+      check the decision, so it has to state which evidence carried it.
+
+      Decide from the review and the manuscript you were given. Do not invent reviewer
+      findings, and do not soften a rejection into a revision because the authors worked
+      hard: your job is the manuscript, not the effort.
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - deliverable.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: editorial_decision
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 180
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  # GOAL-20261029-100 EC-03：**作者逐条应答**的交付物契约（`revision` 相）。
+  #
+  # **它补哪一格**（建档实测）：`ReviewFinding.findings` 是扁平的判据渲染串，没有可应答的
+  # 条目 id；审稿人正文（`weakest_link`）从未被解析成记录；`rebuttal` 全仓零命中 ⇒
+  # 「作者逐条回应、编辑据此判断返修是否到位」这条闭环在结构上不存在。
+  #
+  # 本契约只要求**逐条应答**这一个结构事实（点表由汇编器从本 run 已落库的评审记录派生，
+  # 不需要任何新列 / 迁移）；`response_letter.md` 由汇编器在报告相装配 —— 与手稿同一手法：
+  # **模型写回应**，汇编器写编号与格式。
+  author_response:
+    version: 1.0.0
+    purpose: >
+      TASK — answer the review of this study, point by point. The independent review of this
+      work is listed for you before this task text, with every point it raised numbered
+      (P1, P2, …). Reply directly with the answers — there is nothing to install and nothing
+      to run in this phase.
+
+      Reply with a fenced JSON block named `author_responses`, exactly in this shape:
+
+          {"author_responses": [{"point_id": "P1",
+                                 "response": "<what you say to that point>",
+                                 "action_taken": "<what you actually changed, or 'no change' and why>"}]}
+
+      HARD RULE 1 — one entry per point the review raised. Every point id you were given must
+      appear exactly once. A point left unanswered, and the same point answered twice, are
+      each refused by name (the response letter is not assembled at all).
+
+      HARD RULE 2 — use only the point ids you were given. An id the review never raised is
+      refused by name: an answer to a point nobody made cannot be reviewed.
+
+      HARD RULE 3 — `action_taken` states what you did, in the terms of this manuscript: name
+      the section or the artifact you changed. If you decided not to change anything, say so
+      and say why — a reasoned disagreement is a legitimate answer; silence is not.
+
+      Answer the review you were given. Do not invent reviewer points, and do not restate the
+      whole manuscript: this letter exists so a reader can check the review against the work,
+      point by point.
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - deliverable.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: author_responses
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
     timeout_seconds: 300
     retry_policy:
       max_attempts: 1

@@ -145,3 +145,29 @@ models:
       STREAMING: *user_declared_supported
       TOOL_CALLING_NATIVE: *user_declared_supported
       USAGE_REPORTING: *user_declared_supported
+
+  # 第五个第三方模型（GOAL-20261029-100 EC-02）：`scientific_editor` 的**绑定 agent**。
+  # **为什么必须再要一个**：编辑处置的是**评审者**给出的意见 ⇒ 与评审者同模型的话，
+  # 「编辑对评审的处置」只是同一个模型自言自语。既有五个 `model_name` 各占一角
+  # （`deepseek-v4-flash-vision` / `glm-5.3` / `kimi-k2.6` / `minimax-m3` /
+  # `deepseek-v4-pro-0813`），本模型是第六个。
+  #
+  # 读数来源（2026-10-29 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
+  #   - `GET /v1/models` ⇒ `is_ready: true`（13 个可用模型之一）；
+  #   - `POST /v1/chat/completions` ⇒ HTTP 200、**返回名 = 声明名** `qwen3.8-27b`
+  #     （与主模型的 `deepseek-v4-flash-vision` → `dsv4-flash-vision` 的改名形态不同；
+  #     仍属 §4「可重复配置」而非「完全模型可复现」）；
+  #   - `max_tokens=32` ⇒ `content: None`、`completion_tokens_details.reasoning_tokens=32`
+  #     （该模型先花 token 在推理上）；`max_tokens=400` ⇒ `content: "\n\nOK"`。
+  #     **这是实测行为**，不是故障：额度给小了拿不到正文。
+  #   - **不**声明 `TOOL_CALLING_NATIVE` / `STRUCTURED_OUTPUT_NATIVE`：本轮只实测了
+  #     chat 与 usage，「按实测声明」是本仓既有纪律（`novelty_author_model` 同一条）。
+  scientific_editor_model:
+    endpoint: main
+    display_name: Qwen3.8 27B (handling editor)
+    model_name: qwen3.8-27b
+    context_window_tokens: 1048576
+    capabilities:
+      CHAT: *user_declared_supported
+      STREAMING: *user_declared_supported
+      USAGE_REPORTING: *user_declared_supported

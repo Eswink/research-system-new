@@ -83,3 +83,34 @@ agents:
     workspace_policy: deliverable_only
     skill_refs: [scholarly_writing]
     capability_refs: [deliverable.write]
+
+  # GOAL-20261029-100 EC-02：`scientific_editor` 的**绑定 agent**。该角色在
+  # `roles.yaml` 里早就在（`review_panel_role: WRITER`）但**从未被任何协议激活**
+  # —— 建档实测 `grep -rl scientific_editor examples/protocols/` 零命中。本 GOAL 新建
+  # `editorial` 相点名它，因此必须有一条绑定，否则解析面找不到实例。
+  #
+  # **模型必须是第五个不同的底层模型**（这是 `editor` 这个名字唯一站得住的理由）：
+  # 编辑读的是**评审者**的判词，若它与评审者同模型，「编辑对评审意见的处置」就只是
+  # 同一个模型自言自语。既有四个不同 `model_name` 的分工是：
+  #   production（`research_alpha` / `coding_beta` / …）→ `deepseek-v4-flash-vision`
+  #   `reviewer_a`（`critic_independent`）            → `glm-5.3`
+  #   `reviewer_b`（`kimi_k2_6`）                     → `kimi-k2.6`
+  #   `novelty_a`（`novelty_review_model`）           → `minimax-m3`
+  #   `novelty_writer`（`novelty_author_model`）      → `deepseek-v4-pro-0813`
+  # 本 agent 落在 `scientific_editor_model` = `qwen3.8-27b` —— 与上面五个**都不同**。
+  #
+  # 读数来源（2026-10-29 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
+  #   - `GET /v1/models` ⇒ 在 13 个可用模型之列（`is_ready: true`）；
+  #   - `POST /v1/chat/completions` ⇒ HTTP 200、**返回名 = 声明名** `qwen3.8-27b`
+  #     （与主模型的 `deepseek-v4-flash-vision` → `dsv4-flash-vision` 的改名形态不同；
+  #     仍属 AGENTS §4「可重复配置」而非「完全模型可复现」）；
+  #   - `usage` 逐次回报；该模型先把 token 花在 `reasoning_tokens` 上（`max_tokens=32`
+  #     时 `content` 为 `None`、`completion_tokens_details.reasoning_tokens=32`；
+  #     `max_tokens=400` 时给出正文）⇒ 这是**实测行为**，编辑相的 180s 超时按其上界留足。
+  #   - **不**声明 `TOOL_CALLING_NATIVE` / `STRUCTURED_OUTPUT_NATIVE`：本轮只实测了
+  #     chat 与 usage，「按实测声明」是本仓既有纪律（`novelty_author_model` 同一条）。
+  #     编辑相 `capability_execution: run_chain` ⇒ 不需要工具面。
+  editor:
+    role: scientific_editor
+    model_binding: {type: EXPLICIT_MODEL, value: scientific_editor_model}
+    workspace_policy: deliverable_only

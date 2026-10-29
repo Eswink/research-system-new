@@ -279,17 +279,149 @@ def maybe_assemble_manuscript(deps: Any, task: Any, spec_context: Any) -> Any | 
 
     放在本模块而不是 `report_task.py`：那里贴着 450 行硬上限（规模门），而「手稿怎么装」
     与「报告怎么装」是两件事 —— 派发面只需知道「有没有多产一件」。
+
+    GOAL-20261029-100 EC-03：手稿装配**之后**再装一份 `response_letter.md`（作者逐条
+    回应评审点）。它接在这里而不是另开一相：应答信的全部输入（评审点 + 作者应答）在
+    报告相都已落库，另开一相只会多一次会话而没有新事实。**本 run 没有应答产物 ⇒
+    不写这封信**（没做过返修就产出一封应答信，等于补造证据）。
     """
     if not getattr(deps, "manuscript", False):
         return None
-    return assemble_manuscript(
+    run_id = str(task.run_id.value)
+    result = assemble_manuscript(
         deps.artifacts,
         deps.ledger,
         deps.reviews,
         spec_context.run,
-        str(task.run_id.value),
+        run_id,
         created_by=spec_context.agent.id,
     )
+    maybe_assemble_response_letter(deps.artifacts, deps.ledger, deps.reviews, run_id)
+    return result
+
+
+def maybe_assemble_response_letter(
+    artifacts: Any, ledger: Any, reviews: Any, run_id: str
+) -> Any | None:
+    """本 run 的**作者应答产物** + 评审点 → `response_letter.md`（无应答产物 ⇒ `None`）。
+
+    **两种「空」必须分得开**（与手稿那一格同一纪律）：
+
+    - 本 run **没有** `author_responses` 制品 ⇒ 返回 `None`（这次 run 没走返修回路）——
+      不写一封空信，那会被读成「返修已回应」；
+    - 制品在、但漏答 / 编造 `point_id` / 重复应答 / 畸形 ⇒ **点名抛错**，由报告任务以
+      `EXECUTION_FAILURE` 收敛 —— 不静默产出一封看起来像应答信的残件。
+
+    评审点由 `review_points.review_points_of_run` 派生（**与提示词那一段同一个函数**）：
+    两处各派生一次的话，模型照提示词逐条答完、汇编器仍会判漏答（本 GOAL 实测到
+    「提示词里 17 条、汇编时 19 条」这个形态）。不需要任何新表 / 新列 ⇒ 无迁移风险。
+    """
+    from packages.application.deliverable.author_response import (
+        RESPONSE_LETTER_NAME,
+        parse_responses,
+        response_letter,
+    )
+    from packages.application.run_orchestration.report_facts import evidence_of_run
+    from packages.application.run_orchestration.review_points import review_points_of_run
+
+    content = _response_artifact_content(artifacts, evidence_of_run(ledger, run_id))
+    if content is None:
+        return None
+    points = review_points_of_run(artifacts, ledger, run_id)
+    markdown = response_letter(points, parse_responses(content))
+    artifact = _put_response_letter(artifacts, run_id, markdown, RESPONSE_LETTER_NAME)
+    _register_response_letter(ledger, run_id, artifact, len(points))
+    return artifact
+
+
+def _register_response_letter(ledger: Any, run_id: str, artifact: Artifact, points: int) -> None:
+    """应答信 → SourceRecord + Evidence + Claim（**GENERATED**：本系统汇编）。
+
+    **必须注册**（实测缺口）：只 `put` 进 `ArtifactStore` 的件**不在读面上** ——
+    `GET /runs/{id}/artifacts` 走的是 claim→relation 投影，没挂关系的制品读不到。
+    手稿有 `_register`，应答信同样要有；否则「信产出了」只能在进程内看见。
+    """
+    if ledger is None:
+        return
+    source = SourceRecord(
+        origin=f"author_response:{run_id}",
+        content_digest=str(artifact.digest),
+        trust_label=TrustLabel.GENERATED,
+        access_time=Timestamp.now(),
+        parser_version="author-response-assembler-v1",
+    )
+    ledger.register_source(source)
+    evidence = Evidence(
+        id=f"evidence:{artifact.id}",
+        source_ref=source.origin,
+        content_digest=str(artifact.digest),
+        extracted_by=artifact.created_by,
+        captured_at=Timestamp.now(),
+        artifact_id=artifact.id,
+        run_id=run_id,
+    )
+    ledger.register_evidence(evidence)
+    claim_id = f"claim:author_response:{run_id}"
+    ledger.register_claim(
+        Claim(
+            id=claim_id,
+            statement=(f"Run {run_id} answered {points} review point(s) in {artifact.id}"),
+            status=ClaimStatus.PROPOSED,
+            author=artifact.created_by,
+            evidence_relations=[(evidence.id, EvidenceRelationType.SUPPORTS)],
+        )
+    )
+    ledger.attach_relation(
+        EvidenceRelation(
+            claim_id=claim_id,
+            evidence_id=evidence.id,
+            relation=EvidenceRelationType.SUPPORTS,
+        )
+    )
+
+
+def _response_artifact_content(artifacts: Any, evidence: tuple[Any, ...]) -> str | None:
+    """本 run 的应答制品正文（**不在场 ⇒ `None`**；多于一件 ⇒ 点名）。
+
+    读取面与手稿正文同一手法（证据投影 → `:author_responses` 制品），只取**内容字节**：
+    解包交给 `parse_responses`（信封 + 围栏块都认，与决定块同一处实现）。
+    """
+    from packages.application.deliverable.author_response import (
+        RESPONSE_ARTIFACT_NAME,
+        ResponseError,
+    )
+
+    ids = [
+        str(item.artifact_id)
+        for item in evidence
+        if str(item.artifact_id or "").endswith(f":{RESPONSE_ARTIFACT_NAME}")
+    ]
+    if not ids:
+        return None
+    if len(ids) > 1:
+        raise ResponseError(
+            f"run carries {len(ids)} {RESPONSE_ARTIFACT_NAME} artifacts; a response letter must "
+            f"be assembled from exactly one ({sorted(ids)})"
+        )
+    return str(artifacts.get(ids[0]).decode("utf-8"))
+
+
+def _put_response_letter(artifacts: Any, run_id: str, markdown: str, name: str) -> Artifact:
+    """应答信字节 → 内容寻址制品（run 级 id；重复装配 ⇒ 覆盖写，digest 重算）。"""
+    content = markdown.encode("utf-8")
+    artifact = Artifact(
+        id=f"{run_id}:{name}",
+        digest=Digest.of_bytes(content),
+        size_bytes=len(content),
+        media_type=MANUSCRIPT_MIME,
+        storage_uri=None,
+        created_by="system:author-response-assembler",
+        source_refs=[f"run:{run_id}"],
+        classification="author_response",
+    )
+    artifacts.put(artifact, content)
+    artifacts.mark(artifact.id, ArtifactState.VERIFIED)
+    return artifact
 
 
 __all__ = [
@@ -297,8 +429,9 @@ __all__ = [
     "MANUSCRIPT_ARTIFACT_NAME",
     "NARRATIVE_ARTIFACT_NAME",
     "ManuscriptAdmissionResult",
-    "assembled_message",
-    "maybe_assemble_manuscript",
     "assemble_manuscript",
+    "assembled_message",
     "manuscript_narrative_of_run",
+    "maybe_assemble_manuscript",
+    "maybe_assemble_response_letter",
 ]

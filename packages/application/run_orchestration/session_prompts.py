@@ -73,10 +73,27 @@ def review_outcome_prompt(spec_context: "SessionSpecContext") -> str | None:
     return render_review_outcome_prompt(view) or None
 
 
+def review_points_prompt(spec_context: "SessionSpecContext") -> str | None:
+    """**本次评审的逐条点表** → 提示词那一段（GOAL-20261029-100 EC-03）。
+
+    缺省 `None`（或空点表）⇒ `None`（不加那一段）：多数协议没有返修回路，它们的
+    提示词因此**逐字节**不变。
+    """
+    points = spec_context.review_points
+    if not points:
+        return None
+    from packages.application.run_orchestration.retrieval_prompt import (
+        render_review_points_prompt,
+    )
+
+    return render_review_points_prompt(points) or None
+
+
 __all__ = [
     "direction_prompt",
     "prior_knowledge_prompt",
     "retrieval_prompt",
     "review_material_prompt",
     "review_outcome_prompt",
+    "review_points_prompt",
 ]
