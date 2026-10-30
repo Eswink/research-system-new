@@ -1768,11 +1768,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261023-095-the-ledger-judge-reads-both-directions.md",
-        "sha256": "2a211934704a0a1720fbb7543ef865d5145ee858"
+        "sha256": "7b94ab4d73dadcdf97e8002b6d2a34fb4d134719"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261024-096-direction-to-report-in-one-run.md",
-        "sha256": "19e4fb5be957ee54867e9ccd7e1ff80f0b6f3706"
+        "sha256": "835ce1db6532b579345af352ea121acd1278ddac"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261026-097-productive-entry-and-novelty.md",
@@ -1788,11 +1788,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261029-100-submission-ready-and-citation-binding.md",
-        "sha256": "ce5bc68e8956e96a327e9a81eb150c37e0562e77"
+        "sha256": "a559827e69c6757090e77316c70b5aa2000c4e8e"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "61f41885b0ad9e19c139a16d8d331b216bbdb438"
+        "sha256": "6867023c3f3656cd101046c1efc7510207100ee3"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -1977,6 +1977,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-26-revisions-65-only.md",
         "sha256": "a6ecf538bb697d099b303ae06cabdaf8d225997b"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-27-progress-098-only.md",
+        "sha256": "42ddb8ffee37c8ffb98adc5c21a3dd6342b1d20c"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-27-revisions-66-only.md",
+        "sha256": "0755b8ecbfff69d0ab42b07e886f6e62c43015f1"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -17799,6 +17807,10 @@
         "sha256": "7b05508ec8255e84633a1f1ca1056c0a6f86644f"
       },
       {
+        "path": "tests/tooling/test_record_tables_are_structurally_sound.py",
+        "sha256": "0da482dfd3ca1edd7b4f34b3d648fa8051ea1d55"
+      },
+      {
         "path": "tests/tooling/test_release_file_selection.py",
         "sha256": "a5e8c8e543b2002b28c0db4a08e8df25b902ddcf"
       },
@@ -18368,7 +18380,7 @@
       },
       {
         "path": "tools/goal098_closeout_assertions.py",
-        "sha256": "e1572d6c519546fe44bdcf7d3824db9d3ca9be16"
+        "sha256": "eb223d2185973117fb5094f6e65943d749717171"
       },
       {
         "path": "tools/goal099_closeout_assertions.py",
@@ -18808,7 +18820,7 @@
       },
       {
         "path": "tools/verify_goal098_closeout.py",
-        "sha256": "08d84e6f330452a5bdbf9b7fef358273ffb19e97"
+        "sha256": "16cfeeae2de08114d855ec031e5a46e0e3a78c5b"
       },
       {
         "path": "tools/verify_goal099_closeout.py",
@@ -18823,7 +18835,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "6b1a1a581a198b76636b3fda749d97eade7c383a"
+    "head": "363549b54c42e787cb67a60cf515f82007900686"
   },
   "fingerprint_before": {
     "files": [
@@ -20593,11 +20605,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261023-095-the-ledger-judge-reads-both-directions.md",
-        "sha256": "2a211934704a0a1720fbb7543ef865d5145ee858"
+        "sha256": "7b94ab4d73dadcdf97e8002b6d2a34fb4d134719"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261024-096-direction-to-report-in-one-run.md",
-        "sha256": "19e4fb5be957ee54867e9ccd7e1ff80f0b6f3706"
+        "sha256": "835ce1db6532b579345af352ea121acd1278ddac"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261026-097-productive-entry-and-novelty.md",
@@ -20613,11 +20625,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261029-100-submission-ready-and-citation-binding.md",
-        "sha256": "ce5bc68e8956e96a327e9a81eb150c37e0562e77"
+        "sha256": "a559827e69c6757090e77316c70b5aa2000c4e8e"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "61f41885b0ad9e19c139a16d8d331b216bbdb438"
+        "sha256": "6867023c3f3656cd101046c1efc7510207100ee3"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -20802,6 +20814,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-26-revisions-65-only.md",
         "sha256": "a6ecf538bb697d099b303ae06cabdaf8d225997b"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-27-progress-098-only.md",
+        "sha256": "42ddb8ffee37c8ffb98adc5c21a3dd6342b1d20c"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-27-revisions-66-only.md",
+        "sha256": "0755b8ecbfff69d0ab42b07e886f6e62c43015f1"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -36624,6 +36644,10 @@
         "sha256": "7b05508ec8255e84633a1f1ca1056c0a6f86644f"
       },
       {
+        "path": "tests/tooling/test_record_tables_are_structurally_sound.py",
+        "sha256": "0da482dfd3ca1edd7b4f34b3d648fa8051ea1d55"
+      },
+      {
         "path": "tests/tooling/test_release_file_selection.py",
         "sha256": "a5e8c8e543b2002b28c0db4a08e8df25b902ddcf"
       },
@@ -37193,7 +37217,7 @@
       },
       {
         "path": "tools/goal098_closeout_assertions.py",
-        "sha256": "e1572d6c519546fe44bdcf7d3824db9d3ca9be16"
+        "sha256": "eb223d2185973117fb5094f6e65943d749717171"
       },
       {
         "path": "tools/goal099_closeout_assertions.py",
@@ -37633,7 +37657,7 @@
       },
       {
         "path": "tools/verify_goal098_closeout.py",
-        "sha256": "08d84e6f330452a5bdbf9b7fef358273ffb19e97"
+        "sha256": "16cfeeae2de08114d855ec031e5a46e0e3a78c5b"
       },
       {
         "path": "tools/verify_goal099_closeout.py",
@@ -37648,11 +37672,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "6b1a1a581a198b76636b3fda749d97eade7c383a"
+    "head": "363549b54c42e787cb67a60cf515f82007900686"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "6b1a1a581a198b76636b3fda749d97eade7c383a",
+  "ran_at_head": "363549b54c42e787cb67a60cf515f82007900686",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

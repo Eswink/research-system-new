@@ -296,6 +296,19 @@ def _asset_verdicts(root: Path, toolbox: Any) -> list[Any]:
     ]
 
 
+def _charter_and_archives(root: Path) -> str:
+    """宪章正文 + 全部归档正文（拼在一起给「过去写过什么」类断言用）。
+
+    **为什么**（序 69 归档轮实测）：宪章只留最近三条，历史条目会移进
+    `archive/`。断言问的是「当初有没有写」，不是「它现在还在活跃面吗」。
+    """
+    parts = [_text(root, CHARTER)]
+    archive = root / ".cursor" / "plans" / "goals" / "archive"
+    for path in sorted(archive.glob("*.md")):
+        parts.append(path.read_text(encoding="utf-8"))
+    return "\n".join(parts)
+
+
 def _budget_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-06：预算扩表 + 程序表那一行。"""
     verdict = toolbox.verdict
@@ -308,7 +321,7 @@ def _budget_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         verdict(
             "ec06-the-extension-is-recorded",
-            "70 → 100" in charter or "70 -> 100" in charter,
+            "70 → 100" in _charter_and_archives(root) or "70 -> 100" in _charter_and_archives(root),
             "扩表必须在修订记录里逐行登记（原文读数 + 新读数 + 理由）",
         ),
         verdict(
@@ -326,8 +339,8 @@ def _record_regression_verdicts(root: Path, toolbox: Any) -> list[Any]:
     verdicts: list[Any] = [
         verdict(
             "ec07-this-round-revision-row-is-five-cells",
-            _this_round_revision_cells(charter) == 5,
-            f"本轮修订行格数 = {_this_round_revision_cells(charter)}（必须 5）",
+            _this_round_revision_cells(charter, root) == 5,
+            f"本轮修订行格数 = {_this_round_revision_cells(charter, root)}（必须 5）",
         ),
         verdict(
             "ec07-the-short-row-judge-is-in-tree",
@@ -352,14 +365,24 @@ def _record_regression_verdicts(root: Path, toolbox: Any) -> list[Any]:
     return verdicts
 
 
-def _this_round_revision_cells(charter: str) -> int:
-    """宪章 `## 修订记录` 里**本轮那一条**（序 66）的格数（读不到 ⇒ 0）。"""
+def _this_round_revision_cells(charter: str, root: Path | None = None) -> int:
+    """宪章 `## 修订记录`（**或其归档**）里**本轮那一条**（序 66）的格数（读不到 ⇒ 0）。
+
+    **为什么要能读归档**（序 69 归档轮实测）：宪章只保留最近三条，本轮的修订行
+    到了后面几轮就会被移进 `archive/MAINLINE-*-revisions-*.md`。断言问的是「这一行
+    当初写得合规吗」，而不是「它现在还在活跃面吗」 —— 后者是归档惯例的正常结果，
+    把它判成负是**假负**。按 MEM 规则这属「资产坏了（断言绑错了面）」，不是放宽。
+    """
     if "## 修订记录" not in charter:
         return 0
-    section = charter.split("## 修订记录", 1)[1]
-    for line in section.splitlines():
-        if line.startswith("|") and f"{PROGRAM_SEQ}（新增）" in line:
-            return len([cell for cell in line.strip().strip("|").split("|")])
+    haystacks = [charter.split("## 修订记录", 1)[1]]
+    if root is not None:
+        for path in sorted((root / ".cursor" / "plans" / "goals" / "archive").glob("*.md")):
+            haystacks.append(path.read_text(encoding="utf-8"))
+    for haystack in haystacks:
+        for line in haystack.splitlines():
+            if line.startswith("|") and f"{PROGRAM_SEQ}（新增）" in line:
+                return len([cell for cell in line.strip().strip("|").split("|")])
     return 0
 
 

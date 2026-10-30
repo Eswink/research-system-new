@@ -171,11 +171,20 @@ def _ladder_verdicts(root: Path) -> list[Any]:
     progress_rows = [
         line for line in progress.splitlines() if line.startswith("| ") and LADDER_GOAL in line
     ]
+    # **存档也算**（序 69 归档轮实测）：宪章只保留最近三条，本轮的进展行后面会被移进
+    # `archive/`。断言问的是「当初有没有写这一行」，不是「它现在还在活跃面吗」——
+    # 后者是归档惯例的正常结果，判成负是**假负**（资产绑错了面，按 MEM 规则改断言）。
+    if not progress_rows:
+        for path in sorted((root / ".cursor" / "plans" / "goals" / "archive").glob("*.md")):
+            text = path.read_text(encoding="utf-8")
+            progress_rows.extend(
+                line for line in text.splitlines() if line.startswith("| ") and LADDER_GOAL in line
+            )
     verdicts.extend([
         TOOLBOX.verdict(
             "progress-records-this-goal",
             bool(progress_rows),
-            "宪章「进展记录」必须有本 GOAL 的一行（EC-05 契约逐字要求）",
+            "宪章「进展记录」必须有本 GOAL 的一行（EC-05 契约逐字要求；活跃面或归档均可）",
         ),
         TOOLBOX.verdict(
             "progress-row-names-the-recheck",
