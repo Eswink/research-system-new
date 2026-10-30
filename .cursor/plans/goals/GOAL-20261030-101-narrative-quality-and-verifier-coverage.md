@@ -195,17 +195,20 @@ memory_entries: []
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `79edb87d` | 见推送后的 run | **全 `success`（推送后回填）** | — | **本 GOAL 的交付提交**：叙述质量三判据（`manuscript_quality.py` + 文档 + 装配面接线）/ 负判扫描补主文件侧面（共享 helper `charter_progress.py` + 17 个验证器 + 主文件判据）/ charter 残余两形态 / run 归属校验器 + 静态判据 / 两条方法纪律判据 / 收口资产 / 宪章记账（序 69）；并**付清 GOAL-100 的两笔 tip 债**（`363549b5` / `864b2507`，债记在被点名的那本账上）。本地 m0（记录落盘**之后**）：终态行见下一条记录行 |
+| `79edb87d` | 零 run（**`covered_by: 6505f37f`**） | 覆盖：同批推送，被 `6505f37f` 的 M0 / Push run 承担；**该 run 的 head 是 `6505f37f`，不是本提交** | **本轮交付**（见提交正文）：叙述质量三判据 + 装配面接线 / 负判扫描补主文件侧面（共享 helper + 17 个验证器）/ charter 残余两形态 / run 归属校验器 + 静态判据 / 两条方法纪律判据 / 收口资产 / 宪章记账（序 69）；并付清 GOAL-100 的两笔 tip 债。本地 m0（记录落盘**之后**、commit 前）：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、`tree changed during the run: False` | — | **本 GOAL 的交付提交**：叙述质量三判据（`manuscript_quality.py` + 文档 + 装配面接线）/ 负判扫描补主文件侧面（共享 helper `charter_progress.py` + 17 个验证器 + 主文件判据）/ charter 残余两形态 / run 归属校验器 + 静态判据 / 两条方法纪律判据 / 收口资产 / 宪章记账（序 69）；并**付清 GOAL-100 的两笔 tip 债**（`363549b5` / `864b2507`，债记在被点名的那本账上）。本地 m0（记录落盘**之后**）：终态行见下一条记录行 |
+
+| `1890fec8` | 零 run（**`covered_by: 6505f37f`**） | 覆盖：同批推送 | **记录提交**（只改 `.cursor/`）：迭代日志与 CI 台账点名 `79edb87d`、归档两树判词（两棵各 **67** 条、`sha256` 相同 `8ca8a1d70f57b7a56a693eefab9aa9db423cde1bb919a4e107ef99f59badba8d`）、重封见证 |
+| `6505f37f` | [M0 41053161962](https://github.com/Eswink/research-system-new/actions/runs/41053161962) / [Push 41053161033](https://github.com/Eswink/research-system-new/actions/runs/41053161033) | **全 `success`**：M0 **八 job 全 success**（`quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `container-quality` / `collector-quality`）、Push 三条 Analyze 全 `success` | **本 GOAL 的链在此收口**（推送 tip）：见证最后一次重封（只改见证）。本地 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、`tree changed during the run: False` |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261030-101 | `79edb87d`（本 GOAL 的链；收口 tip 自身即 HEAD —— 按 `goal_commit_chain` 的构造豁免。**并付清 GOAL-100 的两笔 tip 债**：`363549b5` / `864b2507`） |  EC-01：21 passed（含两条真文件按压，按压后 3 红、逐字节复原）；EC-02：17 验证器 0 FAIL（修前 14×2=28 假负）；EC-03：8 passed + 在线读数 6 条发现；EC-04：6 passed；定向套件 manuscript 系 48 passed；mypy 7 文件干净；ruff check/format 双门干净 | （收口时登记） | 修掉的主体是**资产缺陷**不是产品缺陷：① 14 个验证器只读活跃面 ⇒ 进展行归档后 2 条假负；② charter 读取器只认加粗残余 ⇒ 三轮 `REFUSED_RESIDUAL_EMPTY`；③ 负判扫描不含主文件 ⇒ 28 条假负不可见 | `W-1`…`W-4` / `U-1`…`U-3` | ① 叙述质量的**强**口径（论证是否成立 —— 须先论证可判性）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ 投稿包（Cover Letter / 作者贡献 / 利益冲突 / 数据可用性） |
+| 1 | PLAN-20261030-101 | `79edb87d` → `1890fec8` → `6505f37f`（本 GOAL 的链；收口 tip 自身即 HEAD —— 按 `goal_commit_chain` 的构造豁免。**并付清 GOAL-100 的两笔 tip 债**：`363549b5` / `864b2507`） |  EC-01：21 passed（含两条真文件按压，按压后 3 红、逐字节复原）；EC-02：17 验证器 0 FAIL（修前 14×2=28 假负）；EC-03：8 passed + 在线读数 6 条发现；EC-04：6 passed；定向套件 manuscript 系 48 passed；mypy 7 文件干净；ruff check/format 双门干净 | `6505f37f`：M0 八 job 全 success、Push 全 success | 修掉的主体是**资产缺陷**不是产品缺陷：① 14 个验证器只读活跃面 ⇒ 进展行归档后 2 条假负；② charter 读取器只认加粗残余 ⇒ 三轮 `REFUSED_RESIDUAL_EMPTY`；③ 负判扫描不含主文件 ⇒ 28 条假负不可见 | `W-1`…`W-4` / `U-1`…`U-3` | ① 叙述质量的**强**口径（论证是否成立 —— 须先论证可判性）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ 投稿包（Cover Letter / 作者贡献 / 利益冲突 / 数据可用性） |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-30 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 69）。读取器对 GOAL-100 **本轮可读**（修好残余解析后 ⇒ 读到 `W-1`…`W-4` 四条，此前三轮同一拒绝码 `REFUSED_RESIDUAL_EMPTY`）。编号口径按仓库实况更正为序 69 / GOAL-101（本轮提示词正文的「序 70 / GOAL-102」与标题矛盾，且 GOAL-102 不存在）。EC-01…EC-06 全部落地并各自取证。 |
-| 2026-10-30 | **ACHIEVED（待 CI 终态）** | **六个 EC 全 PASS**。判据面：EC-01 **21** 条（含两条**真文件按压**：摘掉装配调用的那一行 ⇒ 1 红；把引用判据改成恒真 ⇒ 3 红；两次均 `sha256` 逐字节复原）、EC-02 **4+11** 条（17 个验证器逐个跑到 0 FAIL，修前实测 **28** 条假负）、EC-03 **8** 条（含两条独立反证臂）、EC-04 **6** 条（两条判据各带反证臂）。**如实登记**：本轮交付的**主体是记录/资产面的缺陷修复**（14 个验证器的假负、charter 读取器的三轮拒绝码、负判扫描的三个盲区），产品面的新增是**三条弱判据**（叙述质量），**不是**「叙述质量已判」。 |
+| 2026-10-30 | **ACHIEVED（CI 全绿）** | **六个 EC 全 PASS**。判据面：EC-01 **21** 条（含两条**真文件按压**：摘掉装配调用的那一行 ⇒ 1 红；把引用判据改成恒真 ⇒ 3 红；两次均 `sha256` 逐字节复原）、EC-02 **4+11** 条（17 个验证器逐个跑到 0 FAIL，修前实测 **28** 条假负）、EC-03 **8** 条（含两条独立反证臂）、EC-04 **6** 条（两条判据各带反证臂）。**如实登记**：本轮交付的**主体是记录/资产面的缺陷修复**（14 个验证器的假负、charter 读取器的三轮拒绝码、负判扫描的三个盲区），产品面的新增是**三条弱判据**（叙述质量），**不是**「叙述质量已判」。 |
