@@ -1355,6 +1355,10 @@
         "sha256": "653238428fea307fe84600558688a6a028c33300"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261030-234-false-negatives-live-on-the-wrong-face.md",
+        "sha256": "614f88534ee120c4239c3a6662ae3d2c8614831c"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "3fa1204b9941d2a31f110529f5051a1165f4d380"
       },
@@ -1792,7 +1796,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261030-101-narrative-quality-and-verifier-coverage.md",
-        "sha256": "cdeb64e52ec445cc8a77d75bc7e4782476b5b0f1"
+        "sha256": "eaec7f6c9aae003da480132b662688ad656e8b44"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -2768,7 +2772,7 @@
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261030-101-two-tree-clean.txt",
-        "sha256": "4353ca65395b1542f6bc1d45f63b8d1c4fc504c6"
+        "sha256": "f650bde37b91c3779f6a78f5bd9504328157bd5a"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261030-101-two-tree-current.txt",
@@ -18895,7 +18899,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "864b2507b3845b44a59433f37243f15e98e936f2"
+    "head": "1890fec8f2876c5fb5263c6eb07bac5af99fbfe9"
   },
   "fingerprint_before": {
     "files": [
@@ -20252,6 +20256,10 @@
         "sha256": "653238428fea307fe84600558688a6a028c33300"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261030-234-false-negatives-live-on-the-wrong-face.md",
+        "sha256": "614f88534ee120c4239c3a6662ae3d2c8614831c"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "3fa1204b9941d2a31f110529f5051a1165f4d380"
       },
@@ -20689,7 +20697,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261030-101-narrative-quality-and-verifier-coverage.md",
-        "sha256": "cdeb64e52ec445cc8a77d75bc7e4782476b5b0f1"
+        "sha256": "eaec7f6c9aae003da480132b662688ad656e8b44"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -21665,7 +21673,7 @@
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261030-101-two-tree-clean.txt",
-        "sha256": "4353ca65395b1542f6bc1d45f63b8d1c4fc504c6"
+        "sha256": "f650bde37b91c3779f6a78f5bd9504328157bd5a"
       },
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261030-101-two-tree-current.txt",
@@ -37792,11 +37800,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "864b2507b3845b44a59433f37243f15e98e936f2"
+    "head": "1890fec8f2876c5fb5263c6eb07bac5af99fbfe9"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "864b2507b3845b44a59433f37243f15e98e936f2",
+  "ran_at_head": "1890fec8f2876c5fb5263c6eb07bac5af99fbfe9",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
