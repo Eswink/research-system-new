@@ -2,9 +2,9 @@
 id: GOAL-20261030-101
 slug: narrative-quality-and-verifier-coverage
 title: 给「写得对不对」装上判据，并按住记录面的结构腐化
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-10-30
-updated_at: 2026-10-30
+updated_at: 2026-10-31
 owners: [root-agent]
 authorization:
   source: user-request
@@ -109,8 +109,10 @@ escalation_triggers:
   - 同一失败签名超过 fix_policy 上限
 child_plans:
   - .cursor/plans/tasks/PLAN-20261030-101-goal-101-narrative-quality-and-verifier-coverage.md
-latest_recheck: null
-memory_entries: []
+latest_recheck: >-
+  .cursor/plans/rechecks/RECHECK-20261030-101-goal-101-narrative-quality-and-verifier-coverage.md
+memory_entries:
+  - MEM-20261030-234
 ---
 
 ## 目标与退出标准
@@ -201,12 +203,10 @@ memory_entries: []
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `79edb87d` | 零 run（**`covered_by: 6505f37f`**） | 覆盖：同批推送，被 `6505f37f` 的 M0 / Push run 承担；**该 run 的 head 是 `6505f37f`，不是本提交** | **本轮交付**（见提交正文）：叙述质量三判据 + 装配面接线 / 负判扫描补主文件侧面（共享 helper + 17 个验证器）/ charter 残余两形态 / run 归属校验器 + 静态判据 / 两条方法纪律判据 / 收口资产 / 宪章记账（序 69）；并付清 GOAL-100 的两笔 tip 债。本地 m0（记录落盘**之后**、commit 前）：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、`tree changed during the run: False` | — | **本 GOAL 的交付提交**：叙述质量三判据（`manuscript_quality.py` + 文档 + 装配面接线）/ 负判扫描补主文件侧面（共享 helper `charter_progress.py` + 17 个验证器 + 主文件判据）/ charter 残余两形态 / run 归属校验器 + 静态判据 / 两条方法纪律判据 / 收口资产 / 宪章记账（序 69）；并**付清 GOAL-100 的两笔 tip 债**（`363549b5` / `864b2507`，债记在被点名的那本账上）。本地 m0（记录落盘**之后**）：终态行见下一条记录行 |
-
+| `79edb87d` | 零 run（**`covered_by: 6505f37f`**） | 覆盖：同批推送，被 `6505f37f` 的 M0 / Push run 承担；**该 run 的 head 是 `6505f37f`，不是本提交** | **本 GOAL 的交付提交**（见提交正文）：叙述质量三判据（`manuscript_quality.py` + 文档 + 装配面接线）/ 负判扫描补主文件侧面（共享 helper `charter_progress.py` + 17 个验证器 + 主文件判据）/ charter 残余两形态 / run 归属校验器 + 静态判据 / 两条方法纪律判据 / 收口资产 / 宪章记账（序 69）；并**付清 GOAL-100 的两笔 tip 债**（`363549b5` / `864b2507`，债记在被点名的那本账上）。本地 m0（记录落盘**之后**、commit 前）：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、`tree changed during the run: False` |
 | `1890fec8` | 零 run（**`covered_by: 6505f37f`**） | 覆盖：同批推送 | **记录提交**（只改 `.cursor/`）：迭代日志与 CI 台账点名 `79edb87d`、归档两树判词（两棵各 **67** 条、`sha256` 相同 `8ca8a1d70f57b7a56a693eefab9aa9db423cde1bb919a4e107ef99f59badba8d`）、重封见证 |
 | `6505f37f` | [M0 41053161962](https://github.com/Eswink/research-system-new/actions/runs/41053161962) / [Push 41053161033](https://github.com/Eswink/research-system-new/actions/runs/41053161033) | **全 `success`**：M0 **八 job 全 success**（`quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `container-quality` / `collector-quality`）、Push 三条 Analyze 全 `success` | **本 GOAL 的链在此收口**（推送 tip）：见证最后一次重封（只改见证）。本地 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、`tree changed during the run: False` |
 | `60cd270f` | [M0 41061049660](https://github.com/Eswink/research-system-new/actions/runs/41061049660) （attempt 2）/ [Push 41061049437](https://github.com/Eswink/research-system-new/actions/runs/41061049437) | Push 三条 Analyze 全 `success`；M0 八 job 里 **7 个 `success`、`quality-windows-latest` 被 `cancelled`** —— **但那一格的 `Run all M0 gates` 步骤本身是 `completed/success`**（attempt 2 实测：步骤 10 success、其后 post 步骤逐个 success）。取消来自 `cancel-in-progress` 的并发组在 20 分钟窗口内被后续事件取消，**不是门判红**；本轮**不放宽**任何判据，也不把 `cancelled` 记成 `success` | **本 GOAL 的收口 tip**：台账回填 CI 结论、状态置 `ACHIEVED`、见证在同一提交里重封（之后不再改树）。本地 m0（记录定稿**之后**）：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、`tree changed during the run: False` |
-
 | `c48dd519` | [M0 41073762267](https://github.com/Eswink/research-system-new/actions/runs/41073762267) / [Push 41073761051](https://github.com/Eswink/research-system-new/actions/runs/41073761051) | **全 `success`**：M0 **八 job 全 success**（`quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `container-quality` / `collector-quality`）、Push 三条 Analyze 全 `success`；run 级 `conclusion` 也是 `success` | **最终收口 tip**（本提交即 HEAD）：把 `60cd270f` 的 `cancelled` 如实登记进台账并在同一提交里重封见证 —— 本行即「不再改树」之后的读数。**注意**：CI 的 `cancelled` 不等于判红（那一次的 `Run all M0 gates` 步骤本身是 `success`）；本轮的**全绿证据是本行这条 run** |
 | `0b4565da` | [M0 41082089708](https://github.com/Eswink/research-system-new/actions/runs/41082089708) / [Push 41082088496](https://github.com/Eswink/research-system-new/actions/runs/41082088496) | **全 `success`**：M0 **八 job 全 success**、Push 三条 Analyze 全 `success`；run 级 `conclusion` `success` | **真正的收口 tip**（本提交即 HEAD）：登记 `c48dd519` 那条 run 并把见证在同一提交里重封。本行之后不再改树 |
 | `c9391e57` | [M0 41089658048](https://github.com/Eswink/research-system-new/actions/runs/41089658048) （attempt 2） | M0 八 job 里 **7 个 `success`、`quality-windows-latest` 被 `cancelled`**；**该 job 的 `Run all M0 gates` 步骤在 attempt 2 是 `completed/success`**（attempt 1 在门中途被并发组取消），**其余七个 job 全 `success`**。**如实登记**：`cancelled` 不是 `success`，本行也不把它写成绿 | **本链最后一个提交**（只改记录 + 见证）：登记 `0b4565da` 的绿 tip 与 `c48dd519` 的取消事件。**全绿证据仍是 `0b4565da` / `c48dd519` 那两条 run**（八 job 全 success），本行不冒充 |
@@ -219,7 +219,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261030-101 | `79edb87d` → `1890fec8` → `6505f37f`（本 GOAL 的链；收口 tip 自身即 HEAD —— 按 `goal_commit_chain` 的构造豁免。**并付清 GOAL-100 的两笔 tip 债**：`363549b5` / `864b2507`） |  EC-01：21 passed（含两条真文件按压，按压后 3 红、逐字节复原）；EC-02：17 验证器 0 FAIL（修前 14×2=28 假负）；EC-03：8 passed + 在线读数 6 条发现；EC-04：6 passed；定向套件 manuscript 系 48 passed；mypy 7 文件干净；ruff check/format 双门干净 | `6505f37f`：M0 八 job 全 success、Push 全 success | 修掉的主体是**资产缺陷**不是产品缺陷：① 14 个验证器只读活跃面 ⇒ 进展行归档后 2 条假负；② charter 读取器只认加粗残余 ⇒ 三轮 `REFUSED_RESIDUAL_EMPTY`；③ 负判扫描不含主文件 ⇒ 28 条假负不可见 | `W-1`…`W-5` / `U-1`…`U-3` | ① 叙述质量的**强**口径（论证是否成立 —— 须先论证可判性）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ 投稿包（Cover Letter / 作者贡献 / 利益冲突 / 数据可用性） |
+| 1 | PLAN-20261030-101 | `79edb87d` → `1890fec8` → `6505f37f` → `60cd270f` → `c48dd519` → `0b4565da` → `c9391e57` → `a20c42f1` → `c7b8171a` → `5925c898` → `6e24d608` → `53d82bd2`（本 GOAL 的链逐条收录；除最后一个外每个都在 CI 台账里有一行 —— 台账按 `goal_commit_chain` 的构造豁免 HEAD。**并付清 GOAL-100 的两笔 tip 债**：`363549b5` / `864b2507`，债记在被点名的那本账上） |  EC-01：21 passed（含两条真文件按压，按压后 3 红、逐字节复原）；EC-02：17 验证器 0 FAIL（修前 14×2=28 假负）；EC-03：8 passed + 在线读数 6 条发现；EC-04：6 passed；定向套件 manuscript 系 48 passed；mypy 7 文件干净；ruff check/format 双门干净 | `6505f37f`：M0 八 job 全 success、Push 全 success | 修掉的主体是**资产缺陷**不是产品缺陷：① 14 个验证器只读活跃面 ⇒ 进展行归档后 2 条假负；② charter 读取器只认加粗残余 ⇒ 三轮 `REFUSED_RESIDUAL_EMPTY`；③ 负判扫描不含主文件 ⇒ 28 条假负不可见 | `W-1`…`W-5` / `U-1`…`U-3` | ① 叙述质量的**强**口径（论证是否成立 —— 须先论证可判性）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ 投稿包（Cover Letter / 作者贡献 / 利益冲突 / 数据可用性） |
 
 ## 状态历史
 
