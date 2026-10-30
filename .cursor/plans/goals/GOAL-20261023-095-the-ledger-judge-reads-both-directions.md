@@ -253,7 +253,6 @@ c9ee898b52c78bb902139a7b5a503a65e474afd69a0e6fec78bb32ea8362d098
 | --- | --- | --- |
 | 2026-10-23 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 63）。建档实测五处缺口（见「为什么这一轮是必要的」）。`max_cycles: 14`。CI 侧历史可得性定为**方案 B**（见下）。 |
 | 2026-10-23 | **ACTIVE** | **收口面落地**：EC-01…04 判据面全绿（14 + 9 例）；两向按压各判红/绿并按 raw `sha256` 逐字节复原；GOAL-094 补四行后正反向同时绿。CI 台账待推送后回填。 |
-
 | 2026-10-23 | **ACHIEVED** | 五个 EC 全达成。**CI 到终态**：`1797c683` 八 job 全 `success` + Push `success`（[M0 39933470022](https://github.com/Eswink/research-system-new/actions/runs/39933470022)）。**本地 m0**：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24**、0 FAILED、`tree changed during the run: False`。**凭据审计**四面 `offenders=0`。**阶梯前进**：证据域升级为「写入时检测 **+** 存量可聚合」，`下一级` 收窄为「矛盾的处置闭环」。残余如实留（`W-1`…`W-4` / `R-1`…`R-3`）。 |
 
 ## CI 侧的历史可得性：选 B（并登记为残余）
