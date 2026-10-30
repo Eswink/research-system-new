@@ -36,7 +36,12 @@ CI_HEADING = "## CI 台账"
 #: 残余节的「确实没有残余」写法（其余「空」一律按缺失处理 —— 空节与忘写不可区分）。
 EMPTY_MARKERS: tuple[str, ...] = ("无残余", "（无）", "（无未覆盖）")
 
-_W_ITEM = re.compile(r"^- \*\*`W-(\d+)`\*\*")
+#: 残余条目的起头。**两种形态都认**（`- **`W-1`**` 与 `- `W-1``）—— 2026-10-30 实测：
+#: 本仓 109 条残余里 **87 条**是不加粗的那种，而这里只认加粗 ⇒ 连续三轮
+#: `REFUSED RESIDUAL_EMPTY`（098 / 099 / 100 各自登记过同一拒绝码）。
+#: 这是**纯放宽唯一被允许的方向**：把已经写下的、语义明确的形态读出来；加粗形态
+#: 仍然照旧解析（`test_the_parsing_agrees_with_the_charter_judges` 两侧同读）。
+_W_ITEM = re.compile(r"^- (?:\*\*)?`W-(\d+)`(?:\*\*)?")
 _OK_CONCLUSION = re.compile(r"\bsuccess\b", re.IGNORECASE)
 _RED_CONCLUSION = re.compile(r"\bfailure\b|判红|取消|cancelled", re.IGNORECASE)
 

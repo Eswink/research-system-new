@@ -111,6 +111,56 @@ def test_the_mark_order_follows_the_prompt_order_with_duplicates_collapsed() -> 
     assert lines[4].startswith("3. ") and "J Third" in lines[4]
 
 
+_BOUNDARY_TABLE = ReferenceTable(
+    entries=(
+        # 标题**不是占位符**：品质判据（GOAL-20261030-101 EC-01）要求被引条目与正文至少共享
+        # 一个实词 ⇒ `T1` 这种两字符假标题会被**正确地**判红。故用真形状的标题，正文也换成
+        # 能与它们对上的实词（benchmark / pipeline / workflow）。
+        ReferenceEntry(
+            identifier="1",
+            authors=("A A",),
+            title="A benchmark for reproducible pipeline work",
+            journal="J1",
+            year="2001",
+        ),
+        ReferenceEntry(
+            identifier="2",
+            authors=("B B",),
+            title="Pipeline provenance in shared pipelines",
+            journal="J2",
+            year="2002",
+        ),
+        ReferenceEntry(
+            identifier="3",
+            authors=("C C",),
+            title="Workflow benchmark across institutions",
+            journal="J3",
+            year="2003",
+        ),
+    )
+)
+
+#: 编号越界用例的正文。**各节互不相同**：摘要与结论若逐字相同，「节间不重复」判据会
+#: **正确地**判红 —— 本用例判的是编号越界，故正文按节区分（引用标记三处齐全）。
+_BOUNDARY_SECTIONS: dict[str, str] = {
+    "title": "A Benchmark Study",
+    "abstract": "We measure benchmark pipelines against their published workflows and report "
+    "the comparison in a table rather than in this prose [1][2].",
+    "introduction": "Prior work documents pipelines in detail but says little about the "
+    "measured cost of running them under a shared procedure [3].",
+    "related_work": "The closest benchmark pipelines report workflow costs for computational "
+    "research and leave the planning choice open [1][2].",
+    "methods": "Two arms run one benchmark pipeline under a fixed workflow so the comparison "
+    "isolates only the item count [1].",
+    "results": "The pipelines differ in measured cost, tabulated below by name so each value "
+    "can be checked [1][2][3].",
+    "discussion": "The difference is a workload effect and nothing more, because one script "
+    "cannot speak for another [3].",
+    "conclusion": "Whether the benchmark generalises beyond this run is not something this "
+    "study measured, and we do not claim it [1].",
+}
+
+
 def test_a_mark_beyond_the_distinct_record_count_is_refused() -> None:
     """上面那条规则的另一半：编号只到**去重后**的条数 ⇒ 超出即点名拒绝。
 
@@ -118,22 +168,15 @@ def test_a_mark_beyond_the_distinct_record_count_is_refused() -> None:
     否则模型会以为「列表里有第五条」而写出一个解析不到任何条目的标记。
     """
     from packages.application.deliverable.manuscript import (
-        MANUSCRIPT_KEYS,
         ManuscriptError,
         validate_manuscript,
     )
 
-    table = ReferenceTable(
-        entries=(
-            ReferenceEntry(identifier="1", authors=("A A",), title="T1", journal="J1", year="2001"),
-            ReferenceEntry(identifier="2", authors=("B B",), title="T2", journal="J2", year="2002"),
-            ReferenceEntry(identifier="3", authors=("C C",), title="T3", journal="J3", year="2003"),
-        )
-    )
-    sections = {key: "Body text without numerals [1][2][3]" for key in MANUSCRIPT_KEYS}
+    table = _BOUNDARY_TABLE
+    sections = dict(_BOUNDARY_SECTIONS)
     validate_manuscript(sections, table)  # 三条都引 ⇒ 通过
     beyond = dict(sections)
-    beyond["results"] = "Body text [4]"
+    beyond["results"] = "Benchmark pipelines measured [4]"
     with pytest.raises(ManuscriptError) as raised:
         validate_manuscript(beyond, table)
     assert "[4]" in str(raised.value), str(raised.value)

@@ -55,8 +55,8 @@ _SECTIONS: dict[str, str] = {
     "records; the per-arm readings are listed there by name [1].",
     "discussion": "The measured difference is a workload effect, not a quality claim: the "
     "study varies the item count only, and one script cannot speak for another [2].",
-    "conclusion": "Grounded planning yields an execrable design; whether it yields a better "
-    "one is not something this run measured.",
+    "conclusion": "Grounded planning yields an executable design here; whether it yields a "
+    "better one is not something this run measured, and we do not claim it.",
 }
 
 _ENTRIES = (
@@ -337,7 +337,17 @@ def test_the_footnote_names_both_faces() -> None:
         verdict=None,
         objective=None,
     )
+    # 这一走动的是**脚注**面（「no retrievable facts」那一条）：本 run 没有可检索事实，
+    # 但**参考文献仍在**（`_table()` 有两条）⇒ 品质判据要求 Results 带引用标记。正文因此
+    # 保留 `[1]`（且与第 1 条的标题共享实词）—— 这不是为了迁就判据，而是真实形态：
+    # 一个什么都没测到的 run 仍然引用了它检索到的文献。
     empty = build_manuscript(
-        empty_inputs, _admission({"results": "Nothing was measured."}), _table()
+        empty_inputs,
+        _admission({
+            "results": "Nothing was measured in this run; the retrieved "
+            "reproducibility work is the only material we can point at [1], and the FAIR "
+            "data analyses it surveys are what this study would have varied [2]."
+        }),
+        _table(),
     )
     assert "no retrievable facts" in empty

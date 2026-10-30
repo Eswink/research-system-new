@@ -63,15 +63,26 @@ _ENTRY = {
     "authors": ["Hoffmann C", "Djerroud S"],
 }
 
+#: 手稿正文。**每节都必须与 §1 的引用条目共享实词**（GOAL-20261030-101 EC-01 的
+#: 引用—主张相关判据）：本 run 只有一条记录，标题讲
+#: `reproducibility … computational research`，故正文里出现这些词是**必要的**
+#: —— 否则判据会（正确地）判「引的条目与正文无关」。
 _SECTIONS = {
-    "title": "A Grounded Design",
-    "abstract": "We ask whether grounding changes the design an experiment can execute.",
-    "introduction": "Planning assistants may propose studies the literature already settles.",
-    "related_work": "The closest retrieved work builds tooling and leaves the choice open [1].",
-    "methods": "Two arms run one shipped script; the treatment arm raises the item count.",
-    "results": "The readings and their sources are published in the data table below [1].",
-    "discussion": "The measured difference is a workload effect, and the run carries one record.",
-    "conclusion": "Whether the design is better is not something this run measured.",
+    "title": "A Grounded Design For Reproducibility",
+    "abstract": "We ask whether grounding a plan in reproducibility literature changes the "
+    "design an experiment can execute, and we report the measured comparison elsewhere.",
+    "introduction": "Planning assistants may propose studies the reproducibility literature "
+    "already settles; we ask what changes when the material is read first.",
+    "related_work": "The closest retrieved work builds reproducibility tooling for "
+    "computational research and leaves the planning choice open [1].",
+    "methods": "Two arms run one shipped script under a fixed procedure; the treatment arm "
+    "raises the item count so only the workload differs.",
+    "results": "The readings and their sources are published in the data table below, by "
+    "name, so each value can be checked against the run's own reproducibility record [1].",
+    "discussion": "The measured difference is a workload effect and nothing more: the run "
+    "varies the item count alone and carries a single retrieved record.",
+    "conclusion": "Whether the design is better is not something this run measured, and we do "
+    "not claim it; the reproducibility question stays open.",
 }
 
 

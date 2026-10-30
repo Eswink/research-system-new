@@ -167,19 +167,12 @@ def _ladder_verdicts(root: Path) -> list[Any]:
                 f"{label}域那一行的「依据 GOAL」必须收录本 GOAL（每轮必须更近科研）",
             )
         )
-    progress = _progress_section(charter)
-    progress_rows = [
-        line for line in progress.splitlines() if line.startswith("| ") and LADDER_GOAL in line
-    ]
-    # **存档也算**（序 69 归档轮实测）：宪章只保留最近三条，本轮的进展行后面会被移进
+    # **活跃面或归档**（GOAL-101 EC-02）：宪章只保留最近三条，本轮的进展行会被移进
     # `archive/`。断言问的是「当初有没有写这一行」，不是「它现在还在活跃面吗」——
-    # 后者是归档惯例的正常结果，判成负是**假负**（资产绑错了面，按 MEM 规则改断言）。
-    if not progress_rows:
-        for path in sorted((root / ".cursor" / "plans" / "goals" / "archive").glob("*.md")):
-            text = path.read_text(encoding="utf-8")
-            progress_rows.extend(
-                line for line in text.splitlines() if line.startswith("| ") and LADDER_GOAL in line
-            )
+    # 后者是归档惯例的正常结果，判成负是**假负**。读取面已提为共享 helper
+    # （`tools/charter_progress.py`）：本文件当年手工写的这一份是**唯一**有归档回退的，
+    # 其余 16 个验证器都没有 ⇒ 各自漂移。现在全部走 `TOOLBOX.progress_rows`。
+    progress_rows = TOOLBOX.progress_rows(root, LADDER_GOAL)
     verdicts.extend([
         TOOLBOX.verdict(
             "progress-records-this-goal",

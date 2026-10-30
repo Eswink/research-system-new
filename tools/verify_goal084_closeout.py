@@ -143,26 +143,14 @@ def _self_loading_verdict() -> Any:
     )
 
 
-def _progress_section(charter: str) -> str:
-    """宪章「进展记录」小节正文（到下一个 `## ` 为止）。"""
-    marker = "## 进展记录"
-    start = charter.find(marker)
-    if start == -1:
-        return ""
-    tail = charter[start + len(marker) :]
-    stop = tail.find("\n## ")
-    return tail[: stop if stop != -1 else len(tail)]
-
-
 def _ladder_verdicts(root: Path) -> list[Any]:
     """宪章记账的**两个面**都必须收录本 GOAL：阶梯行 + 进展记录行。"""
     charter = TOOLBOX.text(root, ".cursor/plans/goals/MAINLINE.md")
     rows = [line for line in charter.splitlines() if line.startswith(LADDER_DOMAIN)]
     recorded = [line for line in rows if LADDER_GOAL in line]
-    progress = _progress_section(charter)
-    progress_rows = [
-        line for line in progress.splitlines() if line.startswith("| ") and LADDER_GOAL in line
-    ]
+    # **活跃面或归档**（GOAL-101 EC-02）：进展行一被归档，只读活跃面就产出假负。
+    # 读取面提为共享 helper（`tools/charter_progress.py`）—— 17 处各写一遍必然漂移。
+    progress_rows = TOOLBOX.progress_rows(root, LADDER_GOAL)
     return [
         TOOLBOX.verdict("ladder-review-row-exists", bool(rows), "宪章阶梯里必须有「复检」域那一行"),
         TOOLBOX.verdict(

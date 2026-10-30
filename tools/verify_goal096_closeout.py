@@ -128,17 +128,6 @@ def _self_loading_verdict() -> Any:
     )
 
 
-def _progress_section(charter: str) -> str:
-    """宪章「进展记录」小节正文（到下一个 `## ` 为止）。"""
-    marker = "## 进展记录"
-    start = charter.find(marker)
-    if start == -1:
-        return ""
-    tail = charter[start + len(marker) :]
-    stop = tail.find("\n## ")
-    return tail[: stop if stop != -1 else len(tail)]
-
-
 def _ladder_verdicts(root: Path) -> list[Any]:
     """宪章记账的**两个面**都必须收录本 GOAL：阶梯行 + 进展记录行。"""
     charter = TOOLBOX.text(root, ".cursor/plans/goals/MAINLINE.md")
@@ -160,10 +149,9 @@ def _ladder_verdicts(root: Path) -> list[Any]:
                 f"{label}域那一行的「依据 GOAL」必须收录本 GOAL（每轮必须更近科研）",
             )
         )
-    progress = _progress_section(charter)
-    progress_rows = [
-        line for line in progress.splitlines() if line.startswith("| ") and LADDER_GOAL in line
-    ]
+    # **活跃面或归档**（GOAL-101 EC-02）：进展行一被归档，只读活跃面就产出假负。
+    # 读取面提为共享 helper（`tools/charter_progress.py`）—— 17 处各写一遍必然漂移。
+    progress_rows = TOOLBOX.progress_rows(root, LADDER_GOAL)
     verdicts.extend([
         TOOLBOX.verdict(
             "progress-records-this-goal",

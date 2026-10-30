@@ -1,0 +1,67 @@
+PASS protected-judges-present
+PASS scale-gate-limits-present
+PASS runner-product-roots-unchanged
+PASS scale-judge-product-roots-unchanged
+PASS m0-check-count-stable
+PASS closeout-assertions-present
+PASS closeout-assertions-judge-present
+PASS two-tree-entry-present
+PASS governance-validator-present
+PASS evidence-scripts-are-path-independent
+PASS entry-judge-present
+PASS entry-refuses-degradation
+PASS entry-carries-a-reverse-proof-case
+PASS entry-refuses-single-tree-pass
+PASS conventions-clause-and-six-items
+PASS conventions-registered
+PASS conventions-name-the-entry-and-the-assertions
+PASS records-declare-existing-rechecks
+FAIL quality-module-in-tree -> packages/application/deliverable/manuscript_quality.py
+FAIL quality-module-defines-three-checks -> check_citation_alignment,check_section_distinctness,check_section_depth
+FAIL quality-module-declares-what-it-does-not-judge -> whether a citation supports the sentence,whether the argument holds,whether the method is appropriate,whether the citation set is sufficient
+FAIL quality-doc-in-tree -> docs/architecture/MANUSCRIPT_QUALITY.md
+FAIL quality-judge-in-tree -> tests/application/test_manuscript_quality.py
+FAIL quality-gate-called-by-the-assembly-path -> 装配面必须调用品质判据（否则它是死代码）
+PASS structural-validator-keeps-the-quality-gate-out
+FAIL shared-progress-helper-in-tree -> tools/charter_progress.py
+FAIL shared-helper-reads-live-or-archive -> 共享 helper 必须读**活跃面或归档**（否则归档后仍是假负）
+FAIL main-file-judge-in-tree -> tests/tooling/test_verifier_main_files_report_no_negative.py
+FAIL main-file-judge-carries-a-counter-arm -> 主文件判据必须带反证臂（否则它只是「都在场」的同义反复）
+PASS false-negatives-before-this-round
+PASS verifier-registry-is-not-empty
+FAIL attribution-tool-in-tree -> tools/check_ledger_run_attribution.py
+FAIL attribution-tool-has-an-online-switch -> 校验器必须有一个**显式**的出网开关（默认门不跑它）
+PASS attribution-tool-is-not-on-the-default-gate
+FAIL attribution-judge-in-tree -> tests/tooling/test_ledger_run_attribution_stays_offline.py
+PASS attribution-tool-does-not-import-httpx-at-top-level
+FAIL methodology-judge-in-tree -> tests/tooling/test_record_locators_are_unambiguous.py
+FAIL methodology-judge-covers-the-glob-discipline -> 必须有一条判据钉住「按编号定位唯一」（宽松 glob 读错文件是本轮纪律第 1 条）
+FAIL methodology-judge-covers-the-encoding-discipline -> 必须有一条判据钉住「记录面读取显式 UTF-8」（区域默认编码是第 2 条的根因）
+FAIL methodology-judge-carries-counter-arms -> 两条判据都必须带反证臂
+FAIL goal-declares-six-ecs ->
+PASS self-loads-its-own-assertions
+PASS ladder-report-row-exists
+FAIL ladder-report-records-this-goal -> 「报告」域那一行的「依据 GOAL」必须收录本 GOAL（每轮必须更近科研）
+FAIL ladder-report-names-the-weak-verdict -> 叙述质量弱口径成立,引用不是无关,节非空洞
+FAIL ladder-report-does-not-claim-the-strong-verdict -> `下一级` 必须逐字保持「叙述质量与事实一致性可判」—— 本轮只做了弱口径，把它改写成已达成属于伪造验证证据
+FAIL progress-records-this-goal -> 宪章「进展记录」必须有本 GOAL 的一行（EC-06 契约逐字要求）
+FAIL progress-row-names-the-recheck -> 进展记录那一行的 RECHECK 列必须指向本轮的复检文件
+FAIL progress-row-is-newest-when-inserted -> 进展记录必须插在**最上面**（判据取 progress[0]，而该表不按日期排序）
+FAIL program-table-has-this-round -> 宪章程序表必须有序 69 = 本 GOAL 那一行
+FAIL goal-ec01-status -> MISSING
+FAIL goal-ec02-status -> MISSING
+FAIL goal-ec03-status -> MISSING
+FAIL goal-ec04-status -> MISSING
+FAIL goal-ec06-status -> MISSING
+FAIL goal-ec05-status -> MISSING
+FAIL record-PLAN-20261030-101-goal-101-narrative-quality-and-verifier-coverage.md ->
+FAIL record-RECHECK-20261030-101-goal-101-narrative-quality-and-verifier-coverage.md ->
+PASS record-README.md
+PASS record-MAINLINE.md
+PASS record-ALL_PLAN.md
+FAIL uncovered-scope-enumerated -> `U-1`,`U-2`,`U-3`
+FAIL residuals-enumerated -> `W-1`,`W-2`,`W-3`,`W-4`
+FAIL claim-boundaries-enumerated -> `R-1`,`R-2`
+FAIL w-1-names-the-strong-verdict-as-unjudged -> 残余节必须明写「叙述质量的强口径仍未判」（不粉饰是判据的一部分）
+FAIL w-4-names-the-ledger-findings-unchanged -> 残余节必须明写「本轮不改写历史台账」（不粉饰是判据的一部分）
+FAIL r-3-names-the-criteria-as-weak -> 残余节必须明写「三条判据是弱判据」（不粉饰是判据的一部分）

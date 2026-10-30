@@ -39,6 +39,10 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from packages.application.deliverable.manuscript_quality import (
+    ManuscriptQuality,
+    validate_quality,
+)
 from packages.application.deliverable.references import ReferenceTable, render_references
 from packages.application.deliverable.report_narrative import (
     FACT_TABLE_COLUMNS,
@@ -128,6 +132,12 @@ def validate_manuscript(sections: Mapping[str, str], table: ReferenceTable) -> N
     """八键齐备、正文不含数字（引用标记除外）、引用**双向闭合**；违反即点名拒绝。
 
     三件事各自点名（不合并成一句「手稿不合法」：判词要能指出**哪一节**、**哪个编号**）。
+
+    **射程（有意只到结构面）**：本函数判「谁写的 / 数字在哪 / 编号是否闭合」三件**结构
+    事实**，**不**判叙述质量 —— 那是 `manuscript_quality.validate_quality` 的事，挂在
+    **装配面**（`manuscript_assembly.assemble_manuscript`）而不是这里。分开的理由：把品质
+    判据塞进结构入口，会让「编号越界」这类**结构**用例因为夹具正文写得短而红 —— 判词
+    指向错误的面（本 GOAL 实测到 5 处这样的连带红）。
     """
     missing = [key for key in MANUSCRIPT_KEYS if not str(sections.get(key) or "").strip()]
     if missing:
@@ -155,6 +165,18 @@ def validate_manuscript(sections: Mapping[str, str], table: ReferenceTable) -> N
             f"reference {orphans} is never cited in the body: every listed work must be a "
             "work the manuscript actually cites"
         )
+
+
+def validate_manuscript_quality(sections: Mapping[str, str], table: ReferenceTable) -> None:
+    """**品质三条**（GOAL-20261030-101 EC-01）：引用—主张相关 / 节间不重复 / 节非空洞。
+
+    单独一个入口、且由**装配面** `assemble_manuscript` 调用 —— 不是 `validate_manuscript`
+    的一部分。理由见后者的 docstring（结构用例不该因为正文短而红）。
+
+    判负类型是 `manuscript_quality.ManuscriptQualityError`（**不**折成 `ManuscriptError`）：
+    「写得不对」与「装不起来」是两类事实，报告任务的判词分类必须能分开读。
+    """
+    validate_quality(sections, ManuscriptQuality.of(table.entries))
 
 
 def parse_manuscript(content: str | None) -> Mapping[str, str]:

@@ -42,6 +42,7 @@ from packages.application.deliverable.manuscript import (
     build_manuscript,
     manuscript_digest,
     validate_manuscript,
+    validate_manuscript_quality,
 )
 from packages.application.deliverable.research_report import ReportInputs
 from packages.application.run_orchestration.manuscript_facts import manuscript_facts
@@ -115,6 +116,11 @@ def assemble_manuscript(  # noqa: PLR0913
     facts = manuscript_facts(artifacts, ledger, reviews, run, run_id)
     sections = {key: str(block.get(key) or "") for key in MANUSCRIPT_KEYS}
     validate_manuscript(sections, facts.references)
+    # **品质三条**（GOAL-20261030-101 EC-01）：装配面是唯一入口 ⇒ 走产品路径的手稿一定
+    # 经过品质判据，不存在「判据只在测试里跑」的死代码形态。判负类型是
+    # `ManuscriptQualityError`（不折成 `ManuscriptError`）：失败消息因此能分开说
+    # 「写得不对」与「装不起来」。
+    validate_manuscript_quality(sections, facts.references)
     admission = ManuscriptAdmission(
         author=f"{ASSEMBLED_CREATOR_PREFIX}{created_by}",
         returned_model=str(block.get("returned_model") or ""),

@@ -366,6 +366,47 @@ def test_the_parsing_agrees_with_the_charter_judges() -> None:
     assert len(progress) == len(judge._progress_rows(charter)), "进展记录行数读数不同"
 
 
+def test_the_plain_residual_form_is_read_too() -> None:
+    """**不加粗**的残余形态（`` - `W-1` ``）也必须被读出 —— 连续三轮拒绝码的根因。
+
+    2026-10-30 实测：本仓 **109** 条残余里 **87** 条写的是不加粗形态，而
+    `charter_parse._W_ITEM` 只认 ``- **`W-N`**``（加粗）⇒ GOAL-098 / 099 / 100
+    **三轮**各自登记过同一个 `REFUSED RESIDUAL_EMPTY`，而残余节**明明有 4 条**。
+
+    **反证臂**（本用例自己证明它咬得住）：把同一条改成**两种形态都不是**的样子
+    （`- W-1`，连反引号都没有）⇒ 回到 `RESIDUAL_EMPTY`。加粗形态的原文读数与不加粗
+    **逐字相同**（多认一种已写下的形态，不改变读数）。
+    """
+    plain = "# GOAL\n\n## 残余与未覆盖范围\n\n- `W-1`｜第一条残余。\n- `W-2`｜第二条残余。\n"
+    bold = plain.replace("- `W-1`", "- **`W-1`**").replace("- `W-2`", "- **`W-2`**")
+    parse = _parse()
+    read_plain = parse.residual_section(plain)
+    read_bold = parse.residual_section(bold)
+    assert [item.number for item in read_plain] == [1, 2], read_plain
+    # `raw` 是**逐字原文**（加粗形态的原文当然带着 `**`）⇒ 比的是**去掉强调标记后**的正文：
+    # 多认一种形态不得改变「这一条说的是什么」。
+    assert [(item.number, item.raw.replace("**", "")) for item in read_plain] == [
+        (item.number, item.raw.replace("**", "")) for item in read_bold
+    ], "两种形态读出来的正文不同 ⇒ 多认的形态改变了读数"
+    broken = plain.replace("- `W-1`", "- W-1").replace("- `W-2`", "- W-2")
+    with pytest.raises(parse.Refusal) as raised:
+        parse.residual_section(broken)
+    assert raised.value.code == "RESIDUAL_EMPTY", raised.value
+
+
+def test_the_real_goal_100_residuals_are_read() -> None:
+    """真文件：GOAL-100 的残余节读得出 4 条（`W-1`…`W-4`）—— 三轮拒绝码的回归钉。"""
+    path = (
+        ROOT
+        / ".cursor"
+        / "plans"
+        / "goals"
+        / ("GOAL-20261029-100-submission-ready-and-citation-binding.md")
+    )
+    items = _parse().residual_section(path.read_text(encoding="utf-8"))
+    assert [item.number for item in items] == [1, 2, 3, 4], items
+
+
 def test_the_tools_are_path_independent_and_do_not_read_the_clock() -> None:
     """两个脚本都不硬编码仓库根、不读时钟、不触网（确定性的一部分）。"""
     for relative in ("tools/next_round_charter.py", "tools/charter_parse.py"):
