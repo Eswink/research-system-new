@@ -91,6 +91,10 @@ memory_entries: []
   `eff7c34d` 的 run 两条；`aec28e2c` 无 run 且无 covered_by）、GOAL-099 三行
   （`covered_by` 写成 `<HEAD>` / `<HEAD-of-seq-68>` 占位符）。**不改历史台账**的理由：
   改写当时写下的记录 = 往历史里编造。若要修正，须在各自的 GOAL 上按当时的 API 读数重记。
+- `WARN-4`｜**CI 的 Windows `quality` job 卡在 20 分钟超时**（`m0-quality.yml:20` 的
+  `timeout-minutes: 20`）：实测两次都恰好 20 分 9 秒、日志无任何失败行，GitHub 报成 `cancelled`。
+  **不是**门判红，**也不是**绿。解除要改 `.github/workflows/**`（须用户拍板）⇒ 登记为待拍板
+  （GOAL 的 `W-5`）。同一链里四条 run 八 job 全 success，那才是全绿证据。
 - `WARN-3`｜**`main()` 端到端不在射程内**：主文件判据只跑 `record_verdicts`（记录面），
   不跑 `main()`（标准集 + 本轮集 + 记录面的联合）。前两段由原判据覆盖，联合面不在射程。
   如实登记为 `U-2`。

@@ -184,6 +184,12 @@ memory_entries: []
   分支能抓（本轮的 goal101 两个脚本已显式登记）。
 - `R-1`｜`R-M1` 未收口 —— 本 GOAL **不**宣称项目安全。
 - `R-2`｜投递语义**不是**「恰好一次」（at-least-once + 幂等 + 去重）。
+- `W-5`｜**CI 的 Windows `quality` job 卡在 20 分钟超时**（`.github/workflows/m0-quality.yml:20` 的
+  `timeout-minutes: 20`）。实测两次都**恰好 20 分 9 秒**、日志里**没有任何测试失败**，GitHub 把它报成
+  `cancelled`。它**不是**门判红，但**也不是**绿。解除条件 = 提高该 job 的 `timeout-minutes`，
+  而改 `.github/workflows/**` 属**须用户拍板**的面 ⇒ 本轮不动，登记为待拍板。
+  同一 GOAL 的链里已有四条 run 是**八 job 全 success**（`0b4565da` / `c48dd519` / `a20c42f1` / `c7b8171a`），
+  那些就是全绿证据；本轮的收口 tip 恰好落在超时窗口里。
 - `R-3`｜`tests/application/test_manuscript_quality.py` 的**三条判据是弱判据**：
   「过不了就是错的，过了不代表对」。任何把它读成「叙述质量已判」的说法都是夸大。
 
@@ -206,11 +212,12 @@ memory_entries: []
 | `c9391e57` | [M0 41089658048](https://github.com/Eswink/research-system-new/actions/runs/41089658048) （attempt 2） | M0 八 job 里 **7 个 `success`、`quality-windows-latest` 被 `cancelled`**；**该 job 的 `Run all M0 gates` 步骤在 attempt 2 是 `completed/success`**（attempt 1 在门中途被并发组取消），**其余七个 job 全 `success`**。**如实登记**：`cancelled` 不是 `success`，本行也不把它写成绿 | **本链最后一个提交**（只改记录 + 见证）：登记 `0b4565da` 的绿 tip 与 `c48dd519` 的取消事件。**全绿证据仍是 `0b4565da` / `c48dd519` 那两条 run**（八 job 全 success），本行不冒充 |
 | `a20c42f1` | [M0 41101107497](https://github.com/Eswink/research-system-new/actions/runs/41101107497) / [Push 41101107244](https://github.com/Eswink/research-system-new/actions/runs/41101107244) | **全 `success`**：M0 **八 job 全 success**（`quality-ubuntu-latest` / `quality-windows-latest` / `eval-gate` / `console-frontend` / `observability-overhead-ubuntu-latest` / `observability-overhead-windows-latest` / `container-quality` / `collector-quality`）、Push 三条 Analyze 全 `success`；run 级 `conclusion` `success` | **本 GOAL 的真正收口 tip**（本提交即 HEAD）：登记 `c9391e57` 的取消事件并在同一提交里重封见证。本行之后不再改树 —— 后续任何记录改动都会让见证失效 |
 | `c7b8171a` | [M0 41109081862](https://github.com/Eswink/research-system-new/actions/runs/41109081862) （attempt 3） / [Push 41109082029](https://github.com/Eswink/research-system-new/actions/runs/41109082029) | **全 `success`**：M0 **八 job 全 success**、run 级 `conclusion` `success`；Push 三条 Analyze 全 `success`。**attempt 1 / 2** 的 `quality-windows-latest` 被 `cancel-in-progress` 取消（门在跑），attempt 3 跑完并 success | **最终收口 tip**（本提交即 HEAD）：登记 `a20c42f1` 的八 job 全绿、重封见证。**过程事实如实登记**：同一 `github.ref` 的多次 `rerun` 会互相同组取消 —— 本轮共触发 3 次才拿到完整绿，两次取消都**不是**门判红（attempt 3 八 job 全 success 即证） |
+| `5925c898` | [M0 41122548998](https://github.com/Eswink/research-system-new/actions/runs/41122548998) （attempt 1 / 2） / [Push 41122548446](https://github.com/Eswink/research-system-new/actions/runs/41122548446) | Push 三条 Analyze 全 `success`；M0 八 job 里 **7 个 `success`、`quality-windows-latest` 两次都是 `cancelled`**。**根因已定位（不是门判红）**：该 job 的 `timeout-minutes: 20`（`.github/workflows/m0-quality.yml:20`）被跑满 —— attempt 1 `20:21:44Z → 20:41:53Z`、attempt 2 `20:52:56Z → 21:13:03Z`，两次都**恰好 20 分 9 秒**，而日志尾部是 checkout 清理动作（**没有任何测试失败行**）。GitHub 把「超时」报成 `cancelled` 而不是 `failed` | **本轮链的最后一个提交**（只改记录 + 见证）。**如实登记三件事**：① 这**不是**门判红（日志无失败、步骤 10 之外全部 success）；② 它**也不是** success（`cancelled` 不许记成绿）；③ 修它要改 `.github/workflows/**`（提高 `timeout-minutes`）—— **该面须用户拍板**，本轮不动。**本 GOAL 的全绿证据**是 `0b4565da` / `c48dd519` / `a20c42f1` / `c7b8171a` 那四条 run（各八 job 全 success） |
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261030-101 | `79edb87d` → `1890fec8` → `6505f37f`（本 GOAL 的链；收口 tip 自身即 HEAD —— 按 `goal_commit_chain` 的构造豁免。**并付清 GOAL-100 的两笔 tip 债**：`363549b5` / `864b2507`） |  EC-01：21 passed（含两条真文件按压，按压后 3 红、逐字节复原）；EC-02：17 验证器 0 FAIL（修前 14×2=28 假负）；EC-03：8 passed + 在线读数 6 条发现；EC-04：6 passed；定向套件 manuscript 系 48 passed；mypy 7 文件干净；ruff check/format 双门干净 | `6505f37f`：M0 八 job 全 success、Push 全 success | 修掉的主体是**资产缺陷**不是产品缺陷：① 14 个验证器只读活跃面 ⇒ 进展行归档后 2 条假负；② charter 读取器只认加粗残余 ⇒ 三轮 `REFUSED_RESIDUAL_EMPTY`；③ 负判扫描不含主文件 ⇒ 28 条假负不可见 | `W-1`…`W-4` / `U-1`…`U-3` | ① 叙述质量的**强**口径（论证是否成立 —— 须先论证可判性）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ 投稿包（Cover Letter / 作者贡献 / 利益冲突 / 数据可用性） |
+| 1 | PLAN-20261030-101 | `79edb87d` → `1890fec8` → `6505f37f`（本 GOAL 的链；收口 tip 自身即 HEAD —— 按 `goal_commit_chain` 的构造豁免。**并付清 GOAL-100 的两笔 tip 债**：`363549b5` / `864b2507`） |  EC-01：21 passed（含两条真文件按压，按压后 3 红、逐字节复原）；EC-02：17 验证器 0 FAIL（修前 14×2=28 假负）；EC-03：8 passed + 在线读数 6 条发现；EC-04：6 passed；定向套件 manuscript 系 48 passed；mypy 7 文件干净；ruff check/format 双门干净 | `6505f37f`：M0 八 job 全 success、Push 全 success | 修掉的主体是**资产缺陷**不是产品缺陷：① 14 个验证器只读活跃面 ⇒ 进展行归档后 2 条假负；② charter 读取器只认加粗残余 ⇒ 三轮 `REFUSED_RESIDUAL_EMPTY`；③ 负判扫描不含主文件 ⇒ 28 条假负不可见 | `W-1`…`W-5` / `U-1`…`U-3` | ① 叙述质量的**强**口径（论证是否成立 —— 须先论证可判性）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ 投稿包（Cover Letter / 作者贡献 / 利益冲突 / 数据可用性） |
 
 ## 状态历史
 

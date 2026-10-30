@@ -1796,7 +1796,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261030-101-narrative-quality-and-verifier-coverage.md",
-        "sha256": "3eefbd1da40ce1510457130137dd7bd203a1f981"
+        "sha256": "1cfaff150a09df676530cccf04180a2b5629b4b0"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4248,7 +4248,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261030-101-goal-101-narrative-quality-and-verifier-coverage.md",
-        "sha256": "aeaceb40899471a60c73a810a620abbc6d4881b4"
+        "sha256": "8bf1afbc99fe598c1ddbff7b77bb6aff6b1199f7"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -18892,14 +18892,14 @@
       },
       {
         "path": "tools/verify_goal101_closeout.py",
-        "sha256": "e0cf34708c622baf7b26d5b88e04b72a2569ed54"
+        "sha256": "f742bd1d9e988c824d808c94f0147da47720f7f6"
       },
       {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "c7b8171a419a52090bf61d21a3b46010dcb95d15"
+    "head": "5925c8989476a0f95c21ffaa6dfd1c83884af74c"
   },
   "fingerprint_before": {
     "files": [
@@ -20697,7 +20697,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261030-101-narrative-quality-and-verifier-coverage.md",
-        "sha256": "3eefbd1da40ce1510457130137dd7bd203a1f981"
+        "sha256": "1cfaff150a09df676530cccf04180a2b5629b4b0"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -23149,7 +23149,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261030-101-goal-101-narrative-quality-and-verifier-coverage.md",
-        "sha256": "aeaceb40899471a60c73a810a620abbc6d4881b4"
+        "sha256": "8bf1afbc99fe598c1ddbff7b77bb6aff6b1199f7"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -37793,18 +37793,18 @@
       },
       {
         "path": "tools/verify_goal101_closeout.py",
-        "sha256": "e0cf34708c622baf7b26d5b88e04b72a2569ed54"
+        "sha256": "f742bd1d9e988c824d808c94f0147da47720f7f6"
       },
       {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "c7b8171a419a52090bf61d21a3b46010dcb95d15"
+    "head": "5925c8989476a0f95c21ffaa6dfd1c83884af74c"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "c7b8171a419a52090bf61d21a3b46010dcb95d15",
+  "ran_at_head": "5925c8989476a0f95c21ffaa6dfd1c83884af74c",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
