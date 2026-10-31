@@ -27,16 +27,18 @@ from packages.application.run_orchestration.report_task import (
     execute_report_task,
 )
 from packages.application.run_orchestration.submission_assembly import (
-    COI_NAME,
-    CONTRIBUTIONS_NAME,
-    COVER_LETTER_NAME,
-    DATA_AVAILABILITY_NAME,
-    SUPPLEMENTARY_NAME,
     SubmissionError,
     parse_coii_fields,
     parse_submission_statement,
     validate_contribution_roles,
     validate_inventory_digests,
+)
+from packages.application.run_orchestration.submission_renderers import (
+    COI_NAME,
+    CONTRIBUTIONS_NAME,
+    COVER_LETTER_NAME,
+    DATA_AVAILABILITY_NAME,
+    SUPPLEMENTARY_NAME,
 )
 from packages.domain.core import ID
 from packages.domain.protocol_source import ProtocolBody

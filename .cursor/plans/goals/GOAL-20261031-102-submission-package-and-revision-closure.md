@@ -116,45 +116,72 @@ memory_entries: []
 
 # GOAL-20261031-102 —— 投稿包 + 改稿闭环
 
-## 背景与靶子
+## 目标与退出标准
 
-序 69（GOAL-101）收口后，手稿已经「能投出去」（八键 IMRaD + 引用闭合 + 编辑决定 +
-逐条应答），但两件事在结构上**不存在**（建档实测，不重新推导）：
+承用户 goal-mode 指令（序 70）。序 69（GOAL-101）收口后，手稿已经「能投出去」（八键
+IMRaD + 引用闭合 + 编辑决定 + 逐条应答），但两件事在结构上**不存在**（建档实测，不
+重新推导）：① **「同一篇论文的下一版」**——`Artifact` 没有 `parent` / `version` /
+`supersedes` 字段（全文件 grep = 0 命中）⇒ v2 无法指回 v1，`AuthorResponse.action_taken`
+是自报字符串，没有任何东西验证手稿真的变了；② **「投出去的包」**——`cover letter` /
+`author contribution` / `CRediT` / `conflict of interest` / `data availability` /
+`supplementary` / `target journal` / `journal selection` 在产品三根全部 0 命中。
+三个靶子：改稿闭环（EC-01/02）、投稿包五件制品（EC-03）、期刊选择闭集（EC-04）。
 
-1. **「同一篇论文的下一版」**：`Artifact` 没有 `parent` / `version` / `supersedes`
-   字段（全文件 grep = 0 命中）⇒ v2 无法指回 v1；`AuthorResponse.action_taken` 是
-   自报字符串，没有任何东西验证手稿真的变了；
-2. **「投出去的包」**：`cover letter` / `author contribution` / `CRediT` /
-   `conflict of interest` / `data availability` / `supplementary` / `target journal`
-   / `journal selection` 在产品三根全部 0 命中。
+方法与边界（继承的三条纪律 + 本轮三条）：判断文件结构用 Python
+`read_bytes().decode('utf-8')`、定位用精确路径、「在不在」用 `grep -c` 拿计数；
+序列化两侧同步（SQLite `SCHEMA_SQL` 单一来源 + Postgres 追加式 migration `030`）；
+会话相/确定性相分工不动摇（模型写正文与信，汇编器写数字/编号/清单/登记）；期刊闭集
+是**声明面**不是评分（无影响因子、无排名，判据钉住）。
 
-本轮三个靶子：改稿闭环（EC-01/02）、投稿包五件制品（EC-03）、期刊选择闭集（EC-04）。
+| EC | 标准（摘要） | 验证 | 状态 |
+| --- | --- | --- | --- |
+| EC-01 | `Artifact.supersedes` 落地（域 + 两侧序列化 + 链校验三反证；digest 不变） | `tests/domain/test_artifacts.py` 19 passed + sqlite 13 passed + `tests/postgres/test_artifact_supersedes_pg.py` 在树 | PASS |
+| EC-02 | 改稿闭环：v2（supersedes → v1）+ `action_taken` 引用真实制品 + 三反证 | `tests/application/test_revision_closure.py` 8 passed + 产品入口判据 | PASS |
+| EC-03 | 投稿包五件制品 + CRediT/digest/COI 三判据 + 三反证 | `tests/application/test_submission_package.py` 11 passed + 产品入口 4 条 + 协议判据 39 passed | PASS |
+| EC-04 | 期刊闭集 + 两字段 + 三判据 + 镜像 | `tests/application/test_journal_selection.py` 9 passed | PASS |
+| EC-05 | 收口验证器 + 断言集 + 两处登记 | `tools/verify_goal102_closeout.py --verdict-only` ⇒ 0 FAIL | PASS |
+| EC-06 | 宪章记账（序 70 / 阶梯两行 / 两表各 3 行 / ALL_PLAN） | mainline 判据 + 记录面判据全过 | PASS |
 
-## 方法与边界
+## 循环入口协议
 
-- **判断文件结构用 Python `read_bytes().decode('utf-8')`**；定位用精确路径；
-  「某段文字在不在」用 `grep -c` 拿计数（三条继承纪律，GOAL-101 各栽一次）。
-- 序列化两侧同步：SQLite 走 `SCHEMA_SQL`（单一来源），Postgres 走追加式 migration
-  `030_artifact_supersedes.sql`（既有 001 保持原样；gapless 1..N 判据继续成立）。
-- 会话相 / 确定性相的分工不动摇：改稿正文与信由**模型**写（会话产物），数字、
-  编号、清单、登记由**汇编器**写（报告相）。
-- 期刊闭集是**声明面**，不是评分：`journals.yaml` 无影响因子、无排名（判据钉住）。
+1. 读本文件「迭代日志」最后一行 → 若该 cycle 未收口，从其「下一轮输入」续；
+2. 读上一次 RECHECK 结论（`latest_recheck`）→ **未 PASS 不得进入下一 cycle 的收口**；
+3. 六个 EC 全部 PASS 且 CI 到终态 ⇒ 进「终止与收口」；
+4. 任一 EC 被结构性堵住（需用户拍板的面）⇒ 移入「残余与未覆盖范围」的待拍板队列，
+   **继续做剩下的**，GOAL 保持 ACTIVE。
 
-## 执行记录（按 cycle）
+## 单 cycle SOP
 
-见 `## 迭代日志`。
+① derive（从残余 + 阶梯下一级圈最小主题）→ ② 执行 → ③ 本地验证（m0 全量 + 定向套件）
+→ ④ commit（显式路径）→ ⑤ push main + CI 轮询 → ⑥ 纠错（按分类）→ ⑦ 回写记录 + 下一轮。
 
-## 验证与证据
+## CI 台账
 
-- 单元：`tests/domain/test_artifacts.py`（19）、`tests/adapters/sqlite/test_artifact_store.py`
-  （13）、`tests/application/test_revision_closure.py`（8）、
-  `tests/application/test_submission_package.py`（11）、
-  `tests/application/test_journal_selection.py`（9）、
-  `tests/contracts/test_direction_to_manuscript_protocol.py`（39）——全绿。
-- 产品路径：`tests/e2e/test_goal102_product_path.py` 6 条全绿（mock 中转站 + 离线
-  Europe PMC + **真容器实验**）；`test_direction_to_manuscript_product_path.py` 9 条全绿。
-- Postgres 侧：`tests/postgres/test_artifact_supersedes_pg.py`（无 DSN 环境按标记跳过；
-  migration 文件存在性与顺序由 `tests/postgres/test_migration_files.py` 判）。
+（逐提交逐 job。**零 run ≠ cancelled**；`covered_by` 只写真实覆盖者哈希。首行先记本地
+见证证据；CI run 的链接与结论由其后的记录提交回填 —— 回填提交用中性主题（只改
+`.cursor/`），不进本 GOAL 的链。）
+
+| 提交 | run | 结论 | 说明 |
+| --- | --- | --- | --- |
+| `9a313685` | 本地 m0 见证（`evidence/M0-WITNESS.json`；首次运行为诚实红：product-lint/format/typecheck/tests/framework-validate 各 1，按「CI 失败分类与纠错」逐类修复后复跑） | 修复后复跑全绿（终态行见迭代日志） | 交付提交（38 文件）：supersedes 域+两侧序列化 / 改稿闭环 / 投稿包五件制品 / 期刊闭集 / 收口资产 / 宪章记账；GitHub run 由本批推送产生 |
+
+## CI 失败分类与纠错
+
+| 类别 | 识别 | 处置 |
+| --- | --- | --- |
+| lint/format/typecheck | ruff / mypy 报错 | 直接修复 → fix commit → 重推 |
+| 产品测试失败 | pytest 断言 | 读输出定位；修产品优先，**禁改断言迁就** |
+| 判据资产坏了 | 收口验证器/断言集崩溃或假负 | 按「资产坏了 ≠ 产品缺陷」处置：修资产并留反证 |
+| flake/env | 已知签名（OTLP 端口、teardown race、DSN） | 按既有配方重跑；不覆盖 ⇒ 归下一行 |
+| 基础设施 | runner 挂 / 网络 | 等窗口重跑 1 次；仍败 ⇒ BLOCKED |
+| 治理/安全门禁 | Mimosa / validator 命中 | 按处置文档修或登记误报；不得绕过；不得宣称安全 |
+
+## 终止与收口
+
+- **ACHIEVED**：六个 EC 全 PASS + 收口验证器 0 FAIL + 两树复检判词逐行且 `sha256` 相同 +
+  CI 逐 job 到终态 + 本文件登记 `latest_recheck`；
+- **BLOCKED**：`no_progress_stop_cycles` 命中，或某 EC 的解除条件须用户拍板且无法绕开；
+- **ABORTED**：用户显式叫停。
 
 ## 残余与未覆盖范围
 
@@ -195,7 +222,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261031-102 | （本 cycle 单提交；哈希见 CI 台账） | 单元 154 passed（域 19 / sqlite 13 / 改稿 8 / 投稿 11 / 期刊 9 / 协议 39 / 手稿装配与编辑等 32）；产品入口 e2e 15 passed（真容器实验）；全量 m0 见 §验证与证据 | （见 CI 台账） | `FakeArtifactStore.mark` 重建白名单丢 `supersedes`（判据先红后绿）；GOAL-101 残余节 W 编号乱序（charter 读取器拒读，纯重排修复）；上一轮 tip 链两行台账欠账（`3cd63a4f` / `66177f39`）按 API 读数补记 | W-1…W-6 逐条处置（见残余节）；期刊选择的语义匹配不可判（U-1） | 判词内容驱动改稿（复检域下一级）；叙述质量强口径（需先论证可判性）；Postgres 行往返在无 DSN 环境仍只跑文件面判据 |
+| 1 | PLAN-20261031-102 | `9a313685` →（修复与见证提交见 CI 台账） | 单元 154 passed（域 19 / sqlite 13 / 改稿 8 / 投稿 11 / 期刊 9 / 协议 39 / 手稿装配与编辑等 32）；产品入口 e2e 15 passed（真容器实验）；全量 m0 见 §验证与证据 | （见 CI 台账） | `FakeArtifactStore.mark` 重建白名单丢 `supersedes`（判据先红后绿）；GOAL-101 残余节 W 编号乱序（charter 读取器拒读，纯重排修复）；上一轮 tip 链两行台账欠账（`3cd63a4f` / `66177f39`）按 API 读数补记 | W-1…W-6 逐条处置（见残余节）；期刊选择的语义匹配不可判（U-1） | 判词内容驱动改稿（复检域下一级）；叙述质量强口径（需先论证可判性）；Postgres 行往返在无 DSN 环境仍只跑文件面判据 |
 
 ## 状态历史
 

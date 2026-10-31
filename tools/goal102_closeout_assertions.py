@@ -1,20 +1,12 @@
 #!/usr/bin/env python3
 """GOAL-20261031-102 的本轮特有断言（产品面 + 记录面）。
 
-与 `tools/goal023…101_closeout_assertions.py` 同形：只写**本 GOAL 特有**的断言，公共面
-（受保护判据 / 规模门 / 产品根 / m0 条数 / 两树入口 / 规范页）由
-`closeout_recheck_assertions.standard_verdicts` 判，一行不重写。
-
-**五组**：
-1. **supersedes 面**：域字段 + 链校验在树、两侧序列化都带上父指针、migration 在树；
-2. **改稿闭环**：装配模块与引用判据在树、附加链顺序钉住（改稿 → 投稿包 → 应答信）、
-   合约声明 `revised_manuscript` 与引用义务、旧形状兼容的判据在树；
-3. **投稿包**：装配/渲染/映射三模块在树、27 角色闭集、五件制品名、十一相协议与
-   七产物报告相、两份判据文件的用例数下界；
-4. **期刊闭集**：声明面在树且无评分字段、解析/校验面在树、合约镜像；
-5. **登记面**：两个 `tools/` 脚本进 `_VERIFIERS` 与 `IN_SCOPE`（纯收紧：只增不删）。
-
-每条断言都**只读树**（零出网、零时钟、不写盘），与 GOAL-023…101 的断言集同一纪律。
+与 `tools/goal023…101_closeout_assertions.py` 同形：只写**本 GOAL 特有**的断言，公共面由
+`closeout_recheck_assertions.standard_verdicts` 判，一行不重写。五组：**supersedes 面**
+（域字段 + 链校验 + 两侧序列化 + migration）、**改稿闭环**（装配/引用判据 + 附加链顺序 +
+合约义务）、**投稿包**（三模块 + 27 角色闭集 + 五件制品 + 十一相协议 + 用例下界）、
+**期刊闭集**（无评分字段 + 合约镜像）、**登记面**（`_VERIFIERS` 与 `IN_SCOPE`）。
+每条断言都**只读树**（零出网、零时钟、不写盘）。
 """
 
 from __future__ import annotations
@@ -24,7 +16,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-#: supersedes 面的落点（逐条点名；缺一即判红）。
+# 落点常量（逐条点名；缺一即判红；分组注释并入此行）。
 DOMAIN = "packages/domain/artifacts.py"
 SQLITE_STORE = "adapters/sqlite/artifact_store.py"
 SQLITE_DB = "adapters/sqlite/db.py"
@@ -33,28 +25,20 @@ PG_MIGRATION = "adapters/postgres/migrations/030_artifact_supersedes.sql"
 DOMAIN_JUDGE = "tests/domain/test_artifacts.py"
 SQLITE_JUDGE = "tests/adapters/sqlite/test_artifact_store.py"
 PG_JUDGE = "tests/postgres/test_artifact_supersedes_pg.py"
-
-#: 改稿闭环的落点。
 REVISION = "packages/application/run_orchestration/revision_assembly.py"
 REPORT_EXTRAS = "packages/application/run_orchestration/report_extras.py"
 MANUSCRIPT_ASSEMBLY = "packages/application/run_orchestration/manuscript_assembly.py"
 CONTRACTS = "examples/contracts/task_contracts.yaml"
 REVISION_JUDGE = "tests/application/test_revision_closure.py"
-
-#: 投稿包的落点。
 SUBMISSION = "packages/application/run_orchestration/submission_assembly.py"
 RENDERERS = "packages/application/run_orchestration/submission_renderers.py"
 CREDIT_ROLES = "packages/application/deliverable/credit_roles.py"
 PROTOCOL = "examples/protocols/direction_to_manuscript_v1.yaml"
 SUBMISSION_JUDGE = "tests/application/test_submission_package.py"
 E2E_JUDGE = "tests/e2e/test_goal102_product_path.py"
-
-#: 期刊闭集的落点。
 JOURNALS = "examples/config/journals.yaml"
 JOURNAL_SELECTION = "packages/application/deliverable/journal_selection.py"
 JOURNAL_JUDGE = "tests/application/test_journal_selection.py"
-
-#: 登记面（两份清单判据）。
 VERIFIER_REGISTRY = "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py"
 GATE_SCOPE = "tests/tooling/test_tooling_scripts_meet_product_gates.py"
 
@@ -144,9 +128,15 @@ def _count_defs(source: str) -> int:
 
 def supersedes_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-01：域字段 + 链校验 + 两侧序列化 + migration，各点其名。"""
+    return [
+        *_supersedes_domain_verdicts(root, toolbox),
+        *_supersedes_serialization_verdicts(root, toolbox),
+    ]
+
+
+def _supersedes_domain_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-01 的域面：字段 / 链校验 / 三类点名 / digest 仍是内容寻址。"""
     domain = _text(root, DOMAIN)
-    sqlite_store = _text(root, SQLITE_STORE)
-    pg_store = _text(root, PG_STORE)
     return [
         toolbox.verdict(
             "domain-declares-supersedes-field",
@@ -166,6 +156,19 @@ def supersedes_verdicts(root: Path, toolbox: Any) -> list[Any]:
             ),
             "链校验必须逐条点名：成环 / 跨 run / 目标缺席",
         ),
+        toolbox.verdict(
+            "digest-is-content-addressed-only",
+            "父指针" in _text(root, DOMAIN) or "supersedes 是元数据" in _text(root, DOMAIN),
+            "域注释必须写明父指针不进内容哈希（digest 仍是内容寻址）",
+        ),
+    ]
+
+
+def _supersedes_serialization_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-01 的序列化面：SQLite 列 / 两侧存储 / migration / 三份判据文件。"""
+    sqlite_store = _text(root, SQLITE_STORE)
+    pg_store = _text(root, PG_STORE)
+    return [
         toolbox.verdict(
             "sqlite-schema-carries-the-column",
             "supersedes TEXT" in _text(root, SQLITE_DB),
@@ -189,11 +192,6 @@ def supersedes_verdicts(root: Path, toolbox: Any) -> list[Any]:
             f"PG 存储面带 supersedes 的点少于 4：{pg_store.count('supersedes')}",
         ),
         toolbox.verdict(
-            "digest-is-content-addressed-only",
-            "父指针" in _text(root, DOMAIN) or "supersedes 是元数据" in _text(root, DOMAIN),
-            "域注释必须写明父指针不进内容哈希（digest 仍是内容寻址）",
-        ),
-        toolbox.verdict(
             "domain-judge-present", toolbox.tree(root, DOMAIN_JUDGE).is_file(), DOMAIN_JUDGE
         ),
         toolbox.verdict(
@@ -205,12 +203,16 @@ def supersedes_verdicts(root: Path, toolbox: Any) -> list[Any]:
 
 def revision_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-02：装配模块 + 引用判据 + 附加链顺序 + 合约义务 + 判据下界。"""
+    return [
+        *_revision_module_verdicts(root, toolbox),
+        *_revision_contract_verdicts(root, toolbox),
+    ]
+
+
+def _revision_module_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-02 的模块面：入口函数 / 常量 / 附加链顺序 / 判据下界。"""
     revision = _text(root, REVISION)
     extras = _text(root, REPORT_EXTRAS)
-    contracts = _text(root, CONTRACTS)
-    author_block = contracts.split("  author_response:", 1)[1].split("\n  submission_package:", 1)[
-        0
-    ]
     order_ok = (
         extras.index("revision_closure_step(")
         < extras.index("maybe_assemble_submission(")
@@ -244,11 +246,6 @@ def revision_verdicts(root: Path, toolbox: Any) -> list[Any]:
             "附加链顺序必须是 改稿 → 投稿包 → 应答信（引用判据要指着 v2 在场）",
         ),
         toolbox.verdict(
-            "contract-demands-the-revised-block",
-            "revised_manuscript" in author_block and "manuscript_v2.md" in author_block,
-            "author_response 合约必须声明第二块 revised_manuscript 与 v2 引用义务",
-        ),
-        toolbox.verdict(
             "manuscript-assembly-hook-in-place",
             "assemble_report_extras" in _text(root, MANUSCRIPT_ASSEMBLY),
             "手稿装配面没有接附加链（改稿闭环只活在测试里 = 死代码）",
@@ -261,15 +258,35 @@ def revision_verdicts(root: Path, toolbox: Any) -> list[Any]:
     ]
 
 
+def _revision_contract_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-02 的合约面：author_response 必须声明改稿块与引用义务。"""
+    contracts = _text(root, CONTRACTS)
+    author_block = contracts.split("  author_response:", 1)[1].split("\n  submission_package:", 1)[
+        0
+    ]
+    return [
+        toolbox.verdict(
+            "contract-demands-the-revised-block",
+            "revised_manuscript" in author_block and "manuscript_v2.md" in author_block,
+            "author_response 合约必须声明第二块 revised_manuscript 与 v2 引用义务",
+        ),
+    ]
+
+
 def submission_verdicts(root: Path, toolbox: Any) -> list[Any]:
     """EC-03：三模块 + 27 角色闭集 + 五件制品 + 十一相协议 + 判据下界。"""
+    return [
+        *_submission_modules_verdicts(root, toolbox),
+        *_submission_declared_verdicts(root, toolbox),
+    ]
+
+
+def _submission_modules_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-03 的模块面：装配/渲染入口、27 角色闭集、五件制品名。"""
     submission = _text(root, SUBMISSION)
     renderers = _text(root, RENDERERS)
     credit = _text(root, CREDIT_ROLES)
-    protocol = _text(root, PROTOCOL)
     roles = _assign_names(credit, "ROLE_CREDIT")
-    report_outputs_ok = all(name in protocol for name in (*FIVE_ARTIFACTS, "manuscript.md"))
-    submission_contract = contracts_block(_text(root, CONTRACTS), "submission_package")
     return [
         toolbox.verdict(
             "submission-trio-in-tree",
@@ -290,6 +307,15 @@ def submission_verdicts(root: Path, toolbox: Any) -> list[Any]:
             all(name in renderers for name in FIVE_ARTIFACTS),
             "五件制品名必须在渲染面逐字声明",
         ),
+    ]
+
+
+def _submission_declared_verdicts(root: Path, toolbox: Any) -> list[Any]:
+    """EC-03 的声明面：十一相协议、七产物报告相、合约、两份判据下界。"""
+    protocol = _text(root, PROTOCOL)
+    report_outputs_ok = all(name in protocol for name in (*FIVE_ARTIFACTS, "manuscript.md"))
+    submission_contract = contracts_block(_text(root, CONTRACTS), "submission_package")
+    return [
         toolbox.verdict(
             "protocol-declares-the-submission-phase",
             "  - id: submission\n" in protocol and "task_contract: submission_package" in protocol,
@@ -422,6 +448,3 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
         *journal_verdicts(root, toolbox),
         *registration_verdicts(root, toolbox),
     ]
-
-
-__all__ = ["assertion_verdicts"]

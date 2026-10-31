@@ -1,5 +1,5 @@
 {
-  "exit_code": 0,
+  "exit_code": 1,
   "fingerprint_after": {
     "files": [
       {
@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "f377b1c1ff1a464c49a3a9f08d50deddda105b98"
+        "sha256": "aba0c88831812f09c0a6e6bac7bc9b3a4f35312d"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1359,8 +1359,12 @@
         "sha256": "614f88534ee120c4239c3a6662ae3d2c8614831c"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261101-235-reconstructing-artifacts-drops-fields.md",
+        "sha256": "286e7f37a67eb7e75ecdf89c4ea23fe83a3cff54"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "3fa1204b9941d2a31f110529f5051a1165f4d380"
+        "sha256": "44d50fcaa803ec5fa882112cf46cb3b3cafffaaf"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1796,11 +1800,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261030-101-narrative-quality-and-verifier-coverage.md",
-        "sha256": "61e273cdeac701105b6276afb334b11bb4d6f12b"
+        "sha256": "f13e5be7bccaaa0eff0bd9c2778c7505d38dac6a"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261031-102-submission-package-and-revision-closure.md",
+        "sha256": "3cabca31e220d068afd0ccf520962ab1102d4fa7"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "455cec36fd1a97d15483cafe147bed13e9e24b05"
+        "sha256": "396c8ff251b4e8c99e7620f553b20c03b92363c3"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -4259,6 +4267,10 @@
         "sha256": "8bf1afbc99fe598c1ddbff7b77bb6aff6b1199f7"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261031-102-submission-package-and-revision-closure.md",
+        "sha256": "2889121436892e9c570341cde542acac0ecbfe3d"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5659,6 +5671,10 @@
         "sha256": "7d068a6cdc6c980cadfc488748ceff64d86eb2c7"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261031-102-submission-package-and-revision-closure.md",
+        "sha256": "6a02b37bd96cf70d958c29454e29c247b592afef"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -6056,7 +6072,7 @@
       },
       {
         "path": "adapters/fakes/artifact_store.py",
-        "sha256": "052329dd4052aaa4acd6286c0b73c7521dc79653"
+        "sha256": "6773522d823f5ff0c24d612f4d0261ab09a5630a"
       },
       {
         "path": "adapters/fakes/base.py",
@@ -6288,7 +6304,7 @@
       },
       {
         "path": "adapters/postgres/artifact_store.py",
-        "sha256": "cb8ed35f62e8a7053e922daecc7df6d6e95b4c38"
+        "sha256": "99162335886016ab28d42aae62c3db966ef2941b"
       },
       {
         "path": "adapters/postgres/base.py",
@@ -6449,6 +6465,10 @@
       {
         "path": "adapters/postgres/migrations/029_review_finding_phase_id.sql",
         "sha256": "ccef5b984af11677d54e4e51ba253fc6dfb8bbc1"
+      },
+      {
+        "path": "adapters/postgres/migrations/030_artifact_supersedes.sql",
+        "sha256": "e8316996df75e4556c9b23c24e34a07231381222"
       },
       {
         "path": "adapters/postgres/outbox.py",
@@ -6620,7 +6640,7 @@
       },
       {
         "path": "adapters/sqlite/artifact_store.py",
-        "sha256": "ed61a72c43d019b9ca821da7858eda325fc24028"
+        "sha256": "b5c60b8bd8df7119fdceda62d186d9900fa0b149"
       },
       {
         "path": "adapters/sqlite/base.py",
@@ -6648,7 +6668,7 @@
       },
       {
         "path": "adapters/sqlite/db.py",
-        "sha256": "6c0d5fa4f830e6a6f5b2279814c0d9176786c578"
+        "sha256": "e4a953edbd9f56c8471bb330d512f2a9465e6df1"
       },
       {
         "path": "adapters/sqlite/endpoint_store.py",
@@ -12731,6 +12751,10 @@
         "sha256": "2f701a72acd9aea9b4adbc7d74795e347ce99afe"
       },
       {
+        "path": "examples/config/journals.yaml",
+        "sha256": "948fbf6550d2537067b05149f28654c06b680f08"
+      },
+      {
         "path": "examples/config/llm_endpoints.yaml",
         "sha256": "6ebd506e6fca8cd7280eb7dcbe239ca7a0bc1de0"
       },
@@ -12808,7 +12832,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "2814dd0a9069386a0da8569c47b11d0f3ee57d95"
+        "sha256": "a50b40fc4c16ab6e0ff18fc743538b4b41ed87c3"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -12888,7 +12912,7 @@
       },
       {
         "path": "examples/protocols/direction_to_manuscript_v1.yaml",
-        "sha256": "3caa9b89cbbb82bba1fadb4277ae470441427efa"
+        "sha256": "e3f681edf99478bea01ab0a4482607acb46d6275"
       },
       {
         "path": "examples/protocols/direction_to_question_v1.yaml",
@@ -13051,8 +13075,16 @@
         "sha256": "4606d321985fa5a406cbbfe39dcf94dbcfaef6fd"
       },
       {
+        "path": "packages/application/deliverable/credit_roles.py",
+        "sha256": "a8e10ac20677cf4ab27b4b670be45e4da2c52270"
+      },
+      {
         "path": "packages/application/deliverable/editorial_decision.py",
         "sha256": "59a6173c7f191ae797f646e672e7e826a4d5e912"
+      },
+      {
+        "path": "packages/application/deliverable/journal_selection.py",
+        "sha256": "5597070d526b1d15cdc5d1388b35e0ab71b6342a"
       },
       {
         "path": "packages/application/deliverable/manuscript.py",
@@ -13740,7 +13772,7 @@
       },
       {
         "path": "packages/application/run_orchestration/manuscript_assembly.py",
-        "sha256": "193e217eb51df5bab844b8d540609bd8dc7dca1a"
+        "sha256": "8a9e2eb460a386a22f0c3cb48114fde4dbb92eaa"
       },
       {
         "path": "packages/application/run_orchestration/manuscript_facts.py",
@@ -13819,6 +13851,10 @@
         "sha256": "f075f77056d7f4427dced795396e375c55e45614"
       },
       {
+        "path": "packages/application/run_orchestration/report_extras.py",
+        "sha256": "376d5f1ea89ec8108ceed3ecb8a0aaa408d8639b"
+      },
+      {
         "path": "packages/application/run_orchestration/report_facts.py",
         "sha256": "bb696d36036c78b428b46d9d0fe5f3839985bed5"
       },
@@ -13867,6 +13903,10 @@
         "sha256": "698389655ce4081592465b6368709514c84cc493"
       },
       {
+        "path": "packages/application/run_orchestration/revision_assembly.py",
+        "sha256": "23b95119cdbd2e88eb6bebde6d02b5a236d6b86c"
+      },
+      {
         "path": "packages/application/run_orchestration/round_loop.py",
         "sha256": "f43ea591484f11f6e99fd1886db1d3ef0714840c"
       },
@@ -13913,6 +13953,14 @@
       {
         "path": "packages/application/run_orchestration/snapshot_migration.py",
         "sha256": "b2a01f5f7f86012d844aa327197162b053429211"
+      },
+      {
+        "path": "packages/application/run_orchestration/submission_assembly.py",
+        "sha256": "13f64a5248c2cc2cf969b63fe68dd706d58ffd29"
+      },
+      {
+        "path": "packages/application/run_orchestration/submission_renderers.py",
+        "sha256": "082c243112725f565b9ee94efb45f83e4a24ac8f"
       },
       {
         "path": "packages/application/run_orchestration/task_dispatch.py",
@@ -13992,7 +14040,7 @@
       },
       {
         "path": "packages/domain/artifacts.py",
-        "sha256": "a00dcf10251390cfffe942cfb5dcf1b94a11e9c0"
+        "sha256": "9bd1afd6fc13e87cb025b724a3753e0b00f578ee"
       },
       {
         "path": "packages/domain/budget.py",
@@ -15068,7 +15116,7 @@
       },
       {
         "path": "tests/adapters/sqlite/test_artifact_store.py",
-        "sha256": "dc6a6c35c3bf52042b268bb6608fbfb49abbe7fa"
+        "sha256": "285eed5d6594c7db50ee0b8d599e87d58b8de2eb"
       },
       {
         "path": "tests/adapters/sqlite/test_dispatch_ownership.py",
@@ -16091,6 +16139,10 @@
         "sha256": "a38173bdd339c41a4f337a19855931847d785159"
       },
       {
+        "path": "tests/application/test_journal_selection.py",
+        "sha256": "af6090b183ba662ea8617f6fddc6a1026894930e"
+      },
+      {
         "path": "tests/application/test_m12_clean_run.py",
         "sha256": "4ea4a2652fa2e6a65cda648b01ba2398707e53ba"
       },
@@ -16235,6 +16287,10 @@
         "sha256": "1cb62626de30041a1383d1f3499d3f16ce62577f"
       },
       {
+        "path": "tests/application/test_revision_closure.py",
+        "sha256": "68a48d89704f8c4402f4f66ac28f8356e3a26928"
+      },
+      {
         "path": "tests/application/test_run_probe.py",
         "sha256": "d6f121b34b8be70a5093890913adffd0f030e5d7"
       },
@@ -16245,6 +16301,10 @@
       {
         "path": "tests/application/test_snapshot_tree.py",
         "sha256": "57bd3da1ee1f96699cd129da45f7b340309d8cd9"
+      },
+      {
+        "path": "tests/application/test_submission_package.py",
+        "sha256": "590aa8969d2034bf399471e8545a55c167b9d8b4"
       },
       {
         "path": "tests/application/test_tool_plane.py",
@@ -16596,7 +16656,7 @@
       },
       {
         "path": "tests/contracts/test_direction_to_manuscript_protocol.py",
-        "sha256": "330ca1c43fbebaacb9be349d8dad26b03e96118a"
+        "sha256": "2800955d4f6ef12b1efe9831a7a1554159950243"
       },
       {
         "path": "tests/contracts/test_direction_to_question_protocol.py",
@@ -16796,7 +16856,7 @@
       },
       {
         "path": "tests/domain/test_artifacts.py",
-        "sha256": "432790d57b5e756d31b5f0ff4ee97a435177c604"
+        "sha256": "cc2dc3fb1e3191a547df51807e6f25efa88b50e9"
       },
       {
         "path": "tests/domain/test_bootstrap.py",
@@ -16940,7 +17000,7 @@
       },
       {
         "path": "tests/e2e/direction_to_manuscript_support.py",
-        "sha256": "5a1cd6d5f47303f778324adc708ee164d7f8b363"
+        "sha256": "285b15726e288b7e883ed93d18ec462c00f91b64"
       },
       {
         "path": "tests/e2e/direction_to_report_live_support.py",
@@ -16969,6 +17029,10 @@
       {
         "path": "tests/e2e/live_switch_support.py",
         "sha256": "229f02b0dc5c3b551bfe02505b3a78cdeb7e39ae"
+      },
+      {
+        "path": "tests/e2e/manuscript_replies.py",
+        "sha256": "aef581cb7671d9585ff1210f124ae3831fe9158e"
       },
       {
         "path": "tests/e2e/multi_round_loop_support.py",
@@ -17032,7 +17096,7 @@
       },
       {
         "path": "tests/e2e/test_direction_to_manuscript_product_path.py",
-        "sha256": "48f9fad7aa21a1fbc486ddeb9b3e733bdcdcd119"
+        "sha256": "c5229683c093854e6c8bfdeea158dfc010a7f803"
       },
       {
         "path": "tests/e2e/test_direction_to_question_to_retrieval.py",
@@ -17109,6 +17173,10 @@
       {
         "path": "tests/e2e/test_fault_matrix.py",
         "sha256": "80e002f43f8b9c3da7ea55edfad85a2d4bffec39"
+      },
+      {
+        "path": "tests/e2e/test_goal102_product_path.py",
+        "sha256": "d6a8e49d78f62c0df99df894a76f103924e175d1"
       },
       {
         "path": "tests/e2e/test_granted_read_capabilities_used_in_a_run.py",
@@ -17603,6 +17671,10 @@
         "sha256": "fa5f53d8878b6f87c460d6d574e4e41fd1082b46"
       },
       {
+        "path": "tests/postgres/test_artifact_supersedes_pg.py",
+        "sha256": "0867c620febfa5a0387d63405ea53aabc3450f5c"
+      },
+      {
         "path": "tests/postgres/test_claim_concurrency_pg.py",
         "sha256": "8945e7643c7fdadba0283b931be7b4759949ac30"
       },
@@ -17760,7 +17832,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "0250a61d9107767e6bb1932b16d315fcc0b315d9"
+        "sha256": "cfe99156a5a082729d4a60e28365c7e966ea4719"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -17892,7 +17964,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "e52ebd1ce083f438a1de5543983710ba8ba30f7e"
+        "sha256": "2deabc19729bc634fe340c4fc03e1e9a01383c3c"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -18448,7 +18520,7 @@
       },
       {
         "path": "tools/goal099_closeout_assertions.py",
-        "sha256": "20df9cc822c38955886c534f21f2b883da2abbac"
+        "sha256": "fe55f543f81298342e73bcc0caff84bbfe540423"
       },
       {
         "path": "tools/goal100_closeout_assertions.py",
@@ -18457,6 +18529,10 @@
       {
         "path": "tools/goal101_closeout_assertions.py",
         "sha256": "108516a9d63b6cdd727921cdfe16e968e0a231be"
+      },
+      {
+        "path": "tools/goal102_closeout_assertions.py",
+        "sha256": "a9ced4e5d2b173d1bc286fe2320cfa6c8532a9c3"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -18903,11 +18979,15 @@
         "sha256": "f725d605d7762006572e4b6b4910627258a58052"
       },
       {
+        "path": "tools/verify_goal102_closeout.py",
+        "sha256": "d909fb2d60f9cc0e8f7ea1a7aa4ac9339215ce3b"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "3cd63a4f2207ca970f9c2e821edcf398f6e88058"
+    "head": "0fa32e5091b18c01e5b94b4cccfaf3049d80c87e"
   },
   "fingerprint_before": {
     "files": [
@@ -19329,7 +19409,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "f377b1c1ff1a464c49a3a9f08d50deddda105b98"
+        "sha256": "aba0c88831812f09c0a6e6bac7bc9b3a4f35312d"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -20268,8 +20348,12 @@
         "sha256": "614f88534ee120c4239c3a6662ae3d2c8614831c"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261101-235-reconstructing-artifacts-drops-fields.md",
+        "sha256": "286e7f37a67eb7e75ecdf89c4ea23fe83a3cff54"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "3fa1204b9941d2a31f110529f5051a1165f4d380"
+        "sha256": "44d50fcaa803ec5fa882112cf46cb3b3cafffaaf"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -20705,11 +20789,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261030-101-narrative-quality-and-verifier-coverage.md",
-        "sha256": "61e273cdeac701105b6276afb334b11bb4d6f12b"
+        "sha256": "f13e5be7bccaaa0eff0bd9c2778c7505d38dac6a"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261031-102-submission-package-and-revision-closure.md",
+        "sha256": "3cabca31e220d068afd0ccf520962ab1102d4fa7"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "455cec36fd1a97d15483cafe147bed13e9e24b05"
+        "sha256": "396c8ff251b4e8c99e7620f553b20c03b92363c3"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -23168,6 +23256,10 @@
         "sha256": "8bf1afbc99fe598c1ddbff7b77bb6aff6b1199f7"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261031-102-submission-package-and-revision-closure.md",
+        "sha256": "2889121436892e9c570341cde542acac0ecbfe3d"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -24568,6 +24660,10 @@
         "sha256": "7d068a6cdc6c980cadfc488748ceff64d86eb2c7"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261031-102-submission-package-and-revision-closure.md",
+        "sha256": "6a02b37bd96cf70d958c29454e29c247b592afef"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -24965,7 +25061,7 @@
       },
       {
         "path": "adapters/fakes/artifact_store.py",
-        "sha256": "052329dd4052aaa4acd6286c0b73c7521dc79653"
+        "sha256": "6773522d823f5ff0c24d612f4d0261ab09a5630a"
       },
       {
         "path": "adapters/fakes/base.py",
@@ -25197,7 +25293,7 @@
       },
       {
         "path": "adapters/postgres/artifact_store.py",
-        "sha256": "cb8ed35f62e8a7053e922daecc7df6d6e95b4c38"
+        "sha256": "99162335886016ab28d42aae62c3db966ef2941b"
       },
       {
         "path": "adapters/postgres/base.py",
@@ -25358,6 +25454,10 @@
       {
         "path": "adapters/postgres/migrations/029_review_finding_phase_id.sql",
         "sha256": "ccef5b984af11677d54e4e51ba253fc6dfb8bbc1"
+      },
+      {
+        "path": "adapters/postgres/migrations/030_artifact_supersedes.sql",
+        "sha256": "e8316996df75e4556c9b23c24e34a07231381222"
       },
       {
         "path": "adapters/postgres/outbox.py",
@@ -25529,7 +25629,7 @@
       },
       {
         "path": "adapters/sqlite/artifact_store.py",
-        "sha256": "ed61a72c43d019b9ca821da7858eda325fc24028"
+        "sha256": "b5c60b8bd8df7119fdceda62d186d9900fa0b149"
       },
       {
         "path": "adapters/sqlite/base.py",
@@ -25557,7 +25657,7 @@
       },
       {
         "path": "adapters/sqlite/db.py",
-        "sha256": "6c0d5fa4f830e6a6f5b2279814c0d9176786c578"
+        "sha256": "e4a953edbd9f56c8471bb330d512f2a9465e6df1"
       },
       {
         "path": "adapters/sqlite/endpoint_store.py",
@@ -31640,6 +31740,10 @@
         "sha256": "2f701a72acd9aea9b4adbc7d74795e347ce99afe"
       },
       {
+        "path": "examples/config/journals.yaml",
+        "sha256": "948fbf6550d2537067b05149f28654c06b680f08"
+      },
+      {
         "path": "examples/config/llm_endpoints.yaml",
         "sha256": "6ebd506e6fca8cd7280eb7dcbe239ca7a0bc1de0"
       },
@@ -31717,7 +31821,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "2814dd0a9069386a0da8569c47b11d0f3ee57d95"
+        "sha256": "a50b40fc4c16ab6e0ff18fc743538b4b41ed87c3"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -31797,7 +31901,7 @@
       },
       {
         "path": "examples/protocols/direction_to_manuscript_v1.yaml",
-        "sha256": "3caa9b89cbbb82bba1fadb4277ae470441427efa"
+        "sha256": "e3f681edf99478bea01ab0a4482607acb46d6275"
       },
       {
         "path": "examples/protocols/direction_to_question_v1.yaml",
@@ -31960,8 +32064,16 @@
         "sha256": "4606d321985fa5a406cbbfe39dcf94dbcfaef6fd"
       },
       {
+        "path": "packages/application/deliverable/credit_roles.py",
+        "sha256": "a8e10ac20677cf4ab27b4b670be45e4da2c52270"
+      },
+      {
         "path": "packages/application/deliverable/editorial_decision.py",
         "sha256": "59a6173c7f191ae797f646e672e7e826a4d5e912"
+      },
+      {
+        "path": "packages/application/deliverable/journal_selection.py",
+        "sha256": "5597070d526b1d15cdc5d1388b35e0ab71b6342a"
       },
       {
         "path": "packages/application/deliverable/manuscript.py",
@@ -32649,7 +32761,7 @@
       },
       {
         "path": "packages/application/run_orchestration/manuscript_assembly.py",
-        "sha256": "193e217eb51df5bab844b8d540609bd8dc7dca1a"
+        "sha256": "8a9e2eb460a386a22f0c3cb48114fde4dbb92eaa"
       },
       {
         "path": "packages/application/run_orchestration/manuscript_facts.py",
@@ -32728,6 +32840,10 @@
         "sha256": "f075f77056d7f4427dced795396e375c55e45614"
       },
       {
+        "path": "packages/application/run_orchestration/report_extras.py",
+        "sha256": "376d5f1ea89ec8108ceed3ecb8a0aaa408d8639b"
+      },
+      {
         "path": "packages/application/run_orchestration/report_facts.py",
         "sha256": "bb696d36036c78b428b46d9d0fe5f3839985bed5"
       },
@@ -32776,6 +32892,10 @@
         "sha256": "698389655ce4081592465b6368709514c84cc493"
       },
       {
+        "path": "packages/application/run_orchestration/revision_assembly.py",
+        "sha256": "23b95119cdbd2e88eb6bebde6d02b5a236d6b86c"
+      },
+      {
         "path": "packages/application/run_orchestration/round_loop.py",
         "sha256": "f43ea591484f11f6e99fd1886db1d3ef0714840c"
       },
@@ -32822,6 +32942,14 @@
       {
         "path": "packages/application/run_orchestration/snapshot_migration.py",
         "sha256": "b2a01f5f7f86012d844aa327197162b053429211"
+      },
+      {
+        "path": "packages/application/run_orchestration/submission_assembly.py",
+        "sha256": "13f64a5248c2cc2cf969b63fe68dd706d58ffd29"
+      },
+      {
+        "path": "packages/application/run_orchestration/submission_renderers.py",
+        "sha256": "082c243112725f565b9ee94efb45f83e4a24ac8f"
       },
       {
         "path": "packages/application/run_orchestration/task_dispatch.py",
@@ -32901,7 +33029,7 @@
       },
       {
         "path": "packages/domain/artifacts.py",
-        "sha256": "a00dcf10251390cfffe942cfb5dcf1b94a11e9c0"
+        "sha256": "9bd1afd6fc13e87cb025b724a3753e0b00f578ee"
       },
       {
         "path": "packages/domain/budget.py",
@@ -33977,7 +34105,7 @@
       },
       {
         "path": "tests/adapters/sqlite/test_artifact_store.py",
-        "sha256": "dc6a6c35c3bf52042b268bb6608fbfb49abbe7fa"
+        "sha256": "285eed5d6594c7db50ee0b8d599e87d58b8de2eb"
       },
       {
         "path": "tests/adapters/sqlite/test_dispatch_ownership.py",
@@ -35000,6 +35128,10 @@
         "sha256": "a38173bdd339c41a4f337a19855931847d785159"
       },
       {
+        "path": "tests/application/test_journal_selection.py",
+        "sha256": "af6090b183ba662ea8617f6fddc6a1026894930e"
+      },
+      {
         "path": "tests/application/test_m12_clean_run.py",
         "sha256": "4ea4a2652fa2e6a65cda648b01ba2398707e53ba"
       },
@@ -35144,6 +35276,10 @@
         "sha256": "1cb62626de30041a1383d1f3499d3f16ce62577f"
       },
       {
+        "path": "tests/application/test_revision_closure.py",
+        "sha256": "68a48d89704f8c4402f4f66ac28f8356e3a26928"
+      },
+      {
         "path": "tests/application/test_run_probe.py",
         "sha256": "d6f121b34b8be70a5093890913adffd0f030e5d7"
       },
@@ -35154,6 +35290,10 @@
       {
         "path": "tests/application/test_snapshot_tree.py",
         "sha256": "57bd3da1ee1f96699cd129da45f7b340309d8cd9"
+      },
+      {
+        "path": "tests/application/test_submission_package.py",
+        "sha256": "590aa8969d2034bf399471e8545a55c167b9d8b4"
       },
       {
         "path": "tests/application/test_tool_plane.py",
@@ -35505,7 +35645,7 @@
       },
       {
         "path": "tests/contracts/test_direction_to_manuscript_protocol.py",
-        "sha256": "330ca1c43fbebaacb9be349d8dad26b03e96118a"
+        "sha256": "2800955d4f6ef12b1efe9831a7a1554159950243"
       },
       {
         "path": "tests/contracts/test_direction_to_question_protocol.py",
@@ -35705,7 +35845,7 @@
       },
       {
         "path": "tests/domain/test_artifacts.py",
-        "sha256": "432790d57b5e756d31b5f0ff4ee97a435177c604"
+        "sha256": "cc2dc3fb1e3191a547df51807e6f25efa88b50e9"
       },
       {
         "path": "tests/domain/test_bootstrap.py",
@@ -35849,7 +35989,7 @@
       },
       {
         "path": "tests/e2e/direction_to_manuscript_support.py",
-        "sha256": "5a1cd6d5f47303f778324adc708ee164d7f8b363"
+        "sha256": "285b15726e288b7e883ed93d18ec462c00f91b64"
       },
       {
         "path": "tests/e2e/direction_to_report_live_support.py",
@@ -35878,6 +36018,10 @@
       {
         "path": "tests/e2e/live_switch_support.py",
         "sha256": "229f02b0dc5c3b551bfe02505b3a78cdeb7e39ae"
+      },
+      {
+        "path": "tests/e2e/manuscript_replies.py",
+        "sha256": "aef581cb7671d9585ff1210f124ae3831fe9158e"
       },
       {
         "path": "tests/e2e/multi_round_loop_support.py",
@@ -35941,7 +36085,7 @@
       },
       {
         "path": "tests/e2e/test_direction_to_manuscript_product_path.py",
-        "sha256": "48f9fad7aa21a1fbc486ddeb9b3e733bdcdcd119"
+        "sha256": "c5229683c093854e6c8bfdeea158dfc010a7f803"
       },
       {
         "path": "tests/e2e/test_direction_to_question_to_retrieval.py",
@@ -36018,6 +36162,10 @@
       {
         "path": "tests/e2e/test_fault_matrix.py",
         "sha256": "80e002f43f8b9c3da7ea55edfad85a2d4bffec39"
+      },
+      {
+        "path": "tests/e2e/test_goal102_product_path.py",
+        "sha256": "d6a8e49d78f62c0df99df894a76f103924e175d1"
       },
       {
         "path": "tests/e2e/test_granted_read_capabilities_used_in_a_run.py",
@@ -36512,6 +36660,10 @@
         "sha256": "fa5f53d8878b6f87c460d6d574e4e41fd1082b46"
       },
       {
+        "path": "tests/postgres/test_artifact_supersedes_pg.py",
+        "sha256": "0867c620febfa5a0387d63405ea53aabc3450f5c"
+      },
+      {
         "path": "tests/postgres/test_claim_concurrency_pg.py",
         "sha256": "8945e7643c7fdadba0283b931be7b4759949ac30"
       },
@@ -36669,7 +36821,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "0250a61d9107767e6bb1932b16d315fcc0b315d9"
+        "sha256": "cfe99156a5a082729d4a60e28365c7e966ea4719"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -36801,7 +36953,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "e52ebd1ce083f438a1de5543983710ba8ba30f7e"
+        "sha256": "2deabc19729bc634fe340c4fc03e1e9a01383c3c"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -37357,7 +37509,7 @@
       },
       {
         "path": "tools/goal099_closeout_assertions.py",
-        "sha256": "20df9cc822c38955886c534f21f2b883da2abbac"
+        "sha256": "fe55f543f81298342e73bcc0caff84bbfe540423"
       },
       {
         "path": "tools/goal100_closeout_assertions.py",
@@ -37366,6 +37518,10 @@
       {
         "path": "tools/goal101_closeout_assertions.py",
         "sha256": "108516a9d63b6cdd727921cdfe16e968e0a231be"
+      },
+      {
+        "path": "tools/goal102_closeout_assertions.py",
+        "sha256": "a9ced4e5d2b173d1bc286fe2320cfa6c8532a9c3"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -37812,15 +37968,19 @@
         "sha256": "f725d605d7762006572e4b6b4910627258a58052"
       },
       {
+        "path": "tools/verify_goal102_closeout.py",
+        "sha256": "d909fb2d60f9cc0e8f7ea1a7aa4ac9339215ce3b"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "3cd63a4f2207ca970f9c2e821edcf398f6e88058"
+    "head": "0fa32e5091b18c01e5b94b4cccfaf3049d80c87e"
   },
-  "green": true,
+  "green": false,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "3cd63a4f2207ca970f9c2e821edcf398f6e88058",
-  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
+  "ran_at_head": "0fa32e5091b18c01e5b94b4cccfaf3049d80c87e",
+  "terminal_line": "FAILED: 1 check(s): python/tests=1",
   "tree_changed_during_the_run": false
 }

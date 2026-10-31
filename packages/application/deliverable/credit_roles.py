@@ -16,10 +16,20 @@ from __future__ import annotations
 
 #: CRediT taxonomy 的 14 个术语（**闭集**）。
 CREDIT_TERMS: frozenset[str] = frozenset({
-    "Conceptualization", "Data curation", "Formal analysis", "Funding acquisition",
-    "Investigation", "Methodology", "Project administration", "Resources", "Software",
-    "Supervision", "Validation", "Visualization",
-    "Writing – original draft", "Writing – review & editing",
+    "Conceptualization",
+    "Data curation",
+    "Formal analysis",
+    "Funding acquisition",
+    "Investigation",
+    "Methodology",
+    "Project administration",
+    "Resources",
+    "Software",
+    "Supervision",
+    "Validation",
+    "Visualization",
+    "Writing – original draft",
+    "Writing – review & editing",
 })
 #: 角色分派 → CRediT 术语（**声明映射**；新角色入表前不得进协议）。
 ROLE_CREDIT: dict[str, str] = {
@@ -52,8 +62,8 @@ ROLE_CREDIT: dict[str, str] = {
     "citation_auditor": "Data curation",
 }
 
-assert all(
-    term in CREDIT_TERMS for term in ROLE_CREDIT.values()
-), "ROLE_CREDIT must map into CREDIT_TERMS"
+assert all(term in CREDIT_TERMS for term in ROLE_CREDIT.values()), (
+    "ROLE_CREDIT must map into CREDIT_TERMS"
+)
 
 __all__ = ["CREDIT_TERMS", "ROLE_CREDIT"]

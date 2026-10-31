@@ -248,3 +248,4 @@
 | [MEM-20260810-003](entries/MEM-20260810-003-governance-rules-audit-fix.md) | RETIRED | repository | 0.93 | 2026-11-10 | PLAN-20260810-003 |
 
 这些条目记录历史工程事实；当前行为以 `AGENTS.md`、`.cursor/rules/`、Accepted ADR 和最新通过的复检为准。
+- [MEM-20261101-235](entries/MEM-20261101-235-reconstructing-artifacts-drops-fields.md) — 手写重建 Artifact 的白名单丢字段；frozen dataclass 加字段后逐处补齐 + 存储面判据

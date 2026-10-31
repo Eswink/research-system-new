@@ -38,8 +38,8 @@ import yaml
 from packages.application.deliverable.credit_roles import CREDIT_TERMS, ROLE_CREDIT
 from packages.application.deliverable.manuscript import ManuscriptError
 from packages.application.run_orchestration.submission_renderers import (
-    CONTRIBUTIONS_NAME,
     COI_NAME,
+    CONTRIBUTIONS_NAME,
     COVER_LETTER_NAME,
     DATA_AVAILABILITY_NAME,
     HAS_CONFLICT_FIELD,
@@ -202,8 +202,7 @@ def validate_inventory_digests(listed: Iterable[str], inventory: Iterable[str]) 
     fabricated = sorted({item for item in listed if item not in known})
     if fabricated:
         raise SubmissionError(
-            f"the data availability statement lists digests this run does not carry: "
-            f"{fabricated}"
+            f"the data availability statement lists digests this run does not carry: {fabricated}"
         )
 
 
@@ -284,8 +283,7 @@ def _verify_rendered(
 ) -> None:
     """装完**复读**：判据按存储里的字节判（信装配路径，不如信制品本身）。"""
     contributions = artifacts.get(f"{run_id}:{CONTRIBUTIONS_NAME}").decode("utf-8")
-    listed = re.findall(r"^\| `[^`]+` \| `[^`]+` \| `([^`]+)` \|$",
-                        contributions, re.MULTILINE)
+    listed = re.findall(r"^\| `[^`]+` \| `[^`]+` \| `([^`]+)` \|$", contributions, re.MULTILINE)
     validate_contribution_roles(listed, {role for _phase, role in pairs})
     availability = artifacts.get(f"{run_id}:{DATA_AVAILABILITY_NAME}").decode("utf-8")
     listed_digests = {match.group("digest") for match in _DIGEST_ROW.finditer(availability)}
@@ -300,7 +298,7 @@ def _verify_rendered(
         )
 
 
-def _write_package(
+def _write_package(  # noqa: PLR0913 - 装配面：五件制品共用的写入参数（收成对象只多一个名字）
     artifacts: Any,
     ledger: Any,
     run_id: str,
@@ -310,12 +308,16 @@ def _write_package(
 ) -> SubmissionPackageResult:
     """五件制品逐件写出并登记（顺序固定：信 → 分工 → 冲突 → 数据 → 补充）。"""
     written = [
-        _put(artifacts, ledger, run_id, COVER_LETTER_NAME,
-             cover_letter_md(declared.cover_letter, run_id)),
+        _put(
+            artifacts,
+            ledger,
+            run_id,
+            COVER_LETTER_NAME,
+            cover_letter_md(declared.cover_letter, run_id),
+        ),
         _put(artifacts, ledger, run_id, CONTRIBUTIONS_NAME, contributions_md(pairs, run_id)),
         _put(artifacts, ledger, run_id, COI_NAME, coi_md(_coi_fields(declared), run_id)),
-        _put(artifacts, ledger, run_id, DATA_AVAILABILITY_NAME,
-             availability_md(inventory, run_id)),
+        _put(artifacts, ledger, run_id, DATA_AVAILABILITY_NAME, availability_md(inventory, run_id)),
         _put(artifacts, ledger, run_id, SUPPLEMENTARY_NAME, supplementary_md(inventory, run_id)),
     ]
     return SubmissionPackageResult(
