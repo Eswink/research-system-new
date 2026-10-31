@@ -69,7 +69,7 @@ README_AND_PRIOR: tuple[str, ...] = (
 )
 
 #: 本轮残余（逐条明写）。
-RESIDUAL_MARKERS: tuple[str, ...] = ("`W-1`", "`W-2`", "`W-3`", "`W-4`", "`W-5`")
+RESIDUAL_MARKERS: tuple[str, ...] = ("`W-1`", "`W-2`", "`W-3`", "`W-4`", "`W-5`", "`W-6`")
 #: 未覆盖范围（逐条明写）。
 UNCOVERED_MARKERS: tuple[str, ...] = ("`U-1`", "`U-2`", "`U-3`")
 #: 声称边界（不得宣称的两件事）。

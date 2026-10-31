@@ -161,6 +161,23 @@ class TestTheCriterionBites:
         problems, _ = module.online_problems(rows, lambda run_id: "abcdef12" + "0" * 32)
         assert any("`99999999`" in item and "无法判定归属" in item for item in problems), problems
 
+    def test_a_prose_covered_by_is_named_red_in_the_static_face(self) -> None:
+        """**反证**：`covered_by` 写成散文（有说明、没哈希）⇒ 静态面必须点名。
+
+        实测的形态：某行写 ``covered_by: 见本行说明`` —— 它既不是哈希也不是 run id，正则
+        读不到 ⇒ 上一版工具在**静态面静默放行**（只有 `--online` 分支才会绕到它）。
+        §5.9 要求「零 run 写 `covered_by`，且必须写真实的覆盖者哈希」⇒ 散文不算。
+        """
+        module = _load_tool()
+        sample = _SAMPLE.replace(
+            "零 run（**`covered_by: abcdef12`**）", "零 run（**`covered_by: 见本行说明`**）"
+        )
+        rows = module.ledger_rows(sample)
+        flagged = [row for row in rows if row.covered_by_prose]
+        assert [row.commit for row in flagged] == ["99999999"], flagged
+        problems = module.static_problems(rows)
+        assert any("没有哈希" in item and "`99999999`" in item for item in problems), problems
+
     def test_a_placeholder_covered_by_is_named_red(self) -> None:
         """反证：`covered_by: <HEAD>` 这类**占位符**必须判红（不是真实提交）。
 

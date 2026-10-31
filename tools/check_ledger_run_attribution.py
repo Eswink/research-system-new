@@ -58,6 +58,9 @@ _RUN_ID = re.compile(r"/actions/runs/(\d+)")
 #: ② ``**`covered_by: 1310dee4`**``（冒号 + 加粗，反引号在加粗**内**）；
 #: ③ `` `covered_by` = `609bab8a` ``（等号 + 中间夹反引号，GOAL-092/098 的散文形态）。
 _COVERED = re.compile(r"covered_by\**[^:=]{0,12}[:=]\s*`?([0-9a-f]{7,40}|\d{6,})`?")
+#: `covered_by` 的**散文形态**（写了说明却没给哈希）。实测过一次：某行写
+#: `covered_by: 见本行说明` —— 它既不是哈希也不是 run id ⇒ 正则读不到 ⇒ 上一版工具**静默放行**。
+_COVERED_PROSE = re.compile(r"covered_by[*\s`:]*[:=]\s*(?![`\s]*[0-9a-f]{7,40})(?![`\s]*\d{6,})")
 #: 「本行**声称**没有自己的 run」的三种写法（此时该行**必须**有 covered_by）。
 _NO_RUN = re.compile(r"零 run|无 run|无\*\* run|\*\*无 run\*\*|没有自己的 run")
 
@@ -72,6 +75,8 @@ class LedgerRow:
     raw: str
     #: 本行是否**明写**「零 run / 无 run」—— 那种行不给 run 是**正确**的（不是漏写）。
     claims_no_run: bool = False
+    #: 本行写了 `covered_by:` 但值**不是**哈希/run id（散文）⇒ 解析不到覆盖者。
+    covered_by_prose: bool = False
 
 
 def _ledger_table_only(body: str) -> str:
@@ -116,6 +121,7 @@ def ledger_rows(text: str) -> tuple[LedgerRow, ...]:
         commit = match.group(1)
         covered = _COVERED.search(line)
         claims_no_run = _NO_RUN.search(line) is not None
+        covered_by_prose = covered is None and _COVERED_PROSE.search(line) is not None
         # run id **只从第二格（run 列）取**：说明格里常有指向**覆盖者**的 run 链接
         # （GOAL-092 的零 run 行就是这样），把它算进「本行的 run」会让每一行都自相矛盾。
         # 那一格若**自己写着**「无 run / 零 run」，里面的链接就是覆盖者的 ⇒ 不算本行的 run
@@ -133,6 +139,7 @@ def ledger_rows(text: str) -> tuple[LedgerRow, ...]:
                 covered_by=covered.group(1) if covered else None,
                 raw=line,
                 claims_no_run=claims_no_run,
+                covered_by_prose=covered_by_prose,
             )
         )
     return tuple(rows)
@@ -161,6 +168,11 @@ def static_problems(rows: tuple[LedgerRow, ...]) -> list[str]:
     for row in rows:
         covered = row.covered_by
         if covered is None:
+            if row.covered_by_prose:
+                problems.append(
+                    f"`{row.commit}` 的 covered_by 写了说明但**没有哈希** ⇒ §5.9 要求真实覆盖者哈希"
+                    "（散文既不是哈希也不是 run id，解析不到覆盖者）"
+                )
             continue
         if covered.isdigit():
             if covered not in run_ids:
