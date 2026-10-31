@@ -182,22 +182,22 @@ memory_entries:
 - `U-2`｜**`test_verifier_main_files_report_no_negative` 只跑 `record_verdicts`**，不跑
   `main()` —— 「标准断言集 + 本轮断言集 + 记录面」三段里，前两段由原判据覆盖，
   但**两侧的联合**（一次 `main()` 端到端）不在射程内。
-- `W-6`｜**§5.9 的「零 run 必须写真实哈希」已机械化为静态判据，但历史台账不改写**：
-  本轮把 `covered_by` 的**散文形态**（有说明、没哈希）纳入 `tools/check_ledger_run_attribution.py`
-  的**静态面**（此前只有 `--online` 分支会绕到它 ⇒ 静态面静默放行）。它立刻点名 **GOAL-099 的三行**
-  （`548790b5` / `b0eb3ff2` / `29ed0d5f`，均写 `<HEAD>` / `<HEAD-of-seq-68>` 占位符）。
-  **本轮不改写那三行**：它们是当时写下的历史记录，改它 = 编造当时的事实；解除方式是回到 GOAL-099
-  按当时的 API 读数重记。**本 GOAL 自己的台账不含这种形态**（17 行全部有真实哈希或真实 run/结论）。
-- `U-3`｜**`IN_SCOPE` / `_VERIFIERS` 的登记是手写的**：新增脚本时漏登记只有「未分类」
-  分支能抓（本轮的 goal101 两个脚本已显式登记）。
-- `R-1`｜`R-M1` 未收口 —— 本 GOAL **不**宣称项目安全。
-- `R-2`｜投递语义**不是**「恰好一次」（at-least-once + 幂等 + 去重）。
 - `W-5`｜**CI 的 Windows `quality` job 卡在 20 分钟超时**（`.github/workflows/m0-quality.yml:20` 的
   `timeout-minutes: 20`）。实测两次都**恰好 20 分 9 秒**、日志里**没有任何测试失败**，GitHub 把它报成
   `cancelled`。它**不是**门判红，但**也不是**绿。解除条件 = 提高该 job 的 `timeout-minutes`，
   而改 `.github/workflows/**` 属**须用户拍板**的面 ⇒ 本轮不动，登记为待拍板。
   同一 GOAL 的链里已有四条 run 是**八 job 全 success**（`0b4565da` / `c48dd519` / `a20c42f1` / `c7b8171a`），
   那些就是全绿证据；本轮的收口 tip 恰好落在超时窗口里。
+- `U-3`｜**`IN_SCOPE` / `_VERIFIERS` 的登记是手写的**：新增脚本时漏登记只有「未分类」
+  分支能抓（本轮的 goal101 两个脚本已显式登记）。
+- `R-1`｜`R-M1` 未收口 —— 本 GOAL **不**宣称项目安全。
+- `R-2`｜投递语义**不是**「恰好一次」（at-least-once + 幂等 + 去重）。
+- `W-6`｜**§5.9 的「零 run 必须写真实哈希」已机械化为静态判据，但历史台账不改写**：
+  本轮把 `covered_by` 的**散文形态**（有说明、没哈希）纳入 `tools/check_ledger_run_attribution.py`
+  的**静态面**（此前只有 `--online` 分支会绕到它 ⇒ 静态面静默放行）。它立刻点名 **GOAL-099 的三行**
+  （`548790b5` / `b0eb3ff2` / `29ed0d5f`，均写 `<HEAD>` / `<HEAD-of-seq-68>` 占位符）。
+  **本轮不改写那三行**：它们是当时写下的历史记录，改它 = 编造当时的事实；解除方式是回到 GOAL-099
+  按当时的 API 读数重记。**本 GOAL 自己的台账不含这种形态**（17 行全部有真实哈希或真实 run/结论）。
 - `R-3`｜`tests/application/test_manuscript_quality.py` 的**三条判据是弱判据**：
   「过不了就是错的，过了不代表对」。任何把它读成「叙述质量已判」的说法都是夸大。
 
@@ -235,11 +235,13 @@ memory_entries:
 | `b3f66c87` | [M0 41189993910](https://github.com/Eswink/research-system-new/actions/runs/41189993910) / [Push 41189993299](https://github.com/Eswink/research-system-new/actions/runs/41189993299) | **全 `success`（attempt 1，八 job 全 success）**：Push 三条 Analyze 全 `success` | **补记 `0234c057`** 并重封见证。**更正两处**：① 本行原先被记成没有自己的 CI —— 按 API 复核，它**有**自己的 run（上列；direct push `bd98191c..b3f66c87` 触发）；② 覆盖者原先写成一句话指向下一行，而 §5.9 要求**真实哈希**，且「下一行」作为 HEAD 永远不会入账 ⇒ 两点都已按 API 读数改正 |
 | `f5324e5b` | [M0 41191939351](https://github.com/Eswink/research-system-new/actions/runs/41191939351) / [Push 41191939271](https://github.com/Eswink/research-system-new/actions/runs/41191939271) | **全 `success`（attempt 1，八 job 全 success）**：含 `console-frontend` 与两个 `quality` job | **一次付清全部剩余非 HEAD 欠账**（`bd98191c` / `b3f66c87` 同轮入账）+ 重封见证。本行之后本链除最新 HEAD 外每个提交都有台账行（§5.2 的终结点） |
 | `2eb5d6ad` | [M0 41195554682](https://github.com/Eswink/research-system-new/actions/runs/41195554682) / [Push 41195554030](https://github.com/Eswink/research-system-new/actions/runs/41195554030) | **全 `success`（八 job 全 success）** | **收口 tip**（只改记录 + 见证）。当时它是 HEAD ⇒ 结构例外；**序 70 的归档推送把它推离 HEAD 后，反方向判据立刻点名它**（`1 个提交不在台账（链 N 个，台账 M 个）`），本行即按该点名补记 |
+| `3cd63a4f` | 零 run（**`covered_by: 66177f39`**） | 覆盖：同批推送，被 `66177f39` 的 M0 / Push run 承担；**该 run 的 head 是 `66177f39`，不是本提交** | **归档提交**（只改 `.cursor/` 内记录）：把序 67 的修订条目与序 69 的进展记录移入单行归档文件（MAINLINE 活跃面收敛到最近三条） |
+| `66177f39` | [M0 41218195479](https://github.com/Eswink/research-system-new/actions/runs/41218195479) / [Push 41218194960](https://github.com/Eswink/research-system-new/actions/runs/41218194960) | **全 `success`（M0 八 job 全 success；Push `success`）** | **上一轮 tip**（只改记录 + 见证）。序 70 的首推把它推离 HEAD；本行在它仍在 HEAD 时按 2026-11-01 的 API 读数补记（head_sha `66177f39d32f108300defebf6966e2b9790ecdfb`，两条 run 均到终态） |
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261030-101 | `79edb87d` → `1890fec8` → `6505f37f` → `60cd270f` → `c48dd519` → `0b4565da` → `c9391e57` → `a20c42f1` → `c7b8171a` → `5925c898` → `6e24d608` → `53d82bd2` → `edc7d654` → `9c8ea929` → `7b63f5ef` → `c9d8f496` → `2348aab7` → `2d244225` → `bc081922` → `496da31a` → `5b644985` → `0234c057` → `bd98191c` → `b3f66c87` → `f5324e5b` → `2eb5d6ad`（本 GOAL 的链逐条收录；除最后一个外每个都在 CI 台账里有一行 —— 台账按 `goal_commit_chain` 的构造豁免 HEAD。**并付清 GOAL-100 的两笔 tip 债**：`363549b5` / `864b2507`，债记在被点名的那本账上。**序 70 归档轮又补了 `2eb5d6ad`**） |  EC-01：21 passed（含两条真文件按压，按压后 3 红、逐字节复原）；EC-02：17 验证器 0 FAIL（修前 14×2=28 假负）；EC-03：8 passed + 在线读数 6 条发现；EC-04：6 passed；定向套件 manuscript 系 48 passed；mypy 7 文件干净；ruff check/format 双门干净 | `6505f37f`：M0 八 job 全 success、Push 全 success | 修掉的主体是**资产缺陷**不是产品缺陷：① 14 个验证器只读活跃面 ⇒ 进展行归档后 2 条假负；② charter 读取器只认加粗残余 ⇒ 三轮 `REFUSED_RESIDUAL_EMPTY`；③ 负判扫描不含主文件 ⇒ 28 条假负不可见 | `W-1`…`W-5` / `U-1`…`U-3` | ① 叙述质量的**强**口径（论证是否成立 —— 须先论证可判性）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ 投稿包（Cover Letter / 作者贡献 / 利益冲突 / 数据可用性） |
+| 1 | PLAN-20261030-101 | `79edb87d` → `1890fec8` → `6505f37f` → `60cd270f` → `c48dd519` → `0b4565da` → `c9391e57` → `a20c42f1` → `c7b8171a` → `5925c898` → `6e24d608` → `53d82bd2` → `edc7d654` → `9c8ea929` → `7b63f5ef` → `c9d8f496` → `2348aab7` → `2d244225` → `bc081922` → `496da31a` → `5b644985` → `0234c057` → `bd98191c` → `b3f66c87` → `f5324e5b` → `2eb5d6ad`（本 GOAL 的链逐条收录；除最后一个外每个都在 CI 台账里有一行 —— 台账按 `goal_commit_chain` 的构造豁免 HEAD。**并付清 GOAL-100 的两笔 tip 债**：`363549b5` / `864b2507`，债记在被点名的那本账上。**序 70 归档轮又补了 `2eb5d6ad`**；**序 70 开场再补 `3cd63a4f` / `66177f39`**（`3cd63a4f` 零 run，`covered_by: 66177f39`；`66177f39` 的两条 run 全 success —— 两行都在它仍是 HEAD 时按 2026-11-01 的 API 读数写）） |  EC-01：21 passed（含两条真文件按压，按压后 3 红、逐字节复原）；EC-02：17 验证器 0 FAIL（修前 14×2=28 假负）；EC-03：8 passed + 在线读数 6 条发现；EC-04：6 passed；定向套件 manuscript 系 48 passed；mypy 7 文件干净；ruff check/format 双门干净 | `6505f37f`：M0 八 job 全 success、Push 全 success | 修掉的主体是**资产缺陷**不是产品缺陷：① 14 个验证器只读活跃面 ⇒ 进展行归档后 2 条假负；② charter 读取器只认加粗残余 ⇒ 三轮 `REFUSED_RESIDUAL_EMPTY`；③ 负判扫描不含主文件 ⇒ 28 条假负不可见 | `W-1`…`W-5` / `U-1`…`U-3` | ① 叙述质量的**强**口径（论证是否成立 —— 须先论证可判性）；② `retmax` 进项目级设置；③ 返修闭环完整版（改稿 + 父指针）；④ 投稿包（Cover Letter / 作者贡献 / 利益冲突 / 数据可用性） |
 
 ## 状态历史
 

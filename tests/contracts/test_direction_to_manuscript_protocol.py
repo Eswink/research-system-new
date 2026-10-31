@@ -55,6 +55,11 @@ _PHASES = (
     # GOAL-20261029-100 EC-03：新增第十相（逐条应答）。它在 `editorial` 之后：编辑处置
     # 的是「评审 + 成稿 + **作者的回应**」，回应不到位与稿件本身有问题要能分开判。
     "revision",
+    # GOAL-20261031-102 EC-03：新增第十一相（投稿包声明）。它在 `revision` 之后、
+    # `report` 之前 —— 五件投稿制品由 `report` 相的装配面写出，信正文与冲突声明必须
+    # 先在场上。**本判据的相集从十相改为十一相是一次申报过的扩展**（不是放宽）：
+    # 断言仍然「一相不多、一相不少、顺序即执行序」，只是钉的集合变大了。
+    "submission",
     "report",
 )
 #: 本协议必须声明的跨相边（读取方 ← 产出方:产物名）。
@@ -77,6 +82,10 @@ _CROSS_PHASE_EDGES: tuple[tuple[str, str], ...] = (
     # 评审点表经**提示词那一段**送到（`REVIEW POINTS`），不是跨相 `inputs` ——
     # 与编辑相那一条同一条实测理由（`review` 是面板 ⇒ 解析 ambiguous）。
     ("revision", "manuscript:manuscript_narrative"),
+    # GOAL-20261031-102 EC-03：投稿信的两条跨相边（问题给「研究什么」，创新点给
+    # 「新在哪」—— 两个产出方都是单任务相 ⇒ 解析不会 ambiguous）。
+    ("submission", "question:research_question"),
+    ("submission", "novelty:novelty_claim"),
 )
 #: C-1：不消费声明输入的两个执行体，它们的相位**不得**声明跨相 `inputs`。
 _NON_CONSUMING_PHASES = ("experiment", "report")
@@ -98,12 +107,13 @@ def _compiled(name: str = _PROTOCOL) -> Any:
     return result
 
 
-def test_the_document_declares_ten_phases_in_order() -> None:
-    """(1) 文档自己写下十相，且顺序就是执行序（不靠产品代码转述）。
+def test_the_document_declares_eleven_phases_in_order() -> None:
+    """(1) 文档自己写下十一相，且顺序就是执行序（不靠产品代码转述）。
 
-    GOAL-20261029-100 把八相扩成十相：EC-02 新增 `editorial`（投稿决策），
-    EC-03 新增 `revision`（逐条应答）。本判据的受判面仍是**文档自己的相表**：
-    一相不多、一相不少、顺序即执行序。
+    GOAL-20261029-100 把八相扩成十相（EC-02 `editorial`、EC-03 `revision`）；
+    GOAL-20261031-102 把十相扩成十一相（EC-03 `submission`，投稿包）。本判据的受判面
+    仍是**文档自己的相表**：一相不多、一相不少、顺序即执行序。相数的变化是**申报过
+    的扩展**（每次都在协议与判据两侧同时登记），不是放宽 —— 断言的形状没有变。
     """
     ids = tuple(str(phase["id"]) for phase in _raw()["phases"])
     assert ids == _PHASES, ids
@@ -178,11 +188,49 @@ def test_the_non_consuming_phases_declare_no_cross_phase_inputs() -> None:
     assert not offenders, offenders
 
 
-def test_the_report_phase_declares_both_products() -> None:
-    """手稿要与报告**并存**：报告相声明两个产物（既有产物零回归 + 新产物）。"""
+def test_the_report_phase_declares_its_products() -> None:
+    """手稿要与报告**并存**，投稿包五件也要从装配面出来：报告相声明七个产物。
+
+    GOAL-20261031-102 EC-03：产物集从两件扩成七件是**申报过的扩展**（不是放宽）——
+    两个既有产物仍逐字在列（零回归面），新五件是 `submission` 相会话产物的装配面
+    （信正文 / 冲突声明来自模型，分工 / 数据 / 补充来自 canonical），本判据把
+    **全部七个**都钉住（比原来钉两个更强）。
+    """
     report = _phases()["report"]
-    assert report["outputs"] == ["research_report.md", "manuscript.md"]
+    assert report["outputs"] == [
+        "research_report.md",
+        "manuscript.md",
+        "cover_letter.md",
+        "author_contributions.md",
+        "conflicts_of_interest.md",
+        "data_availability.md",
+        "supplementary.md",
+    ]
     assert report["task_contract"] == "research_report_deliverable"
+    # 投稿相在 `report` 之前（装配面要读到信），且 `report` 依赖它（DAG 事实）。
+    assert "submission" in report["depends_on"]
+
+
+def test_the_submission_phase_is_a_session_phase_with_its_inputs() -> None:
+    """GOAL-20261031-102 EC-03：投稿相是**会话相**，两条跨相边都解析成产出方产物。
+
+    判三件：合约不声明 `report:` / `experiment:`（C-1 的前提）；`capability_execution`
+    是 `run_chain`（六条能力全声明的理由与 `manuscript` 相同一格）；编译期两条边各自
+    解析（产出方都是单任务相 ⇒ 不 ambiguous）。
+    """
+    contract = load_task_contracts("examples/contracts/task_contracts.yaml")["submission_package"]
+    assert contract.report is None, "投稿契约声明了 report ⇒ 跨相 inputs 必被拒"
+    assert contract.experiment is None, "投稿契约声明了 experiment ⇒ 同上"
+    phase = _phases()["submission"]
+    assert phase["strategy"] == "single_agent"
+    assert phase["task_contract"] == "submission_package"
+    assert str(phase.get("capability_execution", "session")) == "run_chain"
+    plan = _compiled().plan
+    submission = next(item for item in plan.phases if item.id == "submission")
+    declared = {
+        (producer, artifact) for producer, artifact, _label in submission.cross_phase_inputs
+    }
+    assert declared == {("question", "research_question"), ("novelty", "novelty_claim")}, declared
 
 
 def test_the_existing_protocols_are_untouched() -> None:

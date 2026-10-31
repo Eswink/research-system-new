@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -39,6 +40,8 @@ from tests.e2e.direction_to_manuscript_support import (
 )
 
 pytestmark = pytest.mark.requires_docker
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 _MANUSCRIPT_HEADINGS = (
     "## Abstract",
@@ -77,6 +80,15 @@ def _run_once(deps: Any, key: str) -> dict[str, Any]:
             "editorial_decision",
             # GOAL-20261029-100 EC-03：应答信由汇编器写；要判它就得读它的字节。
             "response_letter.md",
+            # GOAL-20261031-102 EC-02：改稿制品（判 `supersedes` 面 + 与 v1 的内容差）。
+            "manuscript_v2.md",
+            # GOAL-20261031-102 EC-03：投稿包（会话产物 + 五件汇编制品）。
+            "submission_package",
+            "cover_letter.md",
+            "author_contributions.md",
+            "conflicts_of_interest.md",
+            "data_availability.md",
+            "supplementary.md",
         ):
             run[f"body:{name}"] = _content_of(client, run["artifact_ids"], name)
     return run
@@ -105,8 +117,9 @@ class TestTheManuscriptComesOutOfTheProductEntry:
         assert run["experiments"]["experiments"], run["experiments"]
         assert offline.requests, "检索必须真的发生过（否则 References 无从谈起）"
         # GOAL-20261029-100：八相 → **十**相（EC-02 新增 `editorial`，EC-03 新增 `revision`）。
-        assert len(PHASES) == 10
-        assert "editorial" in PHASES and "revision" in PHASES
+        # GOAL-20261031-102：十相 → **十一**相（EC-03 新增 `submission`）。
+        assert len(PHASES) == 11
+        assert "editorial" in PHASES and "revision" in PHASES and "submission" in PHASES
 
     def test_the_editorial_decision_comes_out_of_the_product_entry(self) -> None:
         """GOAL-20261029-100 EC-02：编辑决定**经产品入口**产出且四值之一可判。

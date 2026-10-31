@@ -1,8 +1,9 @@
 id: direction_to_manuscript_v1_0_0
 version: 0.1.0
 
-# 一次 run 走完「方向 → 问题 → 检索 → 创新点 → 立题 → 实验 → 评审 → **手稿**」**八相**
-# （GOAL-20261028-099；v2 的七相 + `manuscript`）。
+# 一次 run 走完「方向 → 问题 → 检索 → 创新点 → 立题 → 实验 → 评审 → **手稿**」十相
+# （GOAL-20261028-099 八相；GOAL-20261029-100 加 `editorial` / `revision`；
+# GOAL-20261031-102 加 `submission` ⇒ 十一相）。
 #
 # **它补哪一格**：v2 的产物是 `research_report.md` —— **四节中文研究报告**，由
 # `deliverable/research_report.py` **确定性汇编**，来源渲染成 Python 的 `dict` 字面量
@@ -32,7 +33,7 @@ version: 0.1.0
 # **与既有协议的关系（C-2：不改既有协议）**：v1 六相 / v2 七相 / 两相版 / 四相链各自的
 # 相集判据一字未改、仍全绿，就是「未改」的机械证据。本协议是**新增**的第八相。
 #
-# **受控范围**（写明，不夸大也不缩小）：8 个 phase、5 次真实模型会话（question /
+# **受控范围**（写明，不夸大也不缩小）：11 个 phase、5 次真实模型会话（question /
 # novelty / plan / review 两位评审）+ **1 次手稿会话**、1 次真实检索两步链、1 次沙箱实验、
 # 1 次确定性汇编（同时产出报告与手稿）。它**不**声称：
 #   - 手稿的**叙述质量**或**事实一致性**可判（那需人评或把叙述拆成可核对断言 —— 未授权
@@ -275,17 +276,65 @@ phases:
     outputs: [author_responses]
     timeout_seconds: 300
 
+  # ── GOAL-20261031-102 EC-03：投稿包的**会话**那一格 ──────────────────────────
+  #
+  # **它补哪一格**（建档实测）：`cover letter` / `conflict of interest` 等八个词在产品
+  # 三根**全部 0 命中** ⇒ 「能投出去的稿」与「投出去的包」之间隔着五件制品，而其中
+  # 两件（投稿信正文、冲突声明）必须**模型**写。本相产出会话产物 `submission_package`
+  # （信正文 + 结构化的 `has_conflict` 布尔字段与陈述）；其余三件（CRediT 分工、
+  # 数据可得性、补充材料索引）由**汇编器**在 `report` 相从 canonical 读出。
+  #
+  # **为什么它是会话相**：它声明跨相 `inputs`（信要读方向经问题、定位经创新点），
+  # 而 `cross_phase_inputs._executor_consumes_declared_inputs` 对声明了 `report:` /
+  # `experiment:` 的执行体一律返回 False ⇒ 只有会话相能合法声明它（与 `manuscript`
+  # / `editorial` / `revision` 同一条理由）。
+  #
+  # **为什么在 `report` 之前**：五件制品是 `report` 相装配面写出的 —— `report` 依赖
+  # 本相（`report.depends_on` 含 `submission`），于是「信在汇编之前已经在场」。
+  #
+  # **六条能力全部声明**（与 `manuscript` / `editorial` 那格同一条实测坑）：`run_chain`
+  # 只把「本相 `tool_requirements` 里的 provider」从会话工具面排除，而 provider 按
+  # **能力**映射 —— 少声明一条，它的 provider 排不掉 ⇒ 留在会话工具面里又没有绑定
+  # ⇒ 真实 run 建会话时点名 `ToolDefinition … is not registered`。
+  - id: submission
+    name: Submission Package Statement
+    strategy: single_agent
+    depends_on: [editorial, revision]
+    required_roles:
+      - {role: research_writer, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+      - workspace.read
+      - evidence.read
+      - deliverable.read
+    capability_execution: run_chain
+    inputs: [question:research_question, novelty:novelty_claim]
+    task_contract: submission_package
+    outputs: [submission_package]
+    timeout_seconds: 180
+
   - id: report
     name: Report And Manuscript Assembly
     strategy: deterministic
-    depends_on: [plan, novelty, experiment, review, manuscript, revision]
+    depends_on: [plan, novelty, experiment, review, manuscript, revision, submission]
     required_roles:
       - {role: research_writer, min_instances: 1, max_instances: 1}
     # C-1：report 执行体不消费声明输入 ⇒ 不声明跨相 `inputs`（同 experiment 相）。
     # 它经 canonical 读面读本 run 的全部持久事实，并在装配面**同时**汇出
-    # `research_report.md`（既有产物，零回归）与 `manuscript.md`（本协议的新产物，
-    # 正文来自 `manuscript` 相的制品），以及 `response_letter.md`（本 run 有应答产物时
-    # 才写：没做过返修就产出一封应答信，等于补造证据）。
+    # `research_report.md`（既有产物，零回归）、`manuscript.md`（GOAL-099），
+    # 以及 GOAL-20261031-102 的改稿面（`manuscript_v2.md` / `response_letter.md`，
+    # 本 run 有应答产物时才写）与**五件投稿制品**（本 run 有投稿产物时才写：
+    # cover_letter.md / author_contributions.md / conflicts_of_interest.md /
+    # data_availability.md / supplementary.md）。
     task_contract: research_report_deliverable
-    outputs: [research_report.md, manuscript.md]
+    outputs:
+      - research_report.md
+      - manuscript.md
+      - cover_letter.md
+      - author_contributions.md
+      - conflicts_of_interest.md
+      - data_availability.md
+      - supplementary.md
     timeout_seconds: 300

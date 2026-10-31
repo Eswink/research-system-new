@@ -11,6 +11,7 @@ retention 用例按时间判定。
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from packages.domain.core import Digest, Timestamp
@@ -93,6 +94,10 @@ class Artifact:
     retention_policy: ArtifactRetentionPolicy | None = None
     state: ArtifactState = ArtifactState.STAGED
     created_at: Timestamp | None = None
+    # GOAL-20261031-102 EC-01：**改稿闭环的父指针**（它替代的那个制品 id）。
+    # 缺省 `None` = 不是任何制品的下一版（既有构造点零回归）。digest 仍是内容寻址：
+    # 父指针是元数据，不进内容字节，不影响内容哈希。
+    supersedes: str | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -101,6 +106,49 @@ class Artifact:
             raise ValueError("size_bytes must be non-negative")
         if not self.media_type:
             raise ValueError("media_type must not be empty")
+        if self.supersedes is not None and self.supersedes == self.id:
+            raise ValueError(f"artifact {self.id} cannot supersede itself")
+
+
+class SupersedesError(RuntimeError):
+    """supersedes 链不可解析（目标缺席 / 跨 run / 成环）—— **点名**，不回落。"""
+
+
+def validate_supersedes(
+    artifact: Artifact, *, run_id: str, resolve: Callable[[str], "Artifact | None"]
+) -> None:
+    """从 `artifact` 沿 `supersedes` 链逐跳校验（**点名**三类违例，顺序固定）：
+
+    1. **目标缺席**：链上某跳指向的 id 解析不出来（`resolve` 返回 `None`）；
+    2. **跨 run**：目标 id 不以本 run 的 id 为前缀（跨 run 引用属另一轮）；
+    3. **成环**：链回到已走过的节点（A ⊳ B 且 B ⊳ A 是二环，自指是一环，
+       后者在构造期已被 `__post_init__` 拒绝）。
+
+    `resolve` 由调用方给定（产品路径传 `ArtifactStore.meta`，判据传字典）——
+    本函数不持有存储，也不猜"在场"的定义。
+    """
+    prefix = f"{run_id}:"
+    visited = [artifact.id]
+    seen = {artifact.id}
+    current: Artifact | None = artifact
+    while current is not None and current.supersedes is not None:
+        target = current.supersedes
+        if target in seen:
+            chain = " ⊳ ".join([*visited, target])
+            raise SupersedesError(f"supersedes cycle: {chain}")
+        if not target.startswith(prefix):
+            raise SupersedesError(
+                f"{current.id} supersedes {target}, which is outside run {run_id}: "
+                "a revision chain stays inside the run that produced it"
+            )
+        nxt = resolve(target)
+        if nxt is None:
+            raise SupersedesError(
+                f"{current.id} supersedes {target}, which does not exist in run {run_id}"
+            )
+        visited.append(target)
+        seen.add(target)
+        current = nxt
 
 
 def verify_artifact_content(artifact: Artifact, content: bytes) -> bool:

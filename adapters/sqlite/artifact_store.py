@@ -169,8 +169,9 @@ class SqliteArtifactStore(SqliteAdapterBase):
     def _insert_metadata(self, artifact: Artifact) -> None:
         self._conn.execute(
             "INSERT INTO artifacts (artifact_id, digest, size_bytes, media_type, storage_uri,"
-            " created_by, source_refs_json, classification, retention_policy, state, created_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " created_by, source_refs_json, classification, retention_policy, state, created_at,"
+            " supersedes)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 artifact.id,
                 str(artifact.digest),
@@ -183,6 +184,7 @@ class SqliteArtifactStore(SqliteAdapterBase):
                 _policy_to_text(artifact.retention_policy),
                 artifact.state.value,
                 _created_at_text(artifact, self._now),
+                artifact.supersedes,
             ),
         )
 
@@ -190,7 +192,7 @@ class SqliteArtifactStore(SqliteAdapterBase):
         self._conn.execute(
             "UPDATE artifacts SET digest = ?, size_bytes = ?, media_type = ?, storage_uri = ?,"
             " created_by = ?, source_refs_json = ?, classification = ?, retention_policy = ?,"
-            " state = ? WHERE artifact_id = ?",
+            " state = ?, supersedes = ? WHERE artifact_id = ?",
             (
                 str(artifact.digest),
                 artifact.size_bytes,
@@ -201,6 +203,7 @@ class SqliteArtifactStore(SqliteAdapterBase):
                 artifact.classification,
                 _policy_to_text(artifact.retention_policy),
                 artifact.state.value,
+                artifact.supersedes,
                 artifact.id,
             ),
         )
@@ -232,6 +235,7 @@ def _artifact_from_row(row: sqlite3.Row) -> Artifact:
         retention_policy=_policy_from_text(row["retention_policy"]),
         state=_STATE_BY_VALUE[row["state"]],
         created_at=Timestamp(parse_iso(row["created_at"])),
+        supersedes=row["supersedes"],
     )
 
 

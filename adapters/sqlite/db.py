@@ -146,7 +146,8 @@ CREATE TABLE IF NOT EXISTS artifacts (
     classification TEXT,
     retention_policy TEXT,
     state TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    supersedes TEXT
 );
 """
 

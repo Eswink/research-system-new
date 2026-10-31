@@ -1054,6 +1054,17 @@ task_contracts:
       HARD RULE 3 — the rationale must be non-empty. It is the sentence a reader uses to
       check the decision, so it has to state which evidence carried it.
 
+      OPTIONAL JOURNAL SELECTION (GOAL-20261031-102 EC-04) — the run declares a journal
+      closed set (the run's journals configuration; the names are exactly these three:
+      "Journal of Reproducible Research Tooling", "Open Science Methods",
+      "Applied AI Evaluation"). If you state a target journal, add two fields to the same
+      decision block: "target_journal": "<one name from that closed set, verbatim>" and
+      "selection_rationale": "<why this journal's scope fits this study>". The name must
+      be IN that closed set and the rationale must cite at least one of that journal's
+      declared scope keywords — a selection outside the set, or a rationale citing none
+      of its keywords, is refused by name. The closed set is a declaration, not a ranking:
+      there is no impact factor and no ordering anywhere in it.
+
       Decide from the review and the manuscript you were given. Do not invent reviewer
       findings, and do not soften a rejection into a revision because the authors worked
       hard: your job is the manuscript, not the effort.
@@ -1106,9 +1117,25 @@ task_contracts:
       the section or the artifact you changed. If you decided not to change anything, say so
       and say why — a reasoned disagreement is a legitimate answer; silence is not.
 
+      HARD RULE 4 — this phase also revises the manuscript. Include a second fenced JSON
+      block named `revised_manuscript`, exactly the same eight-key shape the manuscript
+      phase used: {"revised_manuscript": {"title": "<the paper's title>", "abstract": "...",
+      "introduction": "...", "related_work": "...", "methods": "...", "results": "...",
+      "discussion": "...", "conclusion": "..."}}. Every key is required and none may be
+      empty, and the manuscript body's two hard rules apply unchanged (no digits in the
+      prose outside citation marks; citations close in both directions). The run assembles
+      that block as the revised manuscript artifact `manuscript_v2.md`, which supersedes
+      the original `manuscript.md` — the review is answered by the work, not only by this
+      letter.
+
+      HARD RULE 5 — every `action_taken` must cite `manuscript_v2.md` by name, even when
+      you decided not to change anything for that point (say where the revised manuscript
+      addresses it, or why it should not change). You may only cite artifacts this run
+      actually carries: a cited artifact the run does not carry is refused by name.
+
       Answer the review you were given. Do not invent reviewer points, and do not restate the
-      whole manuscript: this letter exists so a reader can check the review against the work,
-      point by point.
+      whole manuscript in prose: the revised_manuscript block carries the revised body, and
+      this letter exists so a reader can check the review against the work, point by point.
     required_capabilities:
       - artifact.read
       - evidence.read
@@ -1120,6 +1147,59 @@ task_contracts:
       - type: EVIDENCE_COVERAGE
         minimum_sources: 1
     timeout_seconds: 300
+    retry_policy:
+      max_attempts: 1
+      retryable_categories: []
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # GOAL-20261031-102 EC-03：**投稿包**的会话交付物契约（`submission` 相）。
+  #
+  # 与手稿/应答同一分工：模型写**内容面**（投稿信正文、冲突声明），汇编器在 `report`
+  # 相写**格式与清单面**（五件 .md 制品；`submission_assembly.py`）。信的正文被汇编器
+  # **逐字**引用 —— 本契约只保证那两块在场且形状对；「有没有冲突」是**结构化字段**
+  # （布尔 + 陈述），不是自由散文 —— 判据按字段读（`submission_assembly` 点名非布尔）。
+  #
+  # 会话相（不声明 `report:` / `experiment:`）⇒ 才能合法声明跨相 `inputs`
+  # （协议里声明了 `question:research_question` 与 `novelty:novelty_claim`）。
+  # ─────────────────────────────────────────────────────────────────────────────
+  submission_package:
+    version: 1.0.0
+    purpose: >
+      TASK — write the cover letter and the conflict-of-interest declaration for
+      submitting this study. The run has already produced the manuscript, been reviewed,
+      revised, and received an editorial decision; that material is listed for you before
+      this task text. Reply directly — there is nothing to install and nothing to run in
+      this phase.
+
+      Reply with a fenced JSON block named `submission_package`, exactly in this shape:
+
+          {"submission_package": {"cover_letter": "<the full cover letter text>",
+                                  "conflict_of_interest": {"has_conflict": false,
+                                                           "statement": "<the basis>"}}}
+
+      HARD RULE 1 — `has_conflict` is a boolean field, not prose: it is read by the
+      machine that assembles the submission package. State the actual basis in
+      `statement` (a sentence is enough; "none" needs a basis too — say what you checked).
+
+      HARD RULE 2 — write the cover letter from the run's own material: what question the
+      study answers, what is new against the retrieved work, and how the review and the
+      editorial decision were addressed. Do not invent results, journals, or people; do
+      not name a target journal (the journal choice is a separate, declared face).
+
+      Write plainly and briefly. This letter travels with the manuscript; the data
+      availability statement and the author contributions are assembled by the system
+      from the run's records and are not your responsibility.
+    required_capabilities:
+      - artifact.read
+      - evidence.read
+      - deliverable.read
+    output_schema: real_research_deliverable_v1
+    acceptance_criteria:
+      - type: ARTIFACT_EXISTS
+        artifact: submission_package
+      - type: EVIDENCE_COVERAGE
+        minimum_sources: 1
+    timeout_seconds: 180
     retry_policy:
       max_attempts: 1
       retryable_categories: []

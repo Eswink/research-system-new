@@ -163,8 +163,8 @@ class PostgresArtifactStore(PostgresAdapterBase):
             self._conn.execute(
                 "INSERT INTO artifacts (artifact_id, digest, size_bytes, media_type, storage_uri,"
                 " created_by, source_refs_json, classification, retention_policy,"
-                " state, created_at)"
-                " VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s)",
+                " state, created_at, supersedes)"
+                " VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s,%s)",
                 (
                     artifact.id,
                     str(artifact.digest),
@@ -177,6 +177,7 @@ class PostgresArtifactStore(PostgresAdapterBase):
                     _policy_to_text(artifact.retention_policy),
                     artifact.state.value,
                     now_iso(None),
+                    artifact.supersedes,
                 ),
             )
 
@@ -186,7 +187,7 @@ class PostgresArtifactStore(PostgresAdapterBase):
                 "UPDATE artifacts SET digest=%s, size_bytes=%s, media_type=%s, storage_uri=%s,"
                 " created_by=%s, source_refs_json=%s::jsonb, classification=%s,"
                 " retention_policy=%s,"
-                " state=%s WHERE artifact_id=%s",
+                " state=%s, supersedes=%s WHERE artifact_id=%s",
                 (
                     str(artifact.digest),
                     artifact.size_bytes,
@@ -197,6 +198,7 @@ class PostgresArtifactStore(PostgresAdapterBase):
                     artifact.classification,
                     _policy_to_text(artifact.retention_policy),
                     artifact.state.value,
+                    artifact.supersedes,
                     artifact.id,
                 ),
             )
@@ -230,6 +232,7 @@ def _artifact_from_row(row: Any) -> Artifact:
         retention_policy=_policy_from_text(row["retention_policy"]),
         state=_STATE_BY_VALUE[row["state"]],
         created_at=_ts_of(row["created_at"]),
+        supersedes=row["supersedes"],
     )
 
 

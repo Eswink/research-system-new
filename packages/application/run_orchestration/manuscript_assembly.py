@@ -290,6 +290,9 @@ def maybe_assemble_manuscript(deps: Any, task: Any, spec_context: Any) -> Any | 
     回应评审点）。它接在这里而不是另开一相：应答信的全部输入（评审点 + 作者应答）在
     报告相都已落库，另开一相只会多一次会话而没有新事实。**本 run 没有应答产物 ⇒
     不写这封信**（没做过返修就产出一封应答信，等于补造证据）。
+
+    GOAL-20261031-102：v1 之后的**附加装配**（改稿闭环 → 投稿包 → 应答信）收在
+    `report_extras.assemble_report_extras` —— 本文件贴着 450 行，附加链的编排不在原地展开。
     """
     if not getattr(deps, "manuscript", False):
         return None
@@ -302,8 +305,9 @@ def maybe_assemble_manuscript(deps: Any, task: Any, spec_context: Any) -> Any | 
         run_id,
         created_by=spec_context.agent.id,
     )
-    maybe_assemble_response_letter(deps.artifacts, deps.ledger, deps.reviews, run_id)
-    return result
+    from packages.application.run_orchestration.report_extras import assemble_report_extras
+
+    return assemble_report_extras(deps, spec_context, run_id, result)
 
 
 def maybe_assemble_response_letter(
@@ -330,7 +334,7 @@ def maybe_assemble_response_letter(
     from packages.application.run_orchestration.report_facts import evidence_of_run
     from packages.application.run_orchestration.review_points import review_points_of_run
 
-    content = _response_artifact_content(artifacts, evidence_of_run(ledger, run_id))
+    content = response_artifact_content(artifacts, evidence_of_run(ledger, run_id))
     if content is None:
         return None
     points = review_points_of_run(artifacts, ledger, run_id)
@@ -386,7 +390,7 @@ def _register_response_letter(ledger: Any, run_id: str, artifact: Artifact, poin
     )
 
 
-def _response_artifact_content(artifacts: Any, evidence: tuple[Any, ...]) -> str | None:
+def response_artifact_content(artifacts: Any, evidence: tuple[Any, ...]) -> str | None:
     """本 run 的应答制品正文（**不在场 ⇒ `None`**；多于一件 ⇒ 点名）。
 
     读取面与手稿正文同一手法（证据投影 → `:author_responses` 制品），只取**内容字节**：

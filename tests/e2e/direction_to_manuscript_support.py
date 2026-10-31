@@ -21,7 +21,6 @@
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
@@ -36,6 +35,15 @@ from tests.e2e.direction_to_report_support import (
     sandbox_runner,
 )
 from tests.e2e.literature_chain_support import EUROPE_PMC_ID
+from tests.e2e.manuscript_replies import (  # noqa: E402 - 常量定义之后的再出口（名字面不变）
+    MANUSCRIPT_SECTIONS,
+    editorial_reply,
+    manuscript_reply,
+    novelty_reply,
+    response_reply,
+    revised_sections,
+    submission_reply,
+)
 
 PROTOCOL = "direction_to_manuscript_v1.yaml"
 DIRECTION = "retrieval augmentation for scientific hypothesis generation"
@@ -54,6 +62,8 @@ PHASES: tuple[str, ...] = (
     "editorial",
     # GOAL-20261029-100 EC-03：逐条应答相（评审点 → 作者回应）。
     "revision",
+    # GOAL-20261031-102 EC-03：投稿包相（信正文 + 冲突声明 = 会话面）。
+    "submission",
     "report",
 )
 #: 本 run 应当落库的会话产物名 + 两个汇编产物。
@@ -68,116 +78,18 @@ OUTPUT_NAMES: tuple[str, ...] = (
     "editorial_decision",
     # GOAL-20261029-100 EC-03：作者逐条应答（汇编器据此产出 `response_letter.md`）。
     "author_responses",
+    # GOAL-20261031-102 EC-03：投稿包 = 一件会话产物 + 五件汇编制品。
+    "submission_package",
     "research_report.md",
     "manuscript.md",
+    "cover_letter.md",
+    "author_contributions.md",
+    "conflicts_of_interest.md",
+    "data_availability.md",
+    "supplementary.md",
 )
 VARIANT_A = ("retrieval augmented planning", "39284801", "ENCORE")
 VARIANT_B = ("systematic review automation", "40601758", "FAIR biomedical")
-
-#: 手稿正文（**无任何数字**，只有 `[1]` 引用标记 —— 与合约的两条硬规则一致）。
-MANUSCRIPT_SECTIONS: dict[str, str] = {
-    "title": "Retrieval Grounding For Controlled Planning Studies",
-    "abstract": "We ask whether grounding a research plan in the retrieved literature "
-    "changes the design a controlled experiment can execute, and we report the measured "
-    "comparison in the assembled table rather than in this prose.",
-    "introduction": "Planning assistants propose studies that the literature may already "
-    "settle; we ask what changes when the material is retrieved before the plan is written.",
-    "related_work": "The closest retrieved work builds reproducibility tooling for "
-    "computational research and documents the cost of custom pipelines [1]; it leaves open "
-    "which planning choices actually move a measured outcome, which is what this study "
-    "varies.",
-    "methods": "Two arms run the same shipped benchmark script. The treatment arm sets a "
-    "larger item count than the control arm, so the comparison isolates the workload under "
-    "a fixed procedure.",
-    "results": "The treatment arm's comparison count differs from the control arm's; the "
-    "per-arm readings and their sources are published in the data table below, by name, so "
-    "each value can be checked against this run rather than against this sentence [1].",
-    "discussion": "The measured difference is a workload effect and nothing more: the study "
-    "varies the item count alone, one script cannot speak for another, and the run carries "
-    "a single retrieved record.",
-    "conclusion": "Grounded planning yields an executable design here; whether it yields a "
-    "better one is not something this run measured, and we do not claim it.",
-}
-
-
-def response_reply(prompt: str) -> str:
-    """应答格的受控回复：**逐条**回应提示词里列出的每一个 `P<n>`。
-
-    为什么从提示词里**读编号**（而不是写死 `P1`/`P2`）：本夹具的意义是证明「点表真的
-    到了模型眼前」—— 写死编号会让它在点表缺失时**依然通过**（那是假绿）。这里按提示词
-    实际给出的 id 生成应答，点表为空就**一条也不回**（那会让汇编器点名漏答 ⇒ 判据红，
-    这正是我们要的行为）。
-    """
-    # `prompt` 是 **JSON 序列化后**的 messages（本文件上游 `json.dumps` 过 ⇒ 换行是
-    # 字面 `\n` 两字符），所以行首锚不能用 `^`+MULTILINE —— 直接按 `- P<n> (` 取。
-    ids = re.findall(r"- (P\d+) \(([a-z_]+)\): ", prompt)
-    block = json.dumps(
-        {
-            "author_responses": [
-                {
-                    "point_id": point_id,
-                    "response": f"We accept {point_id}: the review is right about this one.",
-                    "action_taken": f"revised the section named in {point_id}",
-                }
-                for point_id, _severity in ids
-            ]
-        },
-        ensure_ascii=False,
-    )
-    return "Here is our point by point response.\n\n```json\n" + block + "\n```\n"
-
-
-def editorial_reply() -> str:
-    """编辑决定格的受控回复（形状照合约 `editorial_decision` 的规定）。
-
-    取 `minor_revision` 而不是 `accept`：**带改动的决定**才会经过
-    「`required_changes` 必须非空」那条判据 —— 用 `accept` 作夹具会让那个分支在
-    产品入口上从未被走到（判据侧的单测会绿，产品路径**没有**证据）。
-    """
-    block = json.dumps(
-        {
-            "editorial_decision": {
-                "decision": "minor_revision",
-                "rationale": "the review asks which planning choice moved the measured "
-                "outcome, and the Related Work section does not yet say so in its own words",
-                "required_changes": [
-                    "name the planning choice that differs between the two arms in Related Work",
-                ],
-            }
-        },
-        ensure_ascii=False,
-    )
-    return (
-        "The manuscript needs limited edits before it can proceed.\n\n```json\n" + block + "\n```\n"
-    )
-
-
-def manuscript_reply() -> str:
-    """手稿格的受控回复（形状照合约 `research_manuscript` 的规定）。"""
-    block = json.dumps({"manuscript_narrative": MANUSCRIPT_SECTIONS}, ensure_ascii=False)
-    return (
-        "The body below states no quantity: every number lives in the assembled data table."
-        "\n\n```json\n" + block + "\n```\n"
-    )
-
-
-def novelty_reply(pmid: str) -> str:
-    """创新点格的受控回复（`nearest_prior` 用本 run 真取回的标识）。"""
-    block = json.dumps(
-        {
-            "novelty_claim": {
-                "claim": "This study ties the planning step to what retrieval returned.",
-                "why_novel": "the closest retrieved work builds tooling but does not vary "
-                "which planning choices move a measured outcome",
-                "nearest_prior": [f"PMID:{pmid}"],
-            }
-        },
-        ensure_ascii=False,
-    )
-    return (
-        "That record leaves the planning choice open, which is what this study varies."
-        "\n\n```json\n" + block + "\n```\n"
-    )
 
 
 class ManuscriptRelayHandler(BaseHTTPRequestHandler):
@@ -250,6 +162,8 @@ class ManuscriptRelayHandler(BaseHTTPRequestHandler):
             return editorial_reply()
         if "answer the review of this study, point by point" in prompt:
             return response_reply(prompt)
+        if "write the cover letter and the conflict-of-interest declaration" in prompt:
+            return submission_reply()
         return "Done."
 
     def _respond(self, payload: bytes) -> None:
@@ -380,6 +294,10 @@ __all__ = [
     "ManuscriptRelayHandler",
     "OfflineEuropePmc",
     "deps_for",
+    "editorial_reply",
     "manuscript_reply",
     "novelty_reply",
+    "response_reply",
+    "revised_sections",
+    "submission_reply",
 ]

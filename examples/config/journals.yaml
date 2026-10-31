@@ -1,0 +1,35 @@
+# 期刊闭集（**声明面**；GOAL-20261031-102 EC-04）。
+#
+# 这是什么：`editorial` 相（合约 `editorial_decision`）做**期刊选择**时唯一合法的
+# 取值集合 —— 选中名必须在其中，选择依据必须引用该刊 scope_keywords 的至少一个。
+#
+# 这不是什么（同样重要）：
+# - **不是评分**：没有影响因子、没有排名、没有分区 —— 按「人的评价」给期刊排序是
+#   人评的事，本仓不冒充；
+# - **不是推荐**：闭集之外没有「更差的期刊」，只有「不在声明面里、因此不可选」；
+# - **不是真实注册信息**：三条目是本仓受控演示集，ISSN 形态是占位符（不是任何真实
+#   刊物的登记号）；接真实投稿面之前必须换成运营方自己的闭集。
+#
+# 判据（`packages/application/deliverable/journal_selection.py` + 判据文件）：
+# ① 选中名 ∈ 闭集（点名闭集里有什么）；② 依据引用该刊 scope_keywords ≥ 1（空依据
+# 或引了别的刊的关键词 ⇒ 点名）；③ 本文件与合约 `editorial_decision` 的 purpose
+# **互为镜像**（判据逐名核对，防止两处漂移）。
+journals:
+  - name: Journal of Reproducible Research Tooling
+    issn: "0000-1118"
+    scope_keywords:
+      - reproducibility
+      - research tooling
+      - workflow
+  - name: Open Science Methods
+    issn: "0000-1126"
+    scope_keywords:
+      - methodology
+      - open science
+      - preregistration
+  - name: Applied AI Evaluation
+    issn: "0000-1134"
+    scope_keywords:
+      - evaluation
+      - benchmark
+      - model comparison

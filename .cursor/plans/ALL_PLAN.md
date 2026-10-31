@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261031-102](tasks/PLAN-20261031-102-submission-package-and-revision-closure.md) | DONE |
 | [x] | [PLAN-20261030-101](tasks/PLAN-20261030-101-goal-101-narrative-quality-and-verifier-coverage.md) | DONE |
 | [x] | [PLAN-20261029-100](tasks/PLAN-20261029-100-goal-100-submission-ready-and-citation-binding.md) | DONE |
 | [x] | [PLAN-20261028-099](tasks/PLAN-20261028-099-goal-099-submission-shaped-manuscript.md) | DONE |

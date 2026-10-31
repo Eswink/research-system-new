@@ -1,0 +1,12 @@
+-- 030_artifact_supersedes: 改稿闭环的**父指针**（GOAL-20261031-102 EC-01）。
+--
+-- 为什么落库：`Artifact` 此前没有 `parent` / `version` / `supersedes` 任何字段
+-- （全文件 grep = 0 命中）⇒ 「同一篇论文的下一版」在结构上不存在——作者可以写
+-- 「已修改」，但没有任何东西让 v2 指回 v1。本列把那个指针变成 canonical 事实。
+--
+-- digest 仍是内容寻址：父指针是元数据，不进内容字节，不影响内容哈希。
+--
+-- **纯新增列、可空**：既有行的该列为 NULL = 不是任何制品的下一版（不是「指针丢失」）；
+-- 既有读面 / 写面在未提供该值时的行为逐字不变。跨 run 引用与成环由域层
+-- `validate_supersedes` 点名拒绝（存储层不重复判，链校验需要 run 上下文）。
+ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS supersedes TEXT;

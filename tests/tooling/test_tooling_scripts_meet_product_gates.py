@@ -219,6 +219,9 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal100_closeout.py",
     "tools/goal101_closeout_assertions.py",
     "tools/verify_goal101_closeout.py",
+    # GOAL-20261031-102 EC-05：收口验证器 + 它复用的本轮断言集（纯收紧 ⇒ 只增不删）。
+    "tools/verify_goal102_closeout.py",
+    "tools/goal102_closeout_assertions.py",
     "tools/charter_progress.py",
     "tools/check_ledger_run_attribution.py",
 )

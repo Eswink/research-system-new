@@ -91,6 +91,7 @@ class FakeArtifactStore(FakeBase):
             retention_policy=current.retention_policy,
             state=state,
             created_at=current.created_at,
+            supersedes=current.supersedes,
         )
         self._record("mark", f"{artifact_id}/{state.value}")
 

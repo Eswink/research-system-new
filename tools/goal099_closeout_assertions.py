@@ -75,6 +75,7 @@ PROTOCOL_PHASES: tuple[str, ...] = (
     "manuscript",
     "editorial",  # GOAL-20261029-100 EC-02：投稿决策相。
     "revision",  # GOAL-20261029-100 EC-03：逐条应答相。
+    "submission",  # GOAL-20261031-102 EC-03：投稿包相（申报过的扩展并留归因；不是放宽）。
     "report",
 )
 #: 手稿相必须声明的跨相边（读取方 ← 产出方:产物名）。

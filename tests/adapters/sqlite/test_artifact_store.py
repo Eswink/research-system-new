@@ -8,7 +8,7 @@ import pytest
 
 from adapters.sqlite.artifact_store import SqliteArtifactStore
 from packages.application.ports.errors import InvalidInputError
-from packages.domain.artifacts import Artifact
+from packages.domain.artifacts import Artifact, validate_supersedes
 from packages.domain.core import Digest
 from packages.domain.enums import ArtifactState
 
@@ -112,3 +112,64 @@ class TestDeleteTombstone:
         store.delete("a-1")
         blobs = list((tmp_path / "blobs").rglob("*"))
         assert all(item.is_dir() for item in blobs)
+
+
+class TestSupersedesRoundTrip:
+    """GOAL-20261031-102 EC-01：`supersedes` 在 **SQLite 序列化两侧**逐字节往返。"""
+
+    def test_supersedes_survives_put_and_meta(self, tmp_path: Path) -> None:
+        store = _store(tmp_path)
+        content = b"manuscript v1"
+        store.put(_artifact(content, "run-1:manuscript.md"), content)
+        child_content = b"manuscript v2"
+        child = _artifact(child_content, "run-1:manuscript_v2.md")
+        child = Artifact(
+            id=child.id,
+            digest=child.digest,
+            size_bytes=child.size_bytes,
+            media_type=child.media_type,
+            supersedes="run-1:manuscript.md",
+        )
+        store.put(child, child_content)
+        loaded = store.meta("run-1:manuscript_v2.md")
+        assert loaded is not None
+        assert loaded.supersedes == "run-1:manuscript.md", loaded
+        parent = store.meta("run-1:manuscript.md")
+        assert parent is not None and parent.supersedes is None
+
+    def test_update_writes_supersedes(self, tmp_path: Path) -> None:
+        """覆盖写（同 id 二次 put）也带上父指针（update 侧同受判）。"""
+        store = _store(tmp_path)
+        content = b"first assembly"
+        artifact = _artifact(content, "run-1:manuscript_v2.md")
+        store.put(artifact, content)
+        revised = Artifact(
+            id=artifact.id,
+            digest=artifact.digest,
+            size_bytes=artifact.size_bytes,
+            media_type=artifact.media_type,
+            supersedes="run-1:manuscript.md",
+        )
+        store.put(revised, content)
+        loaded = store.meta("run-1:manuscript_v2.md")
+        assert loaded is not None and loaded.supersedes == "run-1:manuscript.md"
+
+    def test_chain_validates_across_stored_rows(self, tmp_path: Path) -> None:
+        """存储行读回的制品足以做**同 run** 链校验（产品路径的判法）。"""
+        store = _store(tmp_path)
+        v1 = b"v1"
+        v2 = b"v2"
+        store.put(_artifact(v1, "run-1:manuscript.md"), v1)
+        store.put(
+            Artifact(
+                id="run-1:manuscript_v2.md",
+                digest=Digest.of_bytes(v2),
+                size_bytes=len(v2),
+                media_type="text/plain",
+                supersedes="run-1:manuscript.md",
+            ),
+            v2,
+        )
+        loaded = store.meta("run-1:manuscript_v2.md")
+        assert loaded is not None
+        validate_supersedes(loaded, run_id="run-1", resolve=store.meta)
