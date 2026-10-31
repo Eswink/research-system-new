@@ -213,6 +213,11 @@ IMRaD + 引用闭合 + 编辑决定 + 逐条应答），但两件事在结构上
 - `U-3`｜**data_availability 清单的时点边界**：清单是「投稿包装配时点」本 run 已
   产出的制品（应答信与五件投稿制品自身不在自己的清单里 —— 鸡生蛋边界，如实登记）。
 
+- `U-4`｜**run FAILED 时读面的 `message=None`**（windows CI 取证实测）：run 经任务失败
+  收敛 FAILED 后，`GET /runs/{id}` 不携带失败消息；失败详情在 **events read face**
+  （`task.failed` / `run.failed` 的 `payload.message`）。e2e 夹具已留痕（`_run_once` 在
+  非 SUCCEEDED 时把失败事件折进断言消息），产品读面是否应把失败消息提升到 run 行
+  属另一轮的面（涉及 run 行投影）。
 - `R-1`｜`R-M1` 未收口 —— 本 GOAL **不**宣称项目安全。
 - `R-2`｜投递语义**不是**「恰好一次」。
 
@@ -224,7 +229,7 @@ IMRaD + 引用闭合 + 编辑决定 + 逐条应答），但两件事在结构上
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261031-102 | `9a313685` → `910dd745` → `390bb33d` | 单元 154 passed（域 19 / sqlite 13 / 改稿 8 / 投稿 11 / 期刊 9 / 协议 39 / 手稿装配与编辑等 32）；产品入口 e2e 15 passed（真容器实验）；两树复检 **PASS**（83 判词逐行相同 + sha256 相同） | [M0 41238101258](https://github.com/Eswink/research-system-new/actions/runs/41238101258) / [Push 41238100825](https://github.com/Eswink/research-system-new/actions/runs/41238100825)：Push success；M0 7/8 success + `quality-windows-latest` cancelled（W-5 超时窗口，待拍板） | `FakeArtifactStore.mark` 重建白名单丢 `supersedes`（判据先红后绿）；GOAL-101 残余节 W 编号乱序（charter 读取器拒读，纯重排修复）；上一轮 tip 链两行台账欠账（`3cd63a4f` / `66177f39`）按 API 读数补记 | W-1…W-6 逐条处置（见残余节）；期刊选择的语义匹配不可判（U-1） | 判词内容驱动改稿（复检域下一级）；叙述质量强口径（需先论证可判性）；Postgres 行往返在无 DSN 环境仍只跑文件面判据 |
+| 1 | PLAN-20261031-102 | `9a313685` → `910dd745` → `390bb33d` | 单元 154 passed（域 19 / sqlite 13 / 改稿 8 / 投稿 11 / 期刊 9 / 协议 39 / 手稿装配与编辑等 32）；产品入口 e2e 15 passed（真容器实验）；两树复检 **PASS**（83 判词逐行相同 + sha256 相同） | [M0 41238101258](https://github.com/Eswink/research-system-new/actions/runs/41238101258) / [Push 41238100825](https://github.com/Eswink/research-system-new/actions/runs/41238100825)：Push success；M0 7/8 success + `quality-windows-latest` cancelled（W-5 超时窗口，待拍板） | `FakeArtifactStore.mark` 重建白名单丢 `supersedes`（判据先红后绿）；GOAL-101 残余节 W 编号乱序（charter 读取器拒读，纯重排修复）；上一轮 tip 链两行台账欠账（`3cd63a4f` / `66177f39`）按 API 读数补记 | W-1…W-6 逐条处置（见残余节）；期刊选择的语义匹配不可判（U-1） | windows-CI marker 修复后的 CI 复读（expect 8/8）；判词内容驱动改稿（复检域下一级）；叙述质量强口径（需先论证可判性）；U-4 读面 message=None 是否提升到 run 行 |
 
 ## 状态历史
 
@@ -232,3 +237,4 @@ IMRaD + 引用闭合 + 编辑决定 + 逐条应答），但两件事在结构上
 | --- | --- | --- |
 | 2026-10-31 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 70）。charter 读取器先以 `REFUSED RESIDUAL_GAP` 拒读 GOAL-101（W-6 在 W-5 前）；纯重排后可读，读到 W-1…W-6 六条残余。 |
 | 2026-11-01 | **ACHIEVED** | **六个 EC 全 PASS**。收口证据链：本地 m0 第四次全绿（前三次的诚实红逐类修复：治理必需章节 / 规模门 450 行 / mypy 再出口 / 链台账）；两树复检 `TWO-TREE PASS`（83 判词逐行相同，sha256 `50b174dd…`，归档 scratch）；CI Push 三条全 success；M0：7/8（W-5 超时 ⇒ cancelled）→ 记录提交后 6/8（见证过期同源，ubuntu 也红）→ 见证重封后 7/8（ubuntu success；windows 红在本 GOAL 两条 e2e、message=None，根因未定位 ⇒ 下一 cycle 第一输入）。windows 红如实登记，不冒充全绿。产品面：`supersedes` 域+两侧序列化+链校验（缺席/跨 run/成环各点名）；改稿闭环（v2 + 引用判据 + 三反证）；投稿包五件制品（CRediT 27 角色闭集映射 / COI 结构化字段 / digest 读面字节可重算）；期刊闭集（无评分字段 + 镜像判漂移）。实测修掉 `FakeArtifactStore.mark` 丢字段一处。记录面：验证器 + 断言集登记进 `_VERIFIERS` 与 `IN_SCOPE`；宪章程序表序 70 + 阶梯两行 + 两表各 3 行。 |
+| 2026-11-01 | **windows 复现已取证并修复** | **根因**（a4033dc0 的 M0 [41247945135](https://github.com/Eswink/research-system-new/actions/runs/41247945135) windows job 日志逐字）：6 条 e2e 全部 `docker.errors.DockerException: Error while fetching server API version: (2, 'CreateFile', 'The system cannot find the file specified.')` —— **quality-windows runner 没有 docker daemon**，实验相失败 ⇒ run FAILED；而 goal099/100 的同面 e2e 在同机 **skip**（`test_direction_to_manuscript_product_path.py sssssssss`）—— 它们带 `requires_docker` marker，本 GOAL 的新文件**漏了**。**修复**：补 `pytestmark = pytest.mark.requires_docker`（「环境不可用 ⇒ 诚实 skip」既有契约，非放宽）+ e2e 夹具 `_run_once` 在 run 非 SUCCEEDED 时把 events read face 的失败详情折进断言（`U-4` 的留痕面）。 |

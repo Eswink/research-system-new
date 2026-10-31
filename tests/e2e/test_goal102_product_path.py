@@ -11,6 +11,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 from services.api.app import create_app
 from tests.e2e.direction_to_manuscript_support import (
     PROTOCOL,
@@ -21,6 +23,14 @@ from tests.e2e.direction_to_manuscript_support import (
 from tests.e2e.test_direction_to_manuscript_product_path import _content_of, _run_once
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+
+#: 与 `test_direction_to_manuscript_product_path.py` 同一面：本文件的用例经**真容器
+#: 实验**取证（sandbox runner），无 docker 的环境诚实 skip —— windows CI 的 runner
+#: 没有 docker daemon（2026-11-01 实测：6 条用例全部
+#: `docker.errors.DockerException: ... 'The system cannot find the file specified.'`
+#: 且 run state=FAILED，而 goal099 的同面用例在同机 skip）⇒ 本 marker 是
+#: 「环境不可用 ⇒ skip」的既有契约，不是放宽。
+pytestmark = pytest.mark.requires_docker
 
 
 class TestTheRevisionClosureComesOutOfTheProductEntry:

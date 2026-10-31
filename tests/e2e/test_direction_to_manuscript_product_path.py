@@ -68,6 +68,9 @@ def _run_once(deps: Any, key: str) -> dict[str, Any]:
         run_id = str(created.json()["id"])
         # `client.get(...).json()` 是 `Any` ⇒ 显式收成 dict（strict mypy 下 returning Any 是错）
         run: dict[str, Any] = dict(client.get(f"/runs/{run_id}").json())
+        failure_message = _run_failure_evidence(client, run_id, str(run.get("state")))
+        if failure_message and not run.get("message"):
+            run["message"] = failure_message
         run["artifact_ids"] = [
             str(item["id"]) for item in client.get(f"/runs/{run_id}/artifacts").json()
         ]
@@ -92,6 +95,22 @@ def _run_once(deps: Any, key: str) -> dict[str, Any]:
         ):
             run[f"body:{name}"] = _content_of(client, run["artifact_ids"], name)
     return run
+
+
+def _run_failure_evidence(client: Any, run_id: str, state: str) -> str:
+    """GOAL-20261031-102 取证面：run 非 SUCCEEDED 时，把**run 内任务失败详情**经 events
+    read face 留痕（`task.failed` / `run.failed` 的 `payload.message`）—— CI 上的失败
+    不需要第二趟复跑就能定位（实测：windows CI 的 run state=FAILED 而 message=None，
+    读面不带失败消息 ⇒ 当时只能靠怀疑）。SUCCEEDED ⇒ 空串（无取证面）。"""
+    if state == "SUCCEEDED":
+        return ""
+    events = client.get(f"/runs/{run_id}/events").json()
+    failures = [
+        f"{item.get('type')}: {item.get('payload', {}).get('message') or item.get('payload')}"
+        for item in events
+        if isinstance(item, dict) and str(item.get("type", "")).endswith("failed")
+    ]
+    return " | ".join(str(item) for item in failures)
 
 
 def _content_of(client: Any, artifact_ids: list[str], name: str) -> str | None:
