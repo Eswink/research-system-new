@@ -163,7 +163,8 @@ IMRaD + 引用闭合 + 编辑决定 + 逐条应答），但两件事在结构上
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `9a313685` | 本地 m0 见证（`evidence/M0-WITNESS.json`；首次运行为诚实红：product-lint/format/typecheck/tests/framework-validate 各 1，按「CI 失败分类与纠错」逐类修复后复跑） | 修复后复跑全绿（终态行见迭代日志） | 交付提交（38 文件）：supersedes 域+两侧序列化 / 改稿闭环 / 投稿包五件制品 / 期刊闭集 / 收口资产 / 宪章记账；GitHub run 由本批推送产生 |
+| `9a313685` | 本地 m0 见证（`evidence/M0-WITNESS.json`；首次运行为诚实红：product-lint/format/typecheck/tests/framework-validate 各 1，按「CI 失败分类与纠错」逐类修复后复跑） | 修复后复跑全绿（终态行见迭代日志） | 交付提交（38 文件）：supersedes 域+两侧序列化 / 改稿闭环 / 投稿包五件制品 / 期刊闭集 / 收口资产 / 宪章记账；**零 run（`covered_by: 910dd745`）** —— 同批推送，被 tip 的 run 承担 |
+| `910dd745` | [M0 41238101258](https://github.com/Eswink/research-system-new/actions/runs/41238101258) / [Push 41238100825](https://github.com/Eswink/research-system-new/actions/runs/41238100825) | **M0 `cancelled`（7/8 job success，`quality-windows-latest` 撞 20 分钟超时窗口 —— GOAL-101 `W-5` 的同一形态，待拍板面）**；**Push 全 success** | **交付 tip**（含见证；两树复检 83 判词逐行相同、sha256 `50b174dd…`，归档 `scratch/goal102-20261101/`）。超时不是门判红（日志无测试失败），但也**不是绿**——如实登记，不冒充全绿 |
 
 ## CI 失败分类与纠错
 
@@ -222,11 +223,11 @@ IMRaD + 引用闭合 + 编辑决定 + 逐条应答），但两件事在结构上
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261031-102 | `9a313685` →（修复与见证提交见 CI 台账） | 单元 154 passed（域 19 / sqlite 13 / 改稿 8 / 投稿 11 / 期刊 9 / 协议 39 / 手稿装配与编辑等 32）；产品入口 e2e 15 passed（真容器实验）；全量 m0 见 §验证与证据 | （见 CI 台账） | `FakeArtifactStore.mark` 重建白名单丢 `supersedes`（判据先红后绿）；GOAL-101 残余节 W 编号乱序（charter 读取器拒读，纯重排修复）；上一轮 tip 链两行台账欠账（`3cd63a4f` / `66177f39`）按 API 读数补记 | W-1…W-6 逐条处置（见残余节）；期刊选择的语义匹配不可判（U-1） | 判词内容驱动改稿（复检域下一级）；叙述质量强口径（需先论证可判性）；Postgres 行往返在无 DSN 环境仍只跑文件面判据 |
+| 1 | PLAN-20261031-102 | `9a313685` → `910dd745` | 单元 154 passed（域 19 / sqlite 13 / 改稿 8 / 投稿 11 / 期刊 9 / 协议 39 / 手稿装配与编辑等 32）；产品入口 e2e 15 passed（真容器实验）；两树复检 **PASS**（83 判词逐行相同 + sha256 相同） | [M0 41238101258](https://github.com/Eswink/research-system-new/actions/runs/41238101258) / [Push 41238100825](https://github.com/Eswink/research-system-new/actions/runs/41238100825)：Push success；M0 7/8 success + `quality-windows-latest` cancelled（W-5 超时窗口，待拍板） | `FakeArtifactStore.mark` 重建白名单丢 `supersedes`（判据先红后绿）；GOAL-101 残余节 W 编号乱序（charter 读取器拒读，纯重排修复）；上一轮 tip 链两行台账欠账（`3cd63a4f` / `66177f39`）按 API 读数补记 | W-1…W-6 逐条处置（见残余节）；期刊选择的语义匹配不可判（U-1） | 判词内容驱动改稿（复检域下一级）；叙述质量强口径（需先论证可判性）；Postgres 行往返在无 DSN 环境仍只跑文件面判据 |
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-10-31 | **ACTIVE** | **建档**：承用户 goal-mode 指令（序 70）。charter 读取器先以 `REFUSED RESIDUAL_GAP` 拒读 GOAL-101（W-6 在 W-5 前）；纯重排后可读，读到 W-1…W-6 六条残余。 |
-| 2026-11-01 | **ACHIEVED** | **六个 EC 全 PASS**。产品面：`supersedes` 域+两侧序列化+链校验（缺席/跨 run/成环各点名）；改稿闭环（v2 + 引用判据 + 三反证）；投稿包五件制品（CRediT 27 角色闭集映射 / COI 结构化字段 / digest 读面字节可重算）；期刊闭集（无评分字段 + 镜像判漂移）。实测修掉 `FakeArtifactStore.mark` 丢字段一处。记录面：验证器 + 断言集登记进 `_VERIFIERS` 与 `IN_SCOPE`；宪章程序表序 70 + 阶梯两行 + 两表各 3 行。 |
+| 2026-11-01 | **ACHIEVED** | **六个 EC 全 PASS**。收口证据链：本地 m0 第四次全绿（前三次的诚实红逐类修复：治理必需章节 / 规模门 450 行 / mypy 再出口 / 链台账）；两树复检 `TWO-TREE PASS`（83 判词逐行相同，sha256 `50b174dd…`，归档 scratch）；CI Push success、M0 7/8（`quality-windows-latest` 撞 W-5 超时窗口 ⇒ cancelled，如实登记不冒充全绿）。产品面：`supersedes` 域+两侧序列化+链校验（缺席/跨 run/成环各点名）；改稿闭环（v2 + 引用判据 + 三反证）；投稿包五件制品（CRediT 27 角色闭集映射 / COI 结构化字段 / digest 读面字节可重算）；期刊闭集（无评分字段 + 镜像判漂移）。实测修掉 `FakeArtifactStore.mark` 丢字段一处。记录面：验证器 + 断言集登记进 `_VERIFIERS` 与 `IN_SCOPE`；宪章程序表序 70 + 阶梯两行 + 两表各 3 行。 |
