@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "aba0c88831812f09c0a6e6bac7bc9b3a4f35312d"
+        "sha256": "f8e484348ff683f238b70e26a630244f39edcafd"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1363,8 +1363,16 @@
         "sha256": "286e7f37a67eb7e75ecdf89c4ea23fe83a3cff54"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261101-236-project-config-needs-a-per-run-hook.md",
+        "sha256": "628da44adcd2f5f4e78a0318441c848e24504285"
+      },
+      {
+        "path": ".cursor/memory/entries/MEM-20261101-237-declared-but-never-constructed-judge-the-call-site.md",
+        "sha256": "d3d947991eb2b54b8e8bc3dae5838e02e227c674"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "44d50fcaa803ec5fa882112cf46cb3b3cafffaaf"
+        "sha256": "16f82f239c9cbbc81a3ea17dd108571d561bfc7b"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1804,11 +1812,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261031-102-submission-package-and-revision-closure.md",
-        "sha256": "fc182294189d8d221e8140c2b3cef3aaeed50486"
+        "sha256": "c7223844b6e450fcf29419ad9a62fa4a2bd9b7dc"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261101-103-phase-events-and-frontend-visible-chain.md",
+        "sha256": "cc017263e4f6b095aaa10d2c9d69c0f1991725bd"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "8d8e129600d6c61c80f42b1b45173d393dfb75c8"
+        "sha256": "c04fe6b5c9a542167ba79460f612f95fd379d76c"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -4279,6 +4291,10 @@
         "sha256": "2889121436892e9c570341cde542acac0ecbfe3d"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261101-103-phase-events-and-frontend-visible-chain.md",
+        "sha256": "252fb0406c7b8afda9ae621e92d0bdf6f2717949"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5683,6 +5699,10 @@
         "sha256": "6a02b37bd96cf70d958c29454e29c247b592afef"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261101-103-phase-events-and-frontend-visible-chain.md",
+        "sha256": "b454bf3714cf32dfcb3ac5e7cf4564db02028767"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -7012,7 +7032,7 @@
       },
       {
         "path": "apps/web/src/api/types.ts",
-        "sha256": "9c47a7fe6b14bedca928c6280b798a5b81468303"
+        "sha256": "b87cf935e359bf312a0dbab3b442a27675efec55"
       },
       {
         "path": "apps/web/src/api/workspaceSnapshotClient.ts",
@@ -10135,12 +10155,16 @@
         "sha256": "52681dde4158e6f97c06b063a545197777f82853"
       },
       {
+        "path": "apps/web/src/features/reports/ManuscriptPanel.tsx",
+        "sha256": "a7418fc68c48ec481cc5a692e20ba9165dbfec15"
+      },
+      {
         "path": "apps/web/src/features/reports/ReportBody.tsx",
         "sha256": "54f00ae91c0143577641a9dba9ca6db579d06cb4"
       },
       {
         "path": "apps/web/src/features/reports/ReportsPage.tsx",
-        "sha256": "ce6f58389c7781658e75f9250e0e143d60d338d4"
+        "sha256": "b1f26d31901a555c487f5ffc5134250117ea18f6"
       },
       {
         "path": "apps/web/src/features/run-comparison/ComparePage.module.css",
@@ -10159,6 +10183,14 @@
         "sha256": "7ca5372a6e42e4f05bd8733bcb2a574955f30ca3"
       },
       {
+        "path": "apps/web/src/features/runs/PhaseProgress.module.css",
+        "sha256": "d9caa50a4e3be9ec59fdf134854358085513c626"
+      },
+      {
+        "path": "apps/web/src/features/runs/PhaseProgress.tsx",
+        "sha256": "35d630eed848e006fdbd4bddc368931853e56974"
+      },
+      {
         "path": "apps/web/src/features/runs/RebuildReadiness.tsx",
         "sha256": "9e9850431f1cc2ff6858542c3551e810327b89aa"
       },
@@ -10172,7 +10204,7 @@
       },
       {
         "path": "apps/web/src/features/runs/RunPanel.tsx",
-        "sha256": "2c9e7166b2e4176d9481b6a063c19d9d20dc3231"
+        "sha256": "7db38ce57fcb8f39f42194c5ec27e0489bfe8479"
       },
       {
         "path": "apps/web/src/features/runs/TimelineView.tsx",
@@ -10192,7 +10224,7 @@
       },
       {
         "path": "apps/web/src/features/runs/useRunEventStream.ts",
-        "sha256": "521686acb559f8638ce6c3896941a482657bddad"
+        "sha256": "627778ba60f1df135f1b6ac7e86a905ccd144b4d"
       },
       {
         "path": "apps/web/src/features/runs/useRunTimeline.ts",
@@ -10396,7 +10428,7 @@
       },
       {
         "path": "apps/web/src/features/workspace/ArtifactBrowser.tsx",
-        "sha256": "a0d782a32429aa4e25188dd86f67260481de8c73"
+        "sha256": "4e24a9885463a382fa3f0831fb667461ba507a2c"
       },
       {
         "path": "apps/web/src/features/workspace/ArtifactDiffPanel.tsx",
@@ -10409,6 +10441,10 @@
       {
         "path": "apps/web/src/features/workspace/WorkspaceView.tsx",
         "sha256": "02ab93b47edcd5e91cc854a1aced1eff27ea7e34"
+      },
+      {
+        "path": "apps/web/src/features/workspace/artifactLabels.ts",
+        "sha256": "9f3ce046ed2f23ef3210955256b964f92c64fe8b"
       },
       {
         "path": "apps/web/src/features/workspace/workspaceSnapshotColumns.tsx",
@@ -10632,7 +10668,7 @@
       },
       {
         "path": "apps/web/tests/e2e/apiFixtures.ts",
-        "sha256": "fcc1fd3d374182393f1984101441fe211be65f69"
+        "sha256": "7cbe150ae7462fb701b6b83b773116a925bc0ae7"
       },
       {
         "path": "apps/web/tests/e2e/apiHarness.ts",
@@ -10932,7 +10968,7 @@
       },
       {
         "path": "apps/web/tests/e2e/design-outlines.json",
-        "sha256": "730c32f001a334cdec6ff2f0296c696004aa18b9"
+        "sha256": "462b419b6da1a14208fd954a48c20d5825176c2c"
       },
       {
         "path": "apps/web/tests/e2e/endpoint-credential-boundary.spec.ts",
@@ -11075,6 +11111,14 @@
         "sha256": "cb84e0f95f503567d9799e1f3c082777d0c7b34f"
       },
       {
+        "path": "apps/web/tests/e2e/run-artifact-chain-labels.spec.ts",
+        "sha256": "0f157e482dcc14e3fdb95ce30d064ff2dc16ee9c"
+      },
+      {
+        "path": "apps/web/tests/e2e/run-phase-progress.spec.ts",
+        "sha256": "76343946823f1aee7b3b8d71dd843c615b6ff093"
+      },
+      {
         "path": "apps/web/tests/e2e/run-rebuild-readiness.spec.ts",
         "sha256": "f381d69917cd6987cb41251a45fee85a72a3ae26"
       },
@@ -11088,7 +11132,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-api.ts",
-        "sha256": "b0460cf7f006d07436d2ee60fe4b6f6c9c9c0f3a"
+        "sha256": "a03108943312b1469ce2ef7afba8e25f2a995d16"
       },
       {
         "path": "apps/web/tests/e2e/stub-fixtures.ts",
@@ -11132,7 +11176,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-runs.ts",
-        "sha256": "ff2e0724c42d0818db88f5ed28d580cd1d3faccb"
+        "sha256": "0abf031a5c324b7cf624264f1fedb9c147595831"
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-schedules.ts",
@@ -11148,7 +11192,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes.ts",
-        "sha256": "560b60afac05f6da42c0a355ed36669e9324f920"
+        "sha256": "aa2bff850506852ba4fb13318eb287f15d4d9e05"
       },
       {
         "path": "apps/web/tests/e2e/tool-pack-write.spec.ts",
@@ -11408,7 +11452,7 @@
       },
       {
         "path": "docs/api/openapi.m13.json",
-        "sha256": "2299ff15a32d0ca4ef42b24cf7d750151888a609"
+        "sha256": "bdbc153ab8463834fa79a50f1f143bba78c84719"
       },
       {
         "path": "docs/architecture/AGENT_BACKENDS.md",
@@ -11452,7 +11496,7 @@
       },
       {
         "path": "docs/architecture/EVENT_MODEL.md",
-        "sha256": "1fd0f0ececc41cf9d90466579b0f87ef59218c59"
+        "sha256": "67c11969e1f96eb414d61152829736ebbb313a88"
       },
       {
         "path": "docs/architecture/LOCAL_GATE_PROTOCOL.md",
@@ -11460,7 +11504,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "5c50bb75d401af89fb6195ad4af0f139d4019257"
+        "sha256": "bc222568fd6a70452f2d602c9456c267dfb1462a"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -13556,7 +13600,7 @@
       },
       {
         "path": "packages/application/ports/resource_catalog.py",
-        "sha256": "8baf5c348b3ced0d3b5f48ec962239dbacf50fab"
+        "sha256": "cca21dd05a10fea1bb6706b03f5b01269e2cf3ee"
       },
       {
         "path": "packages/application/ports/retrieval_index.py",
@@ -13808,11 +13852,11 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_call_arguments.py",
-        "sha256": "7b694e57f6e74d8618a98d8d03893643b7698f3f"
+        "sha256": "7210ea93a8dc4d5519a18ed4a756e8f7c6df20b6"
       },
       {
         "path": "packages/application/run_orchestration/phase_capabilities.py",
-        "sha256": "bc4edf9905d0e7745bd2e42acdb8b07db5ed5e90"
+        "sha256": "27c398a408bcd60732d31b336285cfc232797e66"
       },
       {
         "path": "packages/application/run_orchestration/phase_capability_triggers.py",
@@ -13824,11 +13868,15 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_pause.py",
-        "sha256": "2e5cd55f1c42eacee18077c595c3c4b14c8fd512"
+        "sha256": "155de1081936120e84f043bd2c38e05dd2a63ecf"
+      },
+      {
+        "path": "packages/application/run_orchestration/phase_progress.py",
+        "sha256": "ef069cf1ff6660e978fd234a182f718839b68e6a"
       },
       {
         "path": "packages/application/run_orchestration/phase_runner.py",
-        "sha256": "8078467901a8f5fdf422673f95bc9e482dc12908"
+        "sha256": "107dfb02cafb768c08254bf01fd4c9b950b273fd"
       },
       {
         "path": "packages/application/run_orchestration/prior_knowledge.py",
@@ -13936,7 +13984,7 @@
       },
       {
         "path": "packages/application/run_orchestration/runner_wiring.py",
-        "sha256": "57cbdf62809c5ccfdf497a7b176b31413b7beed5"
+        "sha256": "8f3b49c77fb5b19eabf17fd324b87ac8e4bf46de"
       },
       {
         "path": "packages/application/run_orchestration/runtime_fingerprint.py",
@@ -13956,7 +14004,7 @@
       },
       {
         "path": "packages/application/run_orchestration/session_resolution.py",
-        "sha256": "775b55e4e2662228c1ad71386f616c10c2cf424f"
+        "sha256": "9b3547cb0d525d8231ebfd3c51a1b7e9c57b87da"
       },
       {
         "path": "packages/application/run_orchestration/snapshot_migration.py",
@@ -13976,7 +14024,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_executor.py",
-        "sha256": "acb7e8b9993a7c73a4270cec0968994d495660af"
+        "sha256": "6e4fe4bcb7fa67534806081c6cde60404d18cbcd"
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
@@ -14088,7 +14136,7 @@
       },
       {
         "path": "packages/domain/events.py",
-        "sha256": "715a13f2ec496e077eb3aca29aba7c6a91ab7508"
+        "sha256": "6701a723fe858675e2918caff0ab1ca85373700f"
       },
       {
         "path": "packages/domain/evidence.py",
@@ -14436,7 +14484,7 @@
       },
       {
         "path": "services/api/dto/artifacts.py",
-        "sha256": "0dadefd46f5f845ff508875cab1f292b1a543157"
+        "sha256": "21c84272e18795cfc40499534a6c76677835951d"
       },
       {
         "path": "services/api/dto/budget_forecast.py",
@@ -14460,7 +14508,7 @@
       },
       {
         "path": "services/api/dto/inspection.py",
-        "sha256": "3b2b5765240352a70cc6471088b805936c3ade2b"
+        "sha256": "0dc2689b0a15e024dc4d46ad98b6bd21c77bc2d4"
       },
       {
         "path": "services/api/dto/library.py",
@@ -14508,7 +14556,7 @@
       },
       {
         "path": "services/api/dto/runs.py",
-        "sha256": "63b3def36c5285ccf12d667cba6f6a3d05d9edc8"
+        "sha256": "56550c0db451e79280ee215d6e125b5c629f5f9c"
       },
       {
         "path": "services/api/dto/tasks.py",
@@ -14652,7 +14700,7 @@
       },
       {
         "path": "services/api/retrieval_wiring.py",
-        "sha256": "bdb2b06c51392c27989cca4e9684d36d441ea4fa"
+        "sha256": "9fd9921ad4a9c1d8a29ff09c1efdb1fe23f97fd2"
       },
       {
         "path": "services/api/review_material_support.py",
@@ -14672,7 +14720,7 @@
       },
       {
         "path": "services/api/routers/artifacts.py",
-        "sha256": "b986a96ef42b61c70bbc0a5168465a8d74cbd41d"
+        "sha256": "7c0020cf466ec36ea8e690db04fbe13a92afb6d2"
       },
       {
         "path": "services/api/routers/budget_forecast.py",
@@ -14692,7 +14740,7 @@
       },
       {
         "path": "services/api/routers/inspection.py",
-        "sha256": "7d349a1a241a2230299f89a9f8c997f35e2b8204"
+        "sha256": "2b5c35f6092f9d008742054c046a225ac05108b7"
       },
       {
         "path": "services/api/routers/library.py",
@@ -14760,7 +14808,7 @@
       },
       {
         "path": "services/api/routers/runs.py",
-        "sha256": "50f0901606f7a6415037f76517ca720be57104d0"
+        "sha256": "f39ba64cb847b936e0f73315676b2855bef9abd0"
       },
       {
         "path": "services/api/routers/tasks.py",
@@ -14813,6 +14861,10 @@
       {
         "path": "services/api/run_pause_view.py",
         "sha256": "0ba3a362df6b943649c7a2d055010cb2fbd3b8c4"
+      },
+      {
+        "path": "services/api/run_phase_view.py",
+        "sha256": "f9c7384f1fe19a5c4f5957930ab32e64f00b359e"
       },
       {
         "path": "services/api/run_rebuild_view.py",
@@ -15495,6 +15547,10 @@
         "sha256": "1f1e8445bc816bcbb831907450e61e7c755f11bb"
       },
       {
+        "path": "tests/api/test_read_face_field_completeness.py",
+        "sha256": "9b7219f865a60a63a559cb000dd8a14896244fa4"
+      },
+      {
         "path": "tests/api/test_real_protocol_identity.py",
         "sha256": "635df4716665d15d2812637cf8f730a9dc7986e9"
       },
@@ -15509,6 +15565,10 @@
       {
         "path": "tests/api/test_retmax_is_configurable.py",
         "sha256": "5988a6377e1449c8a1ff23d34f5341e447c3613d"
+      },
+      {
+        "path": "tests/api/test_run_detail_phases.py",
+        "sha256": "cda8f8f457a6e679a5d477e0ec2ed8f16a170264"
       },
       {
         "path": "tests/api/test_run_dispatch_view_api.py",
@@ -15624,7 +15684,7 @@
       },
       {
         "path": "tests/api/test_write_body_typos_are_named.py",
-        "sha256": "ebff680f08cb76324b5acf51b7f19bd9567f23b8"
+        "sha256": "fcc5d4c0af8346ab08ddc33dcd6e4ad062f99a7b"
       },
       {
         "path": "tests/api/test_write_face_cannot_be_bypassed.py",
@@ -15983,6 +16043,10 @@
         "sha256": "a314d745421b25022aa536416d223b06c1c897c2"
       },
       {
+        "path": "tests/application/run_orchestration/test_phase_progress_events.py",
+        "sha256": "7f2ddc1e1463e88f2aded6ab2311626c8fa077d2"
+      },
+      {
         "path": "tests/application/run_orchestration/test_prior_knowledge_in_prompt.py",
         "sha256": "0f38de10c8bbc94682582e970eedf7ef74633b8b"
       },
@@ -16265,6 +16329,10 @@
       {
         "path": "tests/application/test_research_report_assembler.py",
         "sha256": "01114c1ab67c12c9439a2b850d24000263b6d2ff"
+      },
+      {
+        "path": "tests/application/test_retmax_project_setting.py",
+        "sha256": "cdf327a536eaafdc5b51fc1a29eb78c576c72e4b"
       },
       {
         "path": "tests/application/test_retrieval_context_read_face.py",
@@ -16912,7 +16980,7 @@
       },
       {
         "path": "tests/domain/test_m5_domain_increments.py",
-        "sha256": "a5dabaafc6fdc3cff6520db938b7155a9e372598"
+        "sha256": "91dafecfc2d24e2da00a103a32ae01cafa4c96f3"
       },
       {
         "path": "tests/domain/test_manifest.py",
@@ -17408,7 +17476,7 @@
       },
       {
         "path": "tests/e2e/test_vertical_slice_happy_path.py",
-        "sha256": "0273a962c6fe666d854c2f1999f477646d6f0a86"
+        "sha256": "18e53e102ce8821d1d77579e7dc9fbf6be8f8605"
       },
       {
         "path": "tests/e2e/test_workflow_restart_recovery.py",
@@ -17840,7 +17908,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "cfe99156a5a082729d4a60e28365c7e966ea4719"
+        "sha256": "8e6cfb2dbb334b0f551bd69a363b4d29ffc1e91c"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -17915,6 +17983,10 @@
         "sha256": "cf0683698b6cc7dfa196761fa4c4f43cd398e603"
       },
       {
+        "path": "tests/tooling/test_manuscript_quality_strong_criterion.py",
+        "sha256": "5f4deb7e6f6e9f6e14104529f44b1d158348b467"
+      },
+      {
         "path": "tests/tooling/test_next_round_charter.py",
         "sha256": "7799b7c6247758328dbc0f8686a95a60d16686d1"
       },
@@ -17972,7 +18044,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "2deabc19729bc634fe340c4fc03e1e9a01383c3c"
+        "sha256": "425c5d1e8293dca1e5669bf91f1e9b386e2d720b"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -18008,7 +18080,7 @@
       },
       {
         "path": "tests/tooling/test_verifier_main_files_report_no_negative.py",
-        "sha256": "de5802e59dade1bf03ce5010790835be84853649"
+        "sha256": "5d41455d769e58bb61955c6715af906473476c71"
       },
       {
         "path": "tests/tooling/test_个人生产续审v2.py",
@@ -18532,7 +18604,7 @@
       },
       {
         "path": "tools/goal100_closeout_assertions.py",
-        "sha256": "8f7bfaa0f6b1e7a7b687c0445cae69cc08c0b072"
+        "sha256": "7292d3a0d9c935c58d972ef1b59b3939c9fbb4e5"
       },
       {
         "path": "tools/goal101_closeout_assertions.py",
@@ -18541,6 +18613,10 @@
       {
         "path": "tools/goal102_closeout_assertions.py",
         "sha256": "a9ced4e5d2b173d1bc286fe2320cfa6c8532a9c3"
+      },
+      {
+        "path": "tools/goal103_closeout_assertions.py",
+        "sha256": "0d1a2a87134098c863ac3b43dc4b1654d323bda7"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -18991,11 +19067,15 @@
         "sha256": "d909fb2d60f9cc0e8f7ea1a7aa4ac9339215ce3b"
       },
       {
+        "path": "tools/verify_goal103_closeout.py",
+        "sha256": "d27f2e6698121bf508ce08b83483dc52ecd46e47"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "d9d6e3013b12c37762a86aa063f113752b8c8b67"
+    "head": "a889872ff7874f3979326b116a77a9db677cafb2"
   },
   "fingerprint_before": {
     "files": [
@@ -19417,7 +19497,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "aba0c88831812f09c0a6e6bac7bc9b3a4f35312d"
+        "sha256": "f8e484348ff683f238b70e26a630244f39edcafd"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -20360,8 +20440,16 @@
         "sha256": "286e7f37a67eb7e75ecdf89c4ea23fe83a3cff54"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261101-236-project-config-needs-a-per-run-hook.md",
+        "sha256": "628da44adcd2f5f4e78a0318441c848e24504285"
+      },
+      {
+        "path": ".cursor/memory/entries/MEM-20261101-237-declared-but-never-constructed-judge-the-call-site.md",
+        "sha256": "d3d947991eb2b54b8e8bc3dae5838e02e227c674"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "44d50fcaa803ec5fa882112cf46cb3b3cafffaaf"
+        "sha256": "16f82f239c9cbbc81a3ea17dd108571d561bfc7b"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -20801,11 +20889,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261031-102-submission-package-and-revision-closure.md",
-        "sha256": "fc182294189d8d221e8140c2b3cef3aaeed50486"
+        "sha256": "c7223844b6e450fcf29419ad9a62fa4a2bd9b7dc"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261101-103-phase-events-and-frontend-visible-chain.md",
+        "sha256": "cc017263e4f6b095aaa10d2c9d69c0f1991725bd"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "8d8e129600d6c61c80f42b1b45173d393dfb75c8"
+        "sha256": "c04fe6b5c9a542167ba79460f612f95fd379d76c"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -23276,6 +23368,10 @@
         "sha256": "2889121436892e9c570341cde542acac0ecbfe3d"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261101-103-phase-events-and-frontend-visible-chain.md",
+        "sha256": "252fb0406c7b8afda9ae621e92d0bdf6f2717949"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -24680,6 +24776,10 @@
         "sha256": "6a02b37bd96cf70d958c29454e29c247b592afef"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261101-103-phase-events-and-frontend-visible-chain.md",
+        "sha256": "b454bf3714cf32dfcb3ac5e7cf4564db02028767"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -26009,7 +26109,7 @@
       },
       {
         "path": "apps/web/src/api/types.ts",
-        "sha256": "9c47a7fe6b14bedca928c6280b798a5b81468303"
+        "sha256": "b87cf935e359bf312a0dbab3b442a27675efec55"
       },
       {
         "path": "apps/web/src/api/workspaceSnapshotClient.ts",
@@ -29132,12 +29232,16 @@
         "sha256": "52681dde4158e6f97c06b063a545197777f82853"
       },
       {
+        "path": "apps/web/src/features/reports/ManuscriptPanel.tsx",
+        "sha256": "a7418fc68c48ec481cc5a692e20ba9165dbfec15"
+      },
+      {
         "path": "apps/web/src/features/reports/ReportBody.tsx",
         "sha256": "54f00ae91c0143577641a9dba9ca6db579d06cb4"
       },
       {
         "path": "apps/web/src/features/reports/ReportsPage.tsx",
-        "sha256": "ce6f58389c7781658e75f9250e0e143d60d338d4"
+        "sha256": "b1f26d31901a555c487f5ffc5134250117ea18f6"
       },
       {
         "path": "apps/web/src/features/run-comparison/ComparePage.module.css",
@@ -29156,6 +29260,14 @@
         "sha256": "7ca5372a6e42e4f05bd8733bcb2a574955f30ca3"
       },
       {
+        "path": "apps/web/src/features/runs/PhaseProgress.module.css",
+        "sha256": "d9caa50a4e3be9ec59fdf134854358085513c626"
+      },
+      {
+        "path": "apps/web/src/features/runs/PhaseProgress.tsx",
+        "sha256": "35d630eed848e006fdbd4bddc368931853e56974"
+      },
+      {
         "path": "apps/web/src/features/runs/RebuildReadiness.tsx",
         "sha256": "9e9850431f1cc2ff6858542c3551e810327b89aa"
       },
@@ -29169,7 +29281,7 @@
       },
       {
         "path": "apps/web/src/features/runs/RunPanel.tsx",
-        "sha256": "2c9e7166b2e4176d9481b6a063c19d9d20dc3231"
+        "sha256": "7db38ce57fcb8f39f42194c5ec27e0489bfe8479"
       },
       {
         "path": "apps/web/src/features/runs/TimelineView.tsx",
@@ -29189,7 +29301,7 @@
       },
       {
         "path": "apps/web/src/features/runs/useRunEventStream.ts",
-        "sha256": "521686acb559f8638ce6c3896941a482657bddad"
+        "sha256": "627778ba60f1df135f1b6ac7e86a905ccd144b4d"
       },
       {
         "path": "apps/web/src/features/runs/useRunTimeline.ts",
@@ -29393,7 +29505,7 @@
       },
       {
         "path": "apps/web/src/features/workspace/ArtifactBrowser.tsx",
-        "sha256": "a0d782a32429aa4e25188dd86f67260481de8c73"
+        "sha256": "4e24a9885463a382fa3f0831fb667461ba507a2c"
       },
       {
         "path": "apps/web/src/features/workspace/ArtifactDiffPanel.tsx",
@@ -29406,6 +29518,10 @@
       {
         "path": "apps/web/src/features/workspace/WorkspaceView.tsx",
         "sha256": "02ab93b47edcd5e91cc854a1aced1eff27ea7e34"
+      },
+      {
+        "path": "apps/web/src/features/workspace/artifactLabels.ts",
+        "sha256": "9f3ce046ed2f23ef3210955256b964f92c64fe8b"
       },
       {
         "path": "apps/web/src/features/workspace/workspaceSnapshotColumns.tsx",
@@ -29629,7 +29745,7 @@
       },
       {
         "path": "apps/web/tests/e2e/apiFixtures.ts",
-        "sha256": "fcc1fd3d374182393f1984101441fe211be65f69"
+        "sha256": "7cbe150ae7462fb701b6b83b773116a925bc0ae7"
       },
       {
         "path": "apps/web/tests/e2e/apiHarness.ts",
@@ -29929,7 +30045,7 @@
       },
       {
         "path": "apps/web/tests/e2e/design-outlines.json",
-        "sha256": "730c32f001a334cdec6ff2f0296c696004aa18b9"
+        "sha256": "462b419b6da1a14208fd954a48c20d5825176c2c"
       },
       {
         "path": "apps/web/tests/e2e/endpoint-credential-boundary.spec.ts",
@@ -30072,6 +30188,14 @@
         "sha256": "cb84e0f95f503567d9799e1f3c082777d0c7b34f"
       },
       {
+        "path": "apps/web/tests/e2e/run-artifact-chain-labels.spec.ts",
+        "sha256": "0f157e482dcc14e3fdb95ce30d064ff2dc16ee9c"
+      },
+      {
+        "path": "apps/web/tests/e2e/run-phase-progress.spec.ts",
+        "sha256": "76343946823f1aee7b3b8d71dd843c615b6ff093"
+      },
+      {
         "path": "apps/web/tests/e2e/run-rebuild-readiness.spec.ts",
         "sha256": "f381d69917cd6987cb41251a45fee85a72a3ae26"
       },
@@ -30085,7 +30209,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-api.ts",
-        "sha256": "b0460cf7f006d07436d2ee60fe4b6f6c9c9c0f3a"
+        "sha256": "a03108943312b1469ce2ef7afba8e25f2a995d16"
       },
       {
         "path": "apps/web/tests/e2e/stub-fixtures.ts",
@@ -30129,7 +30253,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-runs.ts",
-        "sha256": "ff2e0724c42d0818db88f5ed28d580cd1d3faccb"
+        "sha256": "0abf031a5c324b7cf624264f1fedb9c147595831"
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-schedules.ts",
@@ -30145,7 +30269,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes.ts",
-        "sha256": "560b60afac05f6da42c0a355ed36669e9324f920"
+        "sha256": "aa2bff850506852ba4fb13318eb287f15d4d9e05"
       },
       {
         "path": "apps/web/tests/e2e/tool-pack-write.spec.ts",
@@ -30405,7 +30529,7 @@
       },
       {
         "path": "docs/api/openapi.m13.json",
-        "sha256": "2299ff15a32d0ca4ef42b24cf7d750151888a609"
+        "sha256": "bdbc153ab8463834fa79a50f1f143bba78c84719"
       },
       {
         "path": "docs/architecture/AGENT_BACKENDS.md",
@@ -30449,7 +30573,7 @@
       },
       {
         "path": "docs/architecture/EVENT_MODEL.md",
-        "sha256": "1fd0f0ececc41cf9d90466579b0f87ef59218c59"
+        "sha256": "67c11969e1f96eb414d61152829736ebbb313a88"
       },
       {
         "path": "docs/architecture/LOCAL_GATE_PROTOCOL.md",
@@ -30457,7 +30581,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "5c50bb75d401af89fb6195ad4af0f139d4019257"
+        "sha256": "bc222568fd6a70452f2d602c9456c267dfb1462a"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -32553,7 +32677,7 @@
       },
       {
         "path": "packages/application/ports/resource_catalog.py",
-        "sha256": "8baf5c348b3ced0d3b5f48ec962239dbacf50fab"
+        "sha256": "cca21dd05a10fea1bb6706b03f5b01269e2cf3ee"
       },
       {
         "path": "packages/application/ports/retrieval_index.py",
@@ -32805,11 +32929,11 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_call_arguments.py",
-        "sha256": "7b694e57f6e74d8618a98d8d03893643b7698f3f"
+        "sha256": "7210ea93a8dc4d5519a18ed4a756e8f7c6df20b6"
       },
       {
         "path": "packages/application/run_orchestration/phase_capabilities.py",
-        "sha256": "bc4edf9905d0e7745bd2e42acdb8b07db5ed5e90"
+        "sha256": "27c398a408bcd60732d31b336285cfc232797e66"
       },
       {
         "path": "packages/application/run_orchestration/phase_capability_triggers.py",
@@ -32821,11 +32945,15 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_pause.py",
-        "sha256": "2e5cd55f1c42eacee18077c595c3c4b14c8fd512"
+        "sha256": "155de1081936120e84f043bd2c38e05dd2a63ecf"
+      },
+      {
+        "path": "packages/application/run_orchestration/phase_progress.py",
+        "sha256": "ef069cf1ff6660e978fd234a182f718839b68e6a"
       },
       {
         "path": "packages/application/run_orchestration/phase_runner.py",
-        "sha256": "8078467901a8f5fdf422673f95bc9e482dc12908"
+        "sha256": "107dfb02cafb768c08254bf01fd4c9b950b273fd"
       },
       {
         "path": "packages/application/run_orchestration/prior_knowledge.py",
@@ -32933,7 +33061,7 @@
       },
       {
         "path": "packages/application/run_orchestration/runner_wiring.py",
-        "sha256": "57cbdf62809c5ccfdf497a7b176b31413b7beed5"
+        "sha256": "8f3b49c77fb5b19eabf17fd324b87ac8e4bf46de"
       },
       {
         "path": "packages/application/run_orchestration/runtime_fingerprint.py",
@@ -32953,7 +33081,7 @@
       },
       {
         "path": "packages/application/run_orchestration/session_resolution.py",
-        "sha256": "775b55e4e2662228c1ad71386f616c10c2cf424f"
+        "sha256": "9b3547cb0d525d8231ebfd3c51a1b7e9c57b87da"
       },
       {
         "path": "packages/application/run_orchestration/snapshot_migration.py",
@@ -32973,7 +33101,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_executor.py",
-        "sha256": "acb7e8b9993a7c73a4270cec0968994d495660af"
+        "sha256": "6e4fe4bcb7fa67534806081c6cde60404d18cbcd"
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
@@ -33085,7 +33213,7 @@
       },
       {
         "path": "packages/domain/events.py",
-        "sha256": "715a13f2ec496e077eb3aca29aba7c6a91ab7508"
+        "sha256": "6701a723fe858675e2918caff0ab1ca85373700f"
       },
       {
         "path": "packages/domain/evidence.py",
@@ -33433,7 +33561,7 @@
       },
       {
         "path": "services/api/dto/artifacts.py",
-        "sha256": "0dadefd46f5f845ff508875cab1f292b1a543157"
+        "sha256": "21c84272e18795cfc40499534a6c76677835951d"
       },
       {
         "path": "services/api/dto/budget_forecast.py",
@@ -33457,7 +33585,7 @@
       },
       {
         "path": "services/api/dto/inspection.py",
-        "sha256": "3b2b5765240352a70cc6471088b805936c3ade2b"
+        "sha256": "0dc2689b0a15e024dc4d46ad98b6bd21c77bc2d4"
       },
       {
         "path": "services/api/dto/library.py",
@@ -33505,7 +33633,7 @@
       },
       {
         "path": "services/api/dto/runs.py",
-        "sha256": "63b3def36c5285ccf12d667cba6f6a3d05d9edc8"
+        "sha256": "56550c0db451e79280ee215d6e125b5c629f5f9c"
       },
       {
         "path": "services/api/dto/tasks.py",
@@ -33649,7 +33777,7 @@
       },
       {
         "path": "services/api/retrieval_wiring.py",
-        "sha256": "bdb2b06c51392c27989cca4e9684d36d441ea4fa"
+        "sha256": "9fd9921ad4a9c1d8a29ff09c1efdb1fe23f97fd2"
       },
       {
         "path": "services/api/review_material_support.py",
@@ -33669,7 +33797,7 @@
       },
       {
         "path": "services/api/routers/artifacts.py",
-        "sha256": "b986a96ef42b61c70bbc0a5168465a8d74cbd41d"
+        "sha256": "7c0020cf466ec36ea8e690db04fbe13a92afb6d2"
       },
       {
         "path": "services/api/routers/budget_forecast.py",
@@ -33689,7 +33817,7 @@
       },
       {
         "path": "services/api/routers/inspection.py",
-        "sha256": "7d349a1a241a2230299f89a9f8c997f35e2b8204"
+        "sha256": "2b5c35f6092f9d008742054c046a225ac05108b7"
       },
       {
         "path": "services/api/routers/library.py",
@@ -33757,7 +33885,7 @@
       },
       {
         "path": "services/api/routers/runs.py",
-        "sha256": "50f0901606f7a6415037f76517ca720be57104d0"
+        "sha256": "f39ba64cb847b936e0f73315676b2855bef9abd0"
       },
       {
         "path": "services/api/routers/tasks.py",
@@ -33810,6 +33938,10 @@
       {
         "path": "services/api/run_pause_view.py",
         "sha256": "0ba3a362df6b943649c7a2d055010cb2fbd3b8c4"
+      },
+      {
+        "path": "services/api/run_phase_view.py",
+        "sha256": "f9c7384f1fe19a5c4f5957930ab32e64f00b359e"
       },
       {
         "path": "services/api/run_rebuild_view.py",
@@ -34492,6 +34624,10 @@
         "sha256": "1f1e8445bc816bcbb831907450e61e7c755f11bb"
       },
       {
+        "path": "tests/api/test_read_face_field_completeness.py",
+        "sha256": "9b7219f865a60a63a559cb000dd8a14896244fa4"
+      },
+      {
         "path": "tests/api/test_real_protocol_identity.py",
         "sha256": "635df4716665d15d2812637cf8f730a9dc7986e9"
       },
@@ -34506,6 +34642,10 @@
       {
         "path": "tests/api/test_retmax_is_configurable.py",
         "sha256": "5988a6377e1449c8a1ff23d34f5341e447c3613d"
+      },
+      {
+        "path": "tests/api/test_run_detail_phases.py",
+        "sha256": "cda8f8f457a6e679a5d477e0ec2ed8f16a170264"
       },
       {
         "path": "tests/api/test_run_dispatch_view_api.py",
@@ -34621,7 +34761,7 @@
       },
       {
         "path": "tests/api/test_write_body_typos_are_named.py",
-        "sha256": "ebff680f08cb76324b5acf51b7f19bd9567f23b8"
+        "sha256": "fcc5d4c0af8346ab08ddc33dcd6e4ad062f99a7b"
       },
       {
         "path": "tests/api/test_write_face_cannot_be_bypassed.py",
@@ -34980,6 +35120,10 @@
         "sha256": "a314d745421b25022aa536416d223b06c1c897c2"
       },
       {
+        "path": "tests/application/run_orchestration/test_phase_progress_events.py",
+        "sha256": "7f2ddc1e1463e88f2aded6ab2311626c8fa077d2"
+      },
+      {
         "path": "tests/application/run_orchestration/test_prior_knowledge_in_prompt.py",
         "sha256": "0f38de10c8bbc94682582e970eedf7ef74633b8b"
       },
@@ -35262,6 +35406,10 @@
       {
         "path": "tests/application/test_research_report_assembler.py",
         "sha256": "01114c1ab67c12c9439a2b850d24000263b6d2ff"
+      },
+      {
+        "path": "tests/application/test_retmax_project_setting.py",
+        "sha256": "cdf327a536eaafdc5b51fc1a29eb78c576c72e4b"
       },
       {
         "path": "tests/application/test_retrieval_context_read_face.py",
@@ -35909,7 +36057,7 @@
       },
       {
         "path": "tests/domain/test_m5_domain_increments.py",
-        "sha256": "a5dabaafc6fdc3cff6520db938b7155a9e372598"
+        "sha256": "91dafecfc2d24e2da00a103a32ae01cafa4c96f3"
       },
       {
         "path": "tests/domain/test_manifest.py",
@@ -36405,7 +36553,7 @@
       },
       {
         "path": "tests/e2e/test_vertical_slice_happy_path.py",
-        "sha256": "0273a962c6fe666d854c2f1999f477646d6f0a86"
+        "sha256": "18e53e102ce8821d1d77579e7dc9fbf6be8f8605"
       },
       {
         "path": "tests/e2e/test_workflow_restart_recovery.py",
@@ -36837,7 +36985,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "cfe99156a5a082729d4a60e28365c7e966ea4719"
+        "sha256": "8e6cfb2dbb334b0f551bd69a363b4d29ffc1e91c"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -36912,6 +37060,10 @@
         "sha256": "cf0683698b6cc7dfa196761fa4c4f43cd398e603"
       },
       {
+        "path": "tests/tooling/test_manuscript_quality_strong_criterion.py",
+        "sha256": "5f4deb7e6f6e9f6e14104529f44b1d158348b467"
+      },
+      {
         "path": "tests/tooling/test_next_round_charter.py",
         "sha256": "7799b7c6247758328dbc0f8686a95a60d16686d1"
       },
@@ -36969,7 +37121,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "2deabc19729bc634fe340c4fc03e1e9a01383c3c"
+        "sha256": "425c5d1e8293dca1e5669bf91f1e9b386e2d720b"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -37005,7 +37157,7 @@
       },
       {
         "path": "tests/tooling/test_verifier_main_files_report_no_negative.py",
-        "sha256": "de5802e59dade1bf03ce5010790835be84853649"
+        "sha256": "5d41455d769e58bb61955c6715af906473476c71"
       },
       {
         "path": "tests/tooling/test_个人生产续审v2.py",
@@ -37529,7 +37681,7 @@
       },
       {
         "path": "tools/goal100_closeout_assertions.py",
-        "sha256": "8f7bfaa0f6b1e7a7b687c0445cae69cc08c0b072"
+        "sha256": "7292d3a0d9c935c58d972ef1b59b3939c9fbb4e5"
       },
       {
         "path": "tools/goal101_closeout_assertions.py",
@@ -37538,6 +37690,10 @@
       {
         "path": "tools/goal102_closeout_assertions.py",
         "sha256": "a9ced4e5d2b173d1bc286fe2320cfa6c8532a9c3"
+      },
+      {
+        "path": "tools/goal103_closeout_assertions.py",
+        "sha256": "0d1a2a87134098c863ac3b43dc4b1654d323bda7"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -37988,15 +38144,19 @@
         "sha256": "d909fb2d60f9cc0e8f7ea1a7aa4ac9339215ce3b"
       },
       {
+        "path": "tools/verify_goal103_closeout.py",
+        "sha256": "d27f2e6698121bf508ce08b83483dc52ecd46e47"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "d9d6e3013b12c37762a86aa063f113752b8c8b67"
+    "head": "a889872ff7874f3979326b116a77a9db677cafb2"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "d9d6e3013b12c37762a86aa063f113752b8c8b67",
+  "ran_at_head": "a889872ff7874f3979326b116a77a9db677cafb2",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
