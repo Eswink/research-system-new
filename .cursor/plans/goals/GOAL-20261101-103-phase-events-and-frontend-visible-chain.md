@@ -280,6 +280,8 @@ GOAL 的链。）
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
 | `24e3418b` | 本地全量 m0 见证（`evidence/M0-WITNESS.json`，重封于 `ef755a99`） | **本地 m0 终态行 `PASS: profile=m0; 23 deterministic checks`**（24 条 `PASS [` 行 = 23 + 计数外的 `release-assets-immutable`）；**零 run（`covered_by: ef755a99`）** —— 同批推送 | 交付提交：相级事件 + `RunDetailDto.phases` + 读面两字段 + 前端两件 + `retmax` 项目级 + §7 论证 + 早期一代射程。首轮见证为**诚实红**（5 个 check：product-lint / format / typecheck / tests / typescript-lint），逐类修复后复跑；第二轮回落后只剩 `python/tests`（5 条真实失败），再修后绿 |
+| `79d02c28` | 本地（记录提交，只改 GOAL 记录 + 见证） | 零 run（`covered_by: 52f7ed35`） | 上一轮的收口封印：CI 读数回填 + 见证重封 |
+| `52f7ed35` | 本地 m0 见证（`evidence/M0-WITNESS.json`；终态行 `PASS: profile=m0; 23 deterministic checks`，跑门期间树未变） | 交付提交；CI 读数见下（本行为本轮的**真跑取证**提交） | **补收口复检指名的两条判据**：① `tests/e2e/test_goal103_phase_events_product_path.py`（十一相**真跑**：恰好 11 对相级事件、时序按 `occurred_at`、DAG 拓扑序、制品真实落库、`phases` 长度 11 全 SUCCEEDED）；② `tests/e2e/test_goal103_read_face_http.py`（**路由级**：两个补字段经真实 `GET /runs/{id}/artifacts` / `/reviews` 回得来）。**同轮修掉真跑暴露的实现缺陷**（`experiment` 相无任务行 ⇒ 读面曾读成「未开始」） |
 | `478d39ed` | [M0 41316718426](https://github.com/Eswink/research-system-new/actions/runs/41316718426) / [Push 41316718390](https://github.com/Eswink/research-system-new/actions/runs/41316718390) | **M0 `cancelled`（7/8 success，`quality-windows-latest` 撞窗口；实测 `14:32:44Z → 14:52:52Z` = 满 20 分钟、非成功步骤只有 `Run all M0 gates` = `cancelled`、无 failure）**；Push 全 success | **封印提交**（只改 GOAL 记录 + 见证）。**这条与前一条的对照是 `W-5` 归因的决定性证据**：**同一份代码**在 `ad17cb22` 上 8/8 全 success、在 `478d39ed` 上撞窗口 —— 差异只在 runner 的时间预算，不在内容。如实记 `cancelled`。 |
 | `ad17cb22` | [M0 41313339542](https://github.com/Eswink/research-system-new/actions/runs/41313339542) / [Push 41313339410](https://github.com/Eswink/research-system-new/actions/runs/41313339410) | **M0 `success`（8/8 job success，含 `quality-windows-latest`）**；**Push 全 success** | **收口封印提交**（只改 GOAL 记录 + `M0-WITNESS.json`）。**这一轮的 `quality-windows` 是 success** ⇒ 前两条 `cancelled` 归因为 20 分钟窗口（`W-5`）**得到证实**：同一套代码在同一 runner 上这次跑完了 8/8。本地见证终态行 `PASS: profile=m0; 23 deterministic checks`（`dcf6f764`，跑门期间树未变）。 |
 | `dcf6f764` | [M0 41308666269](https://github.com/Eswink/research-system-new/actions/runs/41308666269) / [Push 41308665897](https://github.com/Eswink/research-system-new/actions/runs/41308665897) | **M0 `cancelled`（7/8 job success，`quality-windows-latest` 再次撞 20 分钟超时窗口 —— `W-5`）**；**Push 全 success** | **收口 tip**（CI 读数回填 + 见证重封）。`quality-windows-latest` 实测 `12:54:12Z → 13:14:18Z` = **满 20 分钟**，非成功步骤只有 `Run all M0 gates` 一条、其结论是 `cancelled`（**无任何 step 报 failure**，与 `ef755a99` 同一形态）；其余 7 个 job（含 `quality-ubuntu` / `container-quality` / `collector-quality` / 两条 `observability-overhead`）全 success。**如实记 `cancelled`，不冒充绿。** |
@@ -290,7 +292,7 @@ GOAL 的链。）
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261101-103 | `24e3418b` → `a889872f` → `ef755a99` → `dcf6f764` → `ad17cb22` → `478d39ed` | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 105/105 | **M0 `success` 8/8**（`ad17cb22`；此前两条 `cancelled` 证实为 W-5 窗口）；Push success | 无 | 八条 EC 全 PASS；残余 `W-1`…`W-5` 与未覆盖 `U-1`…`U-3` 已登记 | 见 §7「结论」与残余节（续跑取证 / 批量相进度读面 / 阈值标定 / 外部评审面板） |
+| 1 | PLAN-20261101-103 | `24e3418b` → `a889872f` → `ef755a99` → `dcf6f764` → `ad17cb22` → `478d39ed` → `79d02c28` → `52f7ed35` | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 105/105 | **M0 `success` 8/8**（`ad17cb22`；此前两条 `cancelled` 证实为 W-5 窗口）；Push success | 无 | 八条 EC 全 PASS；残余 `W-1`…`W-5` 与未覆盖 `U-1`…`U-3` 已登记 | 见 §7「结论」与残余节（续跑取证 / 批量相进度读面 / 阈值标定 / 外部评审面板） |
 
 
 ## 残余与未覆盖范围
