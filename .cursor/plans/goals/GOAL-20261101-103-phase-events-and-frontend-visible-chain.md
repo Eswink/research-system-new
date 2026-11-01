@@ -273,13 +273,15 @@ GOAL 的链。）
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `24e3418b` | 本地全量 m0 见证（`evidence/M0-WITNESS.json`） | 交付提交；本地 m0 终态行与 CI 读数见下 | 交付提交（见 commit 正文）：相级事件 + `RunDetailDto.phases` + 读面两字段 + 前端两件 + `retmax` 项目级 + §7 论证 + 早期一代射程。首轮见证为**诚实红**（5 个 check：product-lint / format / typecheck / tests / typescript-lint），逐类修复后复跑 |
+| `24e3418b` | 本地全量 m0 见证（`evidence/M0-WITNESS.json`，重封于 `ef755a99`） | **本地 m0 终态行 `PASS: profile=m0; 23 deterministic checks`**（24 条 `PASS [` 行 = 23 + 计数外的 `release-assets-immutable`）；**零 run（`covered_by: ef755a99`）** —— 同批推送 | 交付提交：相级事件 + `RunDetailDto.phases` + 读面两字段 + 前端两件 + `retmax` 项目级 + §7 论证 + 早期一代射程。首轮见证为**诚实红**（5 个 check：product-lint / format / typecheck / tests / typescript-lint），逐类修复后复跑；第二轮回落后只剩 `python/tests`（5 条真实失败），再修后绿 |
+| `a889872f` | 本地（记录提交，只改 `.cursor/` 与两份测试的门内注释） | 零 run（`covered_by: ef755a99`） | 台账补登：GOAL-102 的 `d9d6e301` / `c974223f` 两行（判据未改）；GOAL-103 的 CI 台账建表 |
+| `ef755a99` | [M0 41304287810](https://github.com/Eswink/research-system-new/actions/runs/41304287810) / [Push 41304287338](https://github.com/Eswink/research-system-new/actions/runs/41304287338) | **M0 `cancelled`（7/8 job success，`quality-windows-latest` 撞 20 分钟超时窗口 —— `W-5` 的同一形态）**；**Push 全 success**（CodeQL 三语言 success） | **交付 tip**（含见证）。`quality-windows-latest` 实测 `11:59:03Z → 12:19:09Z` = **满 20 分钟**，卡在 `Run all M0 gates` 这一步被 `cancelled`（**没有任何 step 报 failure**）；`quality-ubuntu` / `console-frontend` / `eval-gate` / `container-quality` / `collector-quality` / 两条 `observability-overhead` 全 success。**不是绿**，也不冒充绿：如实记 `cancelled` |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261101-103 | `24e3418b` | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 105/105 | 见「CI 台账」 | 无 | 八条 EC 全 PASS；残余 `W-1`…`W-5` 与未覆盖 `U-1`…`U-3` 已登记 | 见 §7「结论」与残余节（续跑取证 / 批量相进度读面 / 阈值标定 / 外部评审面板） |
+| 1 | PLAN-20261101-103 | `24e3418b` → `a889872f` → `ef755a99` | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 105/105 | M0 `cancelled`（7/8 success，windows 撞 W-5 超时窗口）；Push success | 无 | 八条 EC 全 PASS；残余 `W-1`…`W-5` 与未覆盖 `U-1`…`U-3` 已登记 | 见 §7「结论」与残余节（续跑取证 / 批量相进度读面 / 阈值标定 / 外部评审面板） |
 
 
 ## 残余与未覆盖范围
