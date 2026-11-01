@@ -60,8 +60,8 @@ GOAL-20261101-103 的八条退出标准（EC-01…EC-08），逐条对照**当�
 
 | EC | 判据（真实执行的） | 读数 | 结论 |
 | --- | --- | --- | --- |
-| EC-01 | `tests/application/run_orchestration/test_phase_progress_events.py` + `tests/api/test_run_detail_phases.py` | 10 passed + 14 passed；两条子进程按压（摘 `emit_phase_started` / 摘 `emit_phase_completed`）各 `pressed_code=1, restored_code=0, digest_matches=True` | PASS |
-| EC-02 | `tests/api/test_read_face_field_completeness.py` + `tests/contracts/test_openapi_snapshot.py` | 8 passed + 8 passed；OpenAPI 快照经 `tools/gen_openapi.py` 重生成（+90 行，三字段齐） | PASS |
+| EC-01 | **`tests/e2e/test_goal103_phase_events_product_path.py`（真跑）** + `tests/application/run_orchestration/test_phase_progress_events.py` + `tests/api/test_run_detail_phases.py` | **5 passed（十一相真跑：恰好 11 `phase.started` + 11 `phase.completed`、相集合逐字等于协议、`started`<本相首任务且 `completed`>本相末任务（按 `occurred_at`）、十一相按 DAG 拓扑序、`outcome` ∈ 闭集、`phases` 长度 11 全 SUCCEEDED）** + 10 passed + 14 passed；两条子进程按压各 `pressed_code=1, restored_code=0` | PASS |
+| EC-02 | **`tests/e2e/test_goal103_read_face_http.py`（路由级）** + `tests/api/test_read_face_field_completeness.py` + `tests/contracts/test_openapi_snapshot.py` | **5 passed（经真实路由：`/artifacts` 每件都带 `supersedes` 且 v2 指回 v1；`/reviews` 每条都带 `reviewer_model`、非空、`endpoint/model` 形态、两位评审归到 ≥2 个不同目标）** + 8 passed + 8 passed | PASS |
 | EC-03 | `apps/web/tests/e2e/run-phase-progress.spec.ts` | 4 passed（十一相逐 id 核对 / 四态计算色两两不同 / 点击展开 / `phases=null` 空态） | PASS |
 | EC-04 | `apps/web/tests/e2e/run-artifact-chain-labels.spec.ts` | 3 passed（`manuscript.md`→「手稿」、`tool-result:xyz` 无标签、Markdown 正文按句子核对、投稿包 5 链接） | PASS |
 | EC-05 | `tests/application/test_retmax_project_setting.py` + `tests/tooling/test_manuscript_quality_strong_criterion.py` | 18 passed + 5 passed；序 70 能力域仍为 `复检`（`test_mainline_program_is_intact` 绿） | PASS |
@@ -82,6 +82,16 @@ $ uv run --frozen --no-sync python -B tools/verify_goal103_closeout.py --root . 
 $ uv run --frozen --no-sync python -B tools/run_m0_with_witness.py
 （终局行 PASS: profile=m0; 23 deterministic checks）
 ```
+
+## 真跑暴露并修掉的实现缺陷（`W-0`）
+
+十一相真跑判据抓到一个**两相合成协议发现不了**的缺陷：`experiment` 相是**确定性执行缝**，
+**不注册 `ResearchTask` 行** ⇒ `run_phase_view` 第一版只按任务行推状态，把一个 `SUCCEEDED`、
+`phase.completed` 在场、两份 `experiment_result.json` 已落库的 run 读成「`experiment` 未开始」。
+**读面说「没开始」而事件说「完成了」就是读面在撒谎。** 修法：`state` 改为**相级事件优先、
+任务行兜底**（`_state_from`），制品取两条来源的并集。修后该相读回 `SUCCEEDED` 且带真实制品。
+
+这条正是「真跑取证」不可省的理由：合成协议每相都有任务行，构造上碰不到这个形态。
 
 ## 结论
 

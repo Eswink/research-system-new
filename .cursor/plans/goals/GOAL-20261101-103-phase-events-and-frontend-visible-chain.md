@@ -32,12 +32,17 @@ exit_criteria:
       反推 phase 分组，字段 phase_id / strategy / state / artifact_ids / started_at /
       completed_at。
     verify: >-
-      tests/application/run_orchestration/test_phase_progress_events.py（phase.started 先于
-      该组首个 task.created；phase.completed 在末个 task 终态之后；失败组两条都不发 /
-      只发 started；payload 键逐条在场）+
-      tests/api/test_run_detail_phases.py（phases 长度 == 协议 phase 数；未冻结 run ⇒ None；
-      逐相 state 由本相任务状态推出）+
-      反证臂：删掉 `phase.started` 的发射点 ⇒ 前端进度条判据判红（子进程按压）。
+      **真跑取证**：tests/e2e/test_goal103_phase_events_product_path.py —— 用
+      `direction_to_manuscript_v1.yaml` 的**11 个 phase** 经产品入口（`POST
+      /projects/{id}/runs`）真跑一次，从 `GET /runs/{id}/events` 断言**恰好 11 条
+      `phase.started` + 11 条 `phase.completed`**、相集合逐字等于协议、`started` 先于本相
+      首个任务且 `completed` 晚于本相末个任务（按 `occurred_at`）、十一相按 DAG 拓扑序开始、
+      `outcome` ∈ 闭集且 `artifact_ids` 指向真实落库制品、`RunDetailDto.phases` 长度 == 11
+      且全部 SUCCEEDED；+
+      tests/application/run_orchestration/test_phase_progress_events.py（两相合成协议的
+      时序/失败不发 completed/payload 键）+ tests/api/test_run_detail_phases.py（未冻结 run
+      ⇒ None；四态推导）+
+      反证臂：删掉 `phase.started` / `phase.completed` 的发射点 ⇒ 判据判红（子进程按压）。
     status: PASS
   - id: EC-02
     criterion: >-
@@ -47,11 +52,12 @@ exit_criteria:
       已有，读面此前不披露）。三处同步：Python DTO + `docs/api/openapi.m13.json`（重新生成）
       + `apps/web/src/api/types.ts`。
     verify: >-
-      tests/api/test_artifact_supersedes_read_face.py（`GET /runs/{id}/artifacts` 的
-      ArtifactDto 带 supersedes，改稿链上 v2 指向 v1）+ 
-      tests/api/test_review_finding_reviewer_model_read_face.py（`GET /runs/{id}/reviews`
-      的 ReviewFindingDto 带 reviewer_model）+ tests/contracts/test_openapi_snapshot.py
-      （快照同轮重生成，不漂移）。
+      **路由级取证**：tests/e2e/test_goal103_read_face_http.py —— 经产品入口真跑后从
+      **真实路由**取回 JSON：`GET /runs/{id}/artifacts` 的**每一件**制品都带 `supersedes`、
+      改稿制品的值**指回**本 run 的 v1（非 None / 非自指）；`GET /runs/{id}/reviews` 的
+      **每一条**判词都带 `reviewer_model`、至少一条非空、形态是 `endpoint/model`、两位评审
+      归到 ≥2 个不同目标；+ tests/api/test_read_face_field_completeness.py（投影函数 +
+      OpenAPI + types.ts 三处同步）+ tests/contracts/test_openapi_snapshot.py（快照不漂移）。
     status: PASS
   - id: EC-03
     criterion: >-
@@ -293,6 +299,12 @@ GOAL 的链。）
 
 ### 残余（本轮已交付里仍然存在的缺口）
 
+- `W-0`｜**已修（真跑才发现）**：`experiment` 相是**确定性执行缝**，它**不注册
+  `ResearchTask` 行** ⇒ `run_phase_view` 第一版只按任务行推状态，把一个 `SUCCEEDED`、
+  `phase.completed` 在场、两份 `experiment_result.json` 已落库的 run 读成
+  `experiment: PENDING`。**两相合成协议发现不了它**（合成协议每相都有任务行）——
+  是十一相真跑判据抓到的。修法：`state` 改为**相级事件优先、任务行兜底**
+  （`_state_from`），制品取两条来源的并集。
 - `W-1`｜**相级事件的时刻在事件本身，而 `state` 从任务状态推**：`started_at` /
   `completed_at` 取自 `phase.started` / `phase.completed` 的 `occurred_at`，而
   `PhaseProgressDto.state` 走的是**任务 canonical 状态**。两者在正常情况下一致，

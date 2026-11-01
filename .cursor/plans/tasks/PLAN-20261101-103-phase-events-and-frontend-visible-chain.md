@@ -121,7 +121,13 @@ GOAL-20261101-103 的八个 EC（缺口是建档实测的，靶面不在本计�
   `run-artifact-chain-labels.spec.ts` **3 passed** / **全量 web e2e 105 passed**（含
   `design-fidelity` 与 `design-outline-guard` 的五条反证臂）。
 - **早期一代判词首次可见**：026 ⇒ 4 条、028 ⇒ 5 条、029 ⇒ 10 条 = **19 条**（此前 0 条在射程内）。
-- **收口验证器**：`tools/verify_goal103_closeout.py --root . --verdict-only` ⇒ **82 判词全 PASS / 0 FAIL**。
+- **收口验证器**：`tools/verify_goal103_closeout.py --root . --verdict-only` ⇒ **84 判词全 PASS / 0 FAIL**。
+- **真跑取证（十一相）**：`tests/e2e/test_goal103_phase_events_product_path.py` **5 passed** ——
+  恰好 11 `phase.started` + 11 `phase.completed`、相集合逐字等于协议、时序按 `occurred_at`
+  成立、DAG 拓扑序成立；该判据抓到一个合成协议碰不到的实现缺陷（`experiment` 相无任务行
+  ⇒ 读面曾把它读成「未开始」），已修（`W-0`）。
+- **路由级读面**：`tests/e2e/test_goal103_read_face_http.py` **5 passed**（两个补字段经真实
+  `GET /runs/{id}/artifacts` / `/reviews` 回得来，且值是真的归因/父指针）。
 - **Charter**：`test_mainline_program_is_intact` / `test_mainline_research_ladder_advances` /
   `test_mainline_archive_is_continuous` / `test_short_archive_revision_rows_are_registered` /
   `test_record_tables_are_structurally_sound` ⇒ **35 passed**。

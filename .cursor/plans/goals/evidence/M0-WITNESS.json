@@ -1816,7 +1816,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261101-103-phase-events-and-frontend-visible-chain.md",
-        "sha256": "c32596dc371079e4df8fc71a92a2c27bc85ecbd8"
+        "sha256": "5f05c0c1dc4d3691bcad1620f96a211d05c02139"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4292,7 +4292,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261101-103-phase-events-and-frontend-visible-chain.md",
-        "sha256": "252fb0406c7b8afda9ae621e92d0bdf6f2717949"
+        "sha256": "b4af1ca6ef29f5d6a193e40a3cab4b012ba7c6a7"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -5700,7 +5700,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261101-103-phase-events-and-frontend-visible-chain.md",
-        "sha256": "b454bf3714cf32dfcb3ac5e7cf4564db02028767"
+        "sha256": "6d5af22be8269670e012baa6dd1963b5131cd733"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -14864,7 +14864,7 @@
       },
       {
         "path": "services/api/run_phase_view.py",
-        "sha256": "f9c7384f1fe19a5c4f5957930ab32e64f00b359e"
+        "sha256": "3f64d6a5f78fd3b7651d3612f7ea4403fb3dcf21"
       },
       {
         "path": "services/api/run_rebuild_view.py",
@@ -17255,6 +17255,14 @@
         "sha256": "2cc8c33a3624a3744cbf9aac3045f04928b1bb7c"
       },
       {
+        "path": "tests/e2e/test_goal103_phase_events_product_path.py",
+        "sha256": "f563de40524e838b210a8bcdda3969ef7cbf0392"
+      },
+      {
+        "path": "tests/e2e/test_goal103_read_face_http.py",
+        "sha256": "268ddc31f07abaf2258c027d61d447b8b872c7bc"
+      },
+      {
         "path": "tests/e2e/test_granted_read_capabilities_used_in_a_run.py",
         "sha256": "d827825f16dc6455099f224a403487a26a3400b3"
       },
@@ -18616,7 +18624,7 @@
       },
       {
         "path": "tools/goal103_closeout_assertions.py",
-        "sha256": "0d1a2a87134098c863ac3b43dc4b1654d323bda7"
+        "sha256": "685fddf5031cd1d0f9bee634178162c5d3684e0b"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -19075,7 +19083,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "478d39ed6bc2e1eca151b2d95a2762cd4a0d9272"
+    "head": "79d02c2860e4f12e4ff0f30124a170efcfbded2e"
   },
   "fingerprint_before": {
     "files": [
@@ -20893,7 +20901,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261101-103-phase-events-and-frontend-visible-chain.md",
-        "sha256": "c32596dc371079e4df8fc71a92a2c27bc85ecbd8"
+        "sha256": "5f05c0c1dc4d3691bcad1620f96a211d05c02139"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -23369,7 +23377,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261101-103-phase-events-and-frontend-visible-chain.md",
-        "sha256": "252fb0406c7b8afda9ae621e92d0bdf6f2717949"
+        "sha256": "b4af1ca6ef29f5d6a193e40a3cab4b012ba7c6a7"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -24777,7 +24785,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261101-103-phase-events-and-frontend-visible-chain.md",
-        "sha256": "b454bf3714cf32dfcb3ac5e7cf4564db02028767"
+        "sha256": "6d5af22be8269670e012baa6dd1963b5131cd733"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -33941,7 +33949,7 @@
       },
       {
         "path": "services/api/run_phase_view.py",
-        "sha256": "f9c7384f1fe19a5c4f5957930ab32e64f00b359e"
+        "sha256": "3f64d6a5f78fd3b7651d3612f7ea4403fb3dcf21"
       },
       {
         "path": "services/api/run_rebuild_view.py",
@@ -36332,6 +36340,14 @@
         "sha256": "2cc8c33a3624a3744cbf9aac3045f04928b1bb7c"
       },
       {
+        "path": "tests/e2e/test_goal103_phase_events_product_path.py",
+        "sha256": "f563de40524e838b210a8bcdda3969ef7cbf0392"
+      },
+      {
+        "path": "tests/e2e/test_goal103_read_face_http.py",
+        "sha256": "268ddc31f07abaf2258c027d61d447b8b872c7bc"
+      },
+      {
         "path": "tests/e2e/test_granted_read_capabilities_used_in_a_run.py",
         "sha256": "d827825f16dc6455099f224a403487a26a3400b3"
       },
@@ -37693,7 +37709,7 @@
       },
       {
         "path": "tools/goal103_closeout_assertions.py",
-        "sha256": "0d1a2a87134098c863ac3b43dc4b1654d323bda7"
+        "sha256": "685fddf5031cd1d0f9bee634178162c5d3684e0b"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -38152,11 +38168,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "478d39ed6bc2e1eca151b2d95a2762cd4a0d9272"
+    "head": "79d02c2860e4f12e4ff0f30124a170efcfbded2e"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "478d39ed6bc2e1eca151b2d95a2762cd4a0d9272",
+  "ran_at_head": "79d02c2860e4f12e4ff0f30124a170efcfbded2e",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

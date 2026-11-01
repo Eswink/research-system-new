@@ -103,6 +103,9 @@ EARLY_SCAN_FILES: dict[str, tuple[str, ...]] = {
 #: 本轮新增的判据文件（每件交付至少一条判据；判据文件不在树 = 交付没有可证伪面）。
 CRITERION_FILES: tuple[str, ...] = (
     "tests/application/run_orchestration/test_phase_progress_events.py",
+    # **真跑取证**（收口复检指名的缺口：两相合成协议与前端 stub 都不算真跑）。
+    "tests/e2e/test_goal103_phase_events_product_path.py",
+    "tests/e2e/test_goal103_read_face_http.py",
     "tests/api/test_run_detail_phases.py",
     "tests/api/test_read_face_field_completeness.py",
     "tests/application/test_retmax_project_setting.py",
