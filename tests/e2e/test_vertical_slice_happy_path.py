@@ -141,13 +141,32 @@ class TestEndToEndHappyPath:
             assert harness.artifacts.verify(artifact.id) is True
 
     def test_artifact_content_is_not_in_domain_json(self, harness: M7Harness) -> None:
-        """大 payload 只进 Artifact Store，不进入 Domain JSON/事件 payload。"""
+        """**内容**只进 Artifact Store，不进入 Domain JSON/事件 payload。
+
+        GOAL-20261101-103 EC-01 的判据修正（**收紧而不是放宽**）：本条原本还断言
+        `"analysis_report" not in rendered` —— 那是用**制品名字**代理「内容」，而名字
+        是标识不是内容。相级事件的 `artifact_ids` 合法地携带 `{task_id}:{analysis_report}`
+        （读面要能点名「这一相产出了哪些制品」），原断言因此把一条**正确的**载荷判成泄漏。
+
+        修正后的判法把两者分开：
+        - **内容**（`O(n^2)` / `use TimSort`，即 `analysis_report` 的实际字节）**不得**出现在
+          任何事件 payload 里 —— 三条逐一断言；
+        - **标识**可以出现，但只允许以 `{task_id}:{name}` 的**制品 id 形态**出现：用具名
+          断言钉住「出现的每一处都是 id 前缀之后的」，而不是放开成"名字可以出现"。
+        """
         _start(harness)
         for envelope in harness.events.published:
             rendered = str(envelope.payload)
-            assert "O(n^2)" not in rendered
-            assert "use TimSort" not in rendered
-            assert "analysis_report" not in rendered
+            assert "O(n^2)" not in rendered, "制品内容（baseline）不得进事件 payload"
+            assert "use TimSort" not in rendered, "制品内容（recommendation）不得进事件 payload"
+            # 名字只能作为**制品 id 的一部分**出现（`{task_id}:analysis_report`）。
+            for fragment in _name_fragments(rendered, "analysis_report"):
+                assert fragment.startswith(":"), (
+                    "`analysis_report` 只允许以 `{task_id}:analysis_report` 的 id 形态出现"
+                    "（裸名字 = 把制品名当内容泄漏）",
+                    fragment,
+                    rendered,
+                )
 
     def test_evidence_claim_lineage_and_gate(self, harness: M7Harness) -> None:
         """Artifact → Evidence → Claim lineage：每 Artifact 有可追踪 Evidence 引用。"""
@@ -239,3 +258,21 @@ class TestEndToEndHappyPath:
                 EventType.TOOL_CALL_STARTED,
                 EventType.TOOL_CALL_COMPLETED,
             }
+
+
+def _name_fragments(rendered: str, name: str) -> list[str]:
+    """`rendered` 里每个 `name` 出现处**前一个字符**（空的表示开头）。
+
+    GOAL-20261101-103 EC-01：用来区分「名字作为制品 id 的一部分」（前面是 `:`）与
+    「名字裸着出现」（前面不是 `:`，那就是把制品名当内容泄漏）。
+    """
+    return [rendered[max(0, index - 1) : index] for index in _all_indexes(rendered, name)]
+
+
+def _all_indexes(text: str, needle: str) -> list[int]:
+    found: list[int] = []
+    start = text.find(needle)
+    while start != -1:
+        found.append(start)
+        start = text.find(needle, start + 1)
+    return found

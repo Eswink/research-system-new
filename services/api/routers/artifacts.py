@@ -66,6 +66,9 @@ def _artifact_dto(artifact: Any, verified: bool | None = None) -> ArtifactDto:
         retention_policy=policy.to_str() if policy is not None else None,
         created_at=str(artifact.created_at) if artifact.created_at is not None else None,
         verified=verified,
+        # GOAL-20261101-103 EC-02：改稿链父指针（`getattr` 兜底：Fake/早期 store 的
+        # 制品对象可能不带这一格 ⇒ 如实给 `None`，不伪造一条链）。
+        supersedes=getattr(artifact, "supersedes", None),
     )
 
 

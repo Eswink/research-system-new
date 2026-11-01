@@ -78,6 +78,11 @@ class ReviewFindingDto(BaseModel):
     findings: list[str] = Field(default_factory=list)
     reviewed_by: str | None = None
     reviewed_at: str | None = None
+    # GOAL-20261101-103 EC-02：**这条判词是哪个模型判的**。域 `ReviewFinding.reviewer_model`
+    # 自 GOAL-20261018-085 EC-01 起就有（`(endpoint_id, model_name)` 的稳定串形
+    # `endpoint/model_name`），而读面此前不披露 ⇒ 阶梯「复检」域的「判词可归因到模型」
+    # 在产品读面上拿不到。`None` = 未声明该面（不得读成「同一个模型」，也不得读成「独立」）。
+    reviewer_model: str | None = None
 
 
 class UsageEntryDto(BaseModel):

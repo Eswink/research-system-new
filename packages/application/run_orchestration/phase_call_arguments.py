@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from packages.application.ports.errors import InvalidInputError
@@ -78,4 +79,30 @@ def arguments_for(
     return args
 
 
-__all__ = ["arguments_for", "lookup_path"]
+def apply_retmax(
+    declared: tuple["RunChainCall", ...], retmax: int | None
+) -> "tuple[RunChainCall, ...]":
+    """把**项目级** `retmax` 声明施加到检索类调用上（GOAL-20261101-103 EC-05）。
+
+    为什么是本模块：`retmax` 是检索调用的一个**参数**（`fixed_arguments["retmax"]`），
+    而本模块的职责正是「声明字段 → provider 参数」的翻译。
+
+    **两条逐字边界**（判据钉住）：
+
+    - `retmax is None` ⇒ 返回**入参本身**（``is`` 相同）⇒ 不声明项目的装配方行为逐字节不变；
+    - 只改**带 `retmax` 键**的调用：读取步（`literature.read`）与任何别的能力**不被碰**
+      —— 给一个不认识该参数的调用塞参数就是伪造调用。
+    """
+    if retmax is None:
+        return declared
+    applied: list["RunChainCall"] = []
+    for call in declared:
+        fixed = getattr(call, "fixed_arguments", None)
+        if not isinstance(fixed, Mapping) or "retmax" not in fixed:
+            applied.append(call)
+            continue
+        applied.append(replace(call, fixed_arguments={**fixed, "retmax": retmax}))
+    return tuple(applied)
+
+
+__all__ = ["apply_retmax", "arguments_for", "lookup_path"]

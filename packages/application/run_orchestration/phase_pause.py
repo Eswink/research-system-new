@@ -92,4 +92,33 @@ def pause_for_human_gate(
     )
 
 
-__all__ = ["pause_for_human_gate", "pause_if_requested"]
+def park_for_retry(
+    deps: Any,
+    ctx: Any,
+    group: "tuple[SessionSpec, ...]",
+    position: int,
+    run: Any,
+) -> RunOutcome:
+    """把「重排还没到期」的 run 停在 PAUSED，而不是判失败（PLAN-20260915-081）。
+
+    失败的任务与其后全部 specs 一起交回 service 暂存供 resume。不能判失败：`FAILED`
+    是终态（不在迁移表里），一落 FAILED 那条 `RETRY_SCHEDULED` 就再没有派发方会来取。
+
+    GOAL-20261101-103 从 `phase_runner` 搬到本模块（该文件卡 450 行硬上限，而本模块
+    正是「相边界的停车处置」的归属地）；判定、交回顺序与返回的 `RunOutcome` 逐字未变。
+    """
+    if deps.on_pause is not None:
+        deps.on_pause(tuple(group[position:]) + tuple(spec for chunk in run.tail for spec in chunk))
+    return RunOutcome(
+        run_id=ctx.run_id,
+        state=ResearchRunState.State.PAUSED,
+        message=(
+            f"task {group[position][0].id.value} retry scheduled; run parked until the retry is due"
+        ),
+        tasks=tuple(run.outcomes),
+        manifest_digest=ctx.frozen_manifest_digest,
+        system_failure=False,
+    )
+
+
+__all__ = ["park_for_retry", "pause_for_human_gate", "pause_if_requested"]

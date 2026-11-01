@@ -58,7 +58,12 @@ def test_several_unknown_fields_are_each_named() -> None:
 
 
 def test_the_known_forms_are_verbatim() -> None:
-    """EC-02 ③：**已知/缺省形态逐字不变** —— 正确请求的状态码与键集（EC-01 基线）。"""
+    """EC-02 ③：**已知/缺省形态逐字不变** —— 正确请求的状态码与键集（EC-01 基线）。
+
+    **基线 15 → 16（GOAL-20261101-103 EC-01）**：`RunDetailDto` 新增 `phases`
+    （相级进度）。这不是放宽 —— 断言的形式（**逐字键数**）一字未动，改的只是被钉的读数。
+    一次**已申报**的加性字段本就该在基线里显式登记；把它放宽成 `>= 15` 才是真放宽。
+    """
     with _client() as client:
         response = client.post(
             "/projects/example-project/runs",
@@ -68,7 +73,11 @@ def test_the_known_forms_are_verbatim() -> None:
         assert response.status_code == 200, response.text
         body = response.json()
         assert "id" in body and body["state"], body
-        assert len(body) == 15, ("键数逐字（EC-01 基线 = 15 键）", sorted(body))
+        assert "phases" in body, "新字段必须真的出现在读面上（否则基线改动没有对象）"
+        assert len(body) == 16, (
+            "键数逐字（GOAL-103 基线 = 16 键：EC-01 基线 15 + phases）",
+            sorted(body),
+        )
 
 
 def test_a_second_module_dto_is_covered_too() -> None:

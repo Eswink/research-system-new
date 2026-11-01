@@ -30,6 +30,14 @@ class ProjectSettings:
     # WP-C（PLAN-040）：项目参考协议（examples/protocols 内文件名的受控模板
     # 引用；Team 页预检用它，不再由前端硬编码 demo 协议）。None = 未配置。
     reference_protocol: str | None = None
+    # GOAL-20261101-103 EC-05：**每次检索取几条**的项目级声明。
+    # 在此之前它只到进程级环境变量（`RESEARCHOS_RETMAX`，GOAL-100 EC-04 落地），
+    # ⇒ 同一控制面上的两个项目无法有不同的检索深度。
+    # 缺省 `3`：与 `retrieval_wiring.DEFAULT_RETMAX` 逐字相同 ⇒ 不声明本字段时
+    # **生成的调用表与改动前逐字段一致**（零回归硬约束）。
+    # 合法范围与非法值的处置由 `retrieval_wiring.configured_retmax` 一处判定
+    # （本类只**携带**声明，不重复实现取值规则）。
+    retmax: int = 3
 
     def __post_init__(self) -> None:
         if not self.project_id:
@@ -54,7 +62,23 @@ class ProjectSettings:
             compute_profile=(str(raw["compute_profile"]) if raw.get("compute_profile") else None),
             policy_id=str(raw.get("policy", "project-policy")),
             reference_protocol=(str(raw["protocol"]) if raw.get("protocol") else None),
+            retmax=_retmax_of(project_id, raw.get("retmax")),
         )
+
+
+def _retmax_of(project_id: str, raw: object) -> int:
+    """`retmax` 声明的**类型收窄**（缺省 ⇒ 3；非法 ⇒ 点名拒绝）。
+
+    **只做"是不是一个整数声明"这件事**：取值范围（1…`MAX_RETMAX`）的判定留在
+    `retrieval_wiring.configured_retmax` —— 一处判好处是不产生两套规则。这里拒绝
+    非整数的理由是"它不是这个字段的取值"，与范围无关：`retmax: "three"` 是**拼错**，
+    静默回落 3 会让「把条数调成 5」与「写错一个字」在读数上不可区分。
+    """
+    if raw is None:
+        return 3
+    if isinstance(raw, bool) or not isinstance(raw, int):
+        raise ValueError(f"project {project_id!r} retmax must be an integer, got {raw!r}")
+    return raw
 
 
 @dataclass(frozen=True, slots=True)

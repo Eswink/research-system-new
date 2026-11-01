@@ -11,6 +11,7 @@ import type { ResourceState } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import { KeyValueList } from "../shared/KeyValueList";
 import styles from "../shared/LivePage.module.css";
+import { artifactLabel, artifactName, labelText } from "./artifactLabels";
 
 const PREVIEWABLE = [
   "text/plain",
@@ -92,6 +93,7 @@ function ArtifactRows({
           >
             <span className="mono">{artifact.id}</span> · {formatBytes(artifact.size_bytes)} ·{" "}
             {artifact.media_type}
+            <ArtifactLabelChip artifactId={artifact.id} zh={zh} />
             <Chip tone={artifact.state === "DELETED_TOMBSTONE" ? "danger" : "neutral"}>
               {zh ? "状态" : "state"} {artifact.state}
             </Chip>
@@ -99,6 +101,24 @@ function ArtifactRows({
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * 链上制品的人类可读标签（GOAL-20261101-103 EC-04）。
+ *
+ * **未命中 ⇒ 什么都不渲染**（调用方已经显示了裸 id）—— 不猜、不伪造一个"看起来像事实"
+ * 的标签。命中时同时给 `data-testid`，判据据它核对「`manuscript.md` 显示为手稿」。
+ */
+function ArtifactLabelChip({ artifactId, zh }: { artifactId: string; zh: boolean }) {
+  const label = artifactLabel(artifactId);
+  if (label === null) return null;
+  return (
+    <Chip tone="accent" className="artifact-label">
+      <span data-testid={`artifact-label-${artifactName(artifactId)}`}>
+        {labelText(label, zh ? "zh" : "en")}
+      </span>
+    </Chip>
   );
 }
 

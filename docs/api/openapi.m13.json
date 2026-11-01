@@ -784,6 +784,17 @@
             "title": "State",
             "type": "string"
           },
+          "supersedes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes"
+          },
           "verified": {
             "anyOf": [
               {
@@ -4533,6 +4544,60 @@
         "title": "PausedDispatchDto",
         "type": "object"
       },
+      "PhaseProgressDto": {
+        "additionalProperties": false,
+        "description": "一相的进度读面（GOAL-20261101-103 EC-01）。\n\n**事实来源**：`state` 由该相各任务的 canonical 状态推出（与 `GET /runs/{id}/tasks`\n同一份投影），不是前端自己攒的状态机；`artifact_ids` 来自按命名约定\n`{task_id}:{name}` 归属到本相任务的制品（真实产出，不补占位）；\n`started_at` / `completed_at` 来自相级事件 `phase.started` / `phase.completed`。\n\n**四态闭集**（`PHASE_STATES`，按此顺序推导）：`PENDING`（本相无任务，或任务全部\n还没被领走）/`FAILED`（有任务终局失败或进死信）/`RUNNING`（还有任务未终态）/\n`SUCCEEDED`（全部终态且无失败）。**不允许**第五个值：多一态就得说明它凭什么存在。",
+        "properties": {
+          "artifact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Artifact Ids",
+            "type": "array"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "phase_id": {
+            "title": "Phase Id",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "state": {
+            "default": "PENDING",
+            "title": "State",
+            "type": "string"
+          },
+          "strategy": {
+            "default": "",
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "phase_id"
+        ],
+        "title": "PhaseProgressDto",
+        "type": "object"
+      },
       "PolicyCapabilitiesDto": {
         "additionalProperties": false,
         "properties": {
@@ -6360,6 +6425,17 @@
             ],
             "title": "Reviewed By"
           },
+          "reviewer_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Model"
+          },
           "run_id": {
             "title": "Run Id",
             "type": "string"
@@ -6516,6 +6592,20 @@
                 "type": "null"
               }
             ]
+          },
+          "phases": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PhaseProgressDto"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phases"
           },
           "program_id": {
             "anyOf": [

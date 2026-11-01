@@ -18,6 +18,10 @@ class ArtifactDto(BaseModel):
     created_at: str | None = None
     # 内容级校验仅在单资源查询执行；列表视图恒为 None（不伪装已验证）。
     verified: bool | None = None
+    # GOAL-20261101-103 EC-02：**改稿链的父指针**读面（域 `Artifact.supersedes` 自
+    # GOAL-20261031-102 EC-01 起就有，而读面此前不披露 ⇒ 改稿链在 API 上退化成两个
+    # 互不相干的制品）。`None` = 这份制品不是任何制品的下一版（既有全部制品都是这一形态）。
+    supersedes: str | None = None
 
 
 class ArtifactDiffLineDto(BaseModel):

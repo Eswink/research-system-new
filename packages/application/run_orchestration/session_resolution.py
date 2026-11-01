@@ -151,6 +151,8 @@ def _spec_context(  # noqa: PLR0913 - 装配面：context + phase/agent/role/目
         endpoint=endpoint,
         model=model,
         phase_id=phase.id,
+        # GOAL-20261101-103 EC-01：本相策略随 spec 走（`phase.started` 的 payload 读它）。
+        phase_strategy=str(phase.strategy),
         # GOAL-011 EC-01：本 phase 由运行链执行的能力所属 provider——
         # 它们**不在**会话工具列表里（冻结集与 preflight 判定不受影响）。
         run_chain_tool_ids=run_chain_tool_ids(context.plan, phase.id),

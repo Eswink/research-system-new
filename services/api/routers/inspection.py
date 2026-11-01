@@ -190,6 +190,8 @@ async def run_reviews(run_id: str, request: Request) -> list[ReviewFindingDto]:
             reviewed_at=None
             if item.finding.reviewed_at is None
             else item.finding.reviewed_at.value.isoformat(),
+            # GOAL-20261101-103 EC-02：判词**跑在哪个模型上**（域层已有，读面此前不披露）。
+            reviewer_model=getattr(item.finding, "reviewer_model", None),
         )
         for item in deps.review_findings.for_run(run_id)
     ]

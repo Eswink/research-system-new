@@ -1,0 +1,80 @@
+/**
+ * 十一相进度条样式（GOAL-20261101-103 EC-03）。
+ *
+ * 四态各有**独立且互不相同**的 class（`pending` / `running` / `succeeded` / `failed`）：
+ * 判据按 `data-phase-state` 与 class 名核对"有状态色"，而**不**靠截图比对颜色 ——
+ * 截图比对会被主题/密度差异淹没。
+ */
+
+.track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.node {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-ctrl);
+  background: var(--bg-panel);
+  cursor: pointer;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg-sunken);
+  font: var(--fs-meta) / 1 var(--font-mono);
+  flex: none;
+}
+
+.id {
+  font: var(--fs-meta) / 1.4 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.pending {
+  border-left: 3px solid var(--border);
+}
+
+.running {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-dim);
+}
+
+.succeeded {
+  border-left: 3px solid var(--success);
+}
+
+.failed {
+  border-left: 3px solid var(--danger);
+}
+
+.detail {
+  padding: 8px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-ctrl);
+  background: var(--bg-sunken);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

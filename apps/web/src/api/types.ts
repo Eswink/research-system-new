@@ -75,6 +75,11 @@ export interface ArtifactDto {
   retention_policy: string | null;
   created_at: string | null;
   verified: boolean | null;
+  /**
+   * GOAL-20261101-103 EC-02：改稿链的父指针（它替代的那个制品 id）。
+   * null = 这份制品不是任何制品的下一版。
+   */
+  supersedes: string | null;
 }
 
 export type CredentialState = "configured" | "missing";
@@ -445,6 +450,20 @@ export interface RunExecutionDto {
   runtime_fingerprint: RuntimeFingerprintDto | null;
 }
 
+// GOAL-20261101-103 EC-01：一相的进度读面（`PHASE_STATES` 四态闭集）。
+// `state` 由该相各任务的 canonical 状态推出；`artifact_ids` 是真实产出；
+// `started_at` / `completed_at` 来自相级事件 `phase.started` / `phase.completed`。
+export type PhaseState = "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED";
+
+export interface PhaseProgressDto {
+  phase_id: string;
+  strategy: string;
+  state: PhaseState;
+  artifact_ids: string[];
+  started_at: string | null;
+  completed_at: string | null;
+}
+
 export interface RunDetailDto {
   id: string;
   project_id: string;
@@ -469,6 +488,10 @@ export interface RunDetailDto {
   // null = 该 run 不属于任何程序（独立 run）。
   program_id: string | null;
   program_index: number | null;
+  // GOAL-20261101-103 EC-01：相级进度（仅详情路径给；列表路径为 null）。
+  // null = 这条 run 没有冻结协议正文 ⇒ 相结构**读不到**（不是「零相」）；
+  // 空数组才是「协议里没有相」。
+  phases: PhaseProgressDto[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -617,6 +640,31 @@ export interface ReviewFindingDto {
   findings: string[];
   reviewed_by: string | null;
   reviewed_at: string | null;
+  /**
+   * GOAL-20261101-103 EC-02：这条判词**跑在哪个模型上**（`endpoint/model_name`）。
+   * null = 未声明该面（不得读成「同一个模型」，也不得读成「独立」）。
+   */
+  reviewer_model: string | null;
+}
+
+// GOAL-20261101-103 EC-02：**编辑决定**的读面形状。它**不是**一条路由：
+// 决定块作为 `editorial_decision` 制品落在 canonical（`Artifact.id` 后缀
+// `editorial_decision`），前端经制品内容读出它的 JSON 再按本接口消费。
+// 四个取值是域枚举 `EditorialDecision` 的**闭集**（不做同义词归并、不做大小写宽容）。
+export type EditorialDecisionValue =
+  | "accept"
+  | "minor_revision"
+  | "major_revision"
+  | "reject";
+
+export interface EditorialDecisionDto {
+  decision: EditorialDecisionValue;
+  rationale: string;
+  required_changes: string[];
+  // GOAL-20261031-102 EC-04：论文要投的期刊（闭合声明集里的 name）。同进同出；
+  // null = 未选择期刊（本 run 没有走选刊那一格）。
+  target_journal?: string | null;
+  selection_rationale?: string | null;
 }
 
 export interface UsageEntryDto {

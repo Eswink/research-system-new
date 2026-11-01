@@ -55,6 +55,7 @@ from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.tool_provider import ToolProvider
 from packages.application.preflight.policy_check import policy_scope_for
 from packages.application.run_orchestration.phase_call_arguments import (
+    apply_retmax,
     arguments_for,
 )
 from packages.application.run_orchestration.phase_call_arguments import (
@@ -98,13 +99,10 @@ class RunChainCall:
       如 `structured.ids` —— MCP provider 的溢出内容是一层信封，机器可读的一半在
       `structured` 下，链式传参因此需要路径而不仅是顶层键）→ 本步的 `ids`
       （检索→读取的真实链条：读取的是**检索结果里真实出现的**标识）；
-    - `run_id_argument`：本步要不要拿到**本次 run 的标识**（GOAL-20261005-030）。
-      canonical 读面的若干工具以 `run_id` 为查询键（`evidence_read` / `workspace_read` /
-      `experiment_read` / `deliverable_read`），而 run id **只在执行期存在**
-      （`ResearchTask.run_id`，由编排生成）——协议/装配方**无从**在声明里写死它。
-      这个字段因此不是「值」而是「**取值的来源**」：置真 ⇒ 运行时把 `task.run_id.value`
-      作为该参数注入，名字就叫 `run_id`（与 provider 侧参数名同源）。
-      缺省 `False` ⇒ 该参数不注入，既有行为**逐字节不变**。
+    - `run_id_argument`：本步要不要拿到**本次 run 的标识**（GOAL-030）。canonical 读面的
+      若干工具以 `run_id` 为查询键，而 run id **只在执行期存在**（`ResearchTask.run_id`）
+      —— 协议/装配方无从写死。此字段不是「值」而是「**取值的来源**」：置真 ⇒ 运行时注入
+      `task.run_id.value`（参数名 `run_id`）。缺省 `False` ⇒ 不注入，行为**逐字节不变**。
     - `requires_previous_ids`：本步是否**要求**上一步真的给出 id 列表
       （GOAL-20261006-031 EC-03 的**声明式触发面**）。
 
@@ -115,9 +113,8 @@ class RunChainCall:
         按第一轮结果决定跑不跑」的声明式形态：**判断依据是声明字段的在场性**，
         不是应用层硬编码「如果就」。
 
-      为什么放在这里而不是编译期：触发条件读的是**上一步的结果**（执行期才知道），
-      编译期无从判定；这个字段因此与 `ids_from_previous` 同层 —— 都是「取值的来源 /
-      条件」，不是值本身。缺省 `True` ⇒ 既有行为**逐字节不变**。
+      为什么不在编译期：触发条件读的是**上一步的结果**（执行期才知道）。本字段与
+      `ids_from_previous` 同层 —— 都是「取值的来源/条件」。缺省 `True` ⇒ 行为逐字节不变。
     - `phase_id`：本调用属于**哪个 phase**（GOAL-20261006-031 EC-03）。
       既有过滤只按 **provider**（`call.provider_id in spec.run_chain_tool_ids`）——一次 run
       的多个 phase 若声明**同一个 provider 的不同调用**，两个 phase 都会执行**全部**调用：
@@ -130,10 +127,9 @@ class RunChainCall:
       里按 `source_ref` 后缀选中**恰好一条**（零条 / 多条 ⇒ 点名失败），把该
       `source_ref` 作为本步的 `artifact_id` 参数。
 
-      为什么是「后缀选择」而不是写死 id：制品 id 含**执行期才生成**的 task id，
-      装配方无从写死；而「产出名」是**声明事实**。这个字段因此与 `ids_from_previous`
-      同层 —— 都是「**取值的来源**」（一个从 id 列表取，一个从证据列表选），不是值本身。
-      缺省 `None` ⇒ 该参数不注入（既有行为逐字节不变）。
+      为什么是「后缀选择」：制品 id 含**执行期才生成**的 task id（装配方写不死），而
+      「产出名」是**声明事实**。与 `ids_from_previous` 同层 —— 都是「取值的来源」。
+      缺省 `None` ⇒ 不注入（既有行为逐字节不变）。
     """
 
     provider_id: str
@@ -173,6 +169,9 @@ class CapabilityDeps:
     actor: str = "system:run-chain"
     telemetry: TelemetrySink | None = None
     workflow: Any | None = None  #: GOAL-089 EC-01：解析跨相输入的身份面（None ⇒ 不变）
+    #: GOAL-103 EC-05：项目级 `retmax`（None ⇒ 逐字回到 `deps.calls`）。
+    #: 施加点 = `phase_call_arguments.apply_retmax`（进程级取值会串项目）。
+    retmax: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -223,17 +222,15 @@ def execute_run_chain_capabilities(
 ) -> CapabilityStepOutcome:
     """执行本 phase 声明为 run-chain 的调用（按声明顺序，逐步把前一步结果带入下一步）。
 
-    没有装配（`deps is None`）或本 phase 没有 run-chain 声明 ⇒ 什么都不做（既有语义
-    逐字节不变）。任何失败**如实上报**：`failure_message` 由调用方交给
-    `failure_step`（容忍策略/失败分类与既有失败路径同一个分叉点）。
-
-    **本轮声明优先**（GOAL-20261008-034 EC-01）：`spec.round_calls` 非空时用它替代
-    装配面那一批 —— 多轮循环因此可以让**每一轮**用不同的调用声明（其余判定逐字不变：
-    仍按 phase 与 provider 过滤、仍过冻结集与策略）。
+    没有装配（`deps is None`）或无 run-chain 声明 ⇒ 什么都不做（既有语义逐字节不变）。
+    失败**如实上报**（`failure_message` 交给 `failure_step`：容忍策略与失败分类都在那一个
+    分叉点上）。**本轮声明优先**（GOAL-034 EC-01）：`spec.round_calls` 非空时替代装配面那
+    一批 ⇒ 每轮可用不同声明（其余判定逐字不变）。**项目级 `retmax`** 在此施加。
     """
     if deps is None:
         return CapabilityStepOutcome()
     declared = spec.round_calls or deps.calls
+    declared = apply_retmax(declared, deps.retmax)
     planned = tuple(call for call in declared if _planned_in_this_phase(call, spec))
     if not planned:
         return CapabilityStepOutcome()

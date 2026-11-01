@@ -74,7 +74,9 @@ def runner_deps(  # noqa: PLR0913 - 装配面：Port 聚合 + 现场面（齐了
         # GOAL-20261019-089 EC-01：运行链要解析**跨相输入**的真实制品 id（上游产物）——
         # 身份面就是本装配的 workflow 引擎（与 `cross_phase_evidence` 同一份事实）。
         # 不声明跨相输入的 phase 逐字节不变（`resolve_cross_phase_material` 提前返回空）。
-        capabilities=_with_workflow(deps.capabilities, deps.workflow),
+        capabilities=_with_project_retmax(
+            _with_workflow(deps.capabilities, deps.workflow), context
+        ),
         experiment_task=deps.experiment_task,
         # GOAL-20261014-077 EC-02：报告汇编的执行缝（缺省 None ⇒ 声明了 `report` 的
         # 任务点名拒绝；既有装配语义逐字节不变）。
@@ -154,6 +156,29 @@ def _with_workflow(capabilities: Any, workflow: Any) -> Any:
     from dataclasses import replace
 
     return replace(capabilities, workflow=workflow)
+
+
+def _with_project_retmax(capabilities: Any, context: Any) -> Any:
+    """把**本 run 所属项目**的 `retmax` 声明补进运行链能力装配（GOAL-103 EC-05）。
+
+    为什么是**这里**：`context.project` 是 `RunContext` 上「这条 run 属于哪个项目」的
+    那份 `ProjectSettings`（组合根在执行前解析）。进程级装配面（`deps.capabilities`）
+    只造一次，在这里取值才与「本次 run 的项目」对齐 —— 反过来在装配期取，会把第一个
+    项目的设置施加给之后所有项目。
+
+    **两条零回归边界**：`capabilities is None`（该步不启用）⇒ 原样返回；项目的
+    `retmax` 与 `CapabilityDeps.retmax` 已经相同 ⇒ 也原样返回（避免每次多造一个对象，
+    也让「没声明项目设置」这条路径与改动前**逐字相同**）。
+    """
+    if capabilities is None:
+        return None
+    project = getattr(context, "project", None)
+    declared = getattr(project, "retmax", None)
+    if declared is None or declared == getattr(capabilities, "retmax", None):
+        return capabilities
+    from dataclasses import replace
+
+    return replace(capabilities, retmax=declared)
 
 
 __all__ = ["RunnerFaces", "project_direction", "run_context", "runner_deps"]

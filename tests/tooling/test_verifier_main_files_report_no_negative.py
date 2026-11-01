@@ -58,6 +58,53 @@ _MIN_MAIN_FILES = 60
 #: 「走共享 helper」的验证器下界（实测 16 个；下界取 14 —— 只防判据空转）。
 _MIN_ON_HELPER = 14
 
+#: **早期一代**里确实带 `record_verdicts` 的三个验证器（GOAL-20261101-103 EC-06）。
+#:
+#: 为什么单列：它们在 `LEGACY_INLINE` 里（没有外部断言集），因此**不在 `_VERIFIERS`**
+#: —— 而 `_VERIFIERS` 是主文件判负扫描的唯一射程 ⇒ 这一代的主文件断言**从来不在任何
+#: 判据的射程内**。GOAL-101 EC-02 修的是"`_VERIFIERS` 里的主文件没被扫"，本轮补的是
+#: "有一整代根本不在 `_VERIFIERS` 里"。
+#:
+#: 三个都跑得动，但**签名不同**：026 是 `record_verdicts(root, factory)`（它从标准断言集
+#: 取 `Verdict` 来造判词），028/029 是后来的一代 `record_verdicts(root)`。
+#: 逐条登记签名而不是"统一调用"，因为把它们改成同一签名等于改历史资产的形状。
+_EARLY_RECORD_VERIFIERS: tuple[str, ...] = (
+    "tools/verify_goal026_closeout.py",
+    "tools/verify_goal028_closeout.py",
+    "tools/verify_goal029_closeout.py",
+)
+
+#: 需要 `(root, factory)` 两参签名的那些（逐条登记理由）。
+_TWO_ARG_RECORD_VERIFIERS: frozenset[str] = frozenset({"tools/verify_goal026_closeout.py"})
+
+#: 早期一代的射程下界（三个可跑；下界取 3 = 全部，因为这个名单本身是**闭集且经实测**）。
+_MIN_EARLY_FILES = 3
+
+
+def _verdict_factory(module: Any) -> Any:
+    """从验证器**自己加载的标准断言集**里取 `Verdict` 工厂（与它 `main()` 同一条取法）。
+
+    为什么不能自己造一个：判词对象的 `ok`/`name` 字段形状由那套标准断言集定义；造一个
+    "长得像"的对象等于让本判据在**自己的替身**上判绿。026 的 `main()` 就是这么取的
+    （`getattr(standard, "Verdict")`），本函数照抄。
+    """
+    path = _ROOT / getattr(module, "STANDARD", "tools/closeout_recheck_assertions.py")
+    standard = _load_module(path, f"goal103_standard_for_{id(module)}")
+    return getattr(standard, "Verdict")
+
+
+def _early_record_verdicts(relative: str, root: Path) -> list[Any]:
+    """跑一个**早期一代**验证器主文件的判词（按它自己的签名调用）。"""
+    path = _ROOT.joinpath(*relative.split("/"))
+    digits = relative.split("verify_goal", 1)[1].split("_", 1)[0]
+    module = _load_module(path, f"goal103_early_{digits}")
+    record = getattr(module, "record_verdicts", None)
+    if record is None:
+        return []
+    if relative in _TWO_ARG_RECORD_VERIFIERS:
+        return list(record(root, _verdict_factory(module)))
+    return list(record(root))
+
 
 def _main_record_verdicts(relative: str, root: Path) -> list[Any]:
     """跑某个验证器**主文件**的 `record_verdicts(root)`，返回它的判词。"""
@@ -95,6 +142,32 @@ def test_every_verifier_main_file_reports_no_negative_on_this_tree() -> None:
     )
     assert not negative, (
         "这些验证器**主文件**在本树上有判负 ⇒ 记录面断言失配（资产坏了，不是产品缺陷）",
+        negative,
+    )
+
+
+def test_the_early_generation_verifiers_report_no_negative_too() -> None:
+    """**早期一代**（`LEGACY_INLINE` 里带 `record_verdicts` 的那三个）也不得判负。
+
+    它补的是 GOAL-101 EC-02 留下的那一格：那边把**`_VERIFIERS` 清单内**的主文件纳入
+    射程，而 `LEGACY_INLINE` 登记的 9 个早期验证器**不在 `_VERIFIERS` 里** ⇒ 其中确实
+    带 `record_verdicts` 的三个（026 / 028 / 029）**从来不在任何判据的射程内**。
+    名单是**闭集**：新增早期验证器要显式加进来（与 `IN_SCOPE` 同一纪律）。
+    """
+    negative: list[str] = []
+    ran = 0
+    for relative in _EARLY_RECORD_VERIFIERS:
+        verdicts = _early_record_verdicts(relative, _ROOT)
+        if verdicts:
+            ran += 1
+        failed = [item.name for item in verdicts if not item.ok]
+        if failed:
+            negative.append(f"{relative}: {failed}")
+    assert ran >= _MIN_EARLY_FILES, (
+        f"只有 {ran} 个早期验证器产出了判词（下界 {_MIN_EARLY_FILES}）⇒ 射程疑似被清空"
+    )
+    assert not negative, (
+        "这些**早期一代**验证器的主文件在本树上有判负 ⇒ 记录面断言失配",
         negative,
     )
 
@@ -238,4 +311,62 @@ class TestTheMainFileCriterionBites:
         )
         assert on_helper >= _MIN_ON_HELPER, (
             f"只有 {on_helper} 个验证器走共享 helper（下界 {_MIN_ON_HELPER}）⇒ 判据失去对象"
+        )
+
+
+class TestTheEarlyGenerationCriterionBites:
+    """**反证臂**：早期一代的判负扫描真的会红（不是"名单里有三个就完事"）。
+
+    做法与 GOAL-101 的反证臂同形（最小合成树 + 真验证器），但对象换成早期一代：
+    028 的 `record_verdicts(root)` 读的是 **GOAL 记录正文**里的固定标记
+    （`UNCOVERED_MARKERS` / `RESIDUAL_MARKERS` / EC 状态行）。把合成树里 GOAL 正文的
+    这些标记**全部去掉** ⇒ 它必须报出多条判负；把这些标记写回去 ⇒ 必须全绿。
+
+    这一条钉的是「射程真的伸到了早期一代」：如果 `_early_record_verdicts` 因为签名不匹配
+    而静默返回空列表，`ran >= 3` 会红 —— 但**只有**这一条反证能证明"返回的判词真的
+    带着它自己的断言"。
+    """
+
+    def test_the_early_verifier_reports_red_when_its_markers_are_gone(self, tmp_path: Path) -> None:
+        module = _load_module(
+            _ROOT / "tools" / "verify_goal028_closeout.py", "goal103_early028_probe"
+        )
+        goal_path = tmp_path / getattr(module, "GOAL")
+        goal_path.parent.mkdir(parents=True, exist_ok=True)
+        goal_path.write_bytes(b"# empty goal record\n")
+
+        verdicts = list(module.record_verdicts(tmp_path))
+        assert verdicts, "空记录上必须产出判词（否则这一代的主文件面是空转）"
+        assert any(not item.ok for item in verdicts), (
+            "GOAL 正文里什么标记都没有时，早期一代的判据必须判红",
+            [(item.name, item.ok) for item in verdicts],
+        )
+
+    def test_the_early_verifier_is_green_on_a_record_carrying_its_markers(
+        self, tmp_path: Path
+    ) -> None:
+        """反向：把该验证器自己声明的标记**原样**写进记录 ⇒ 判词全绿。
+
+        与上一条成对：只判"红"会让"永远红"也通过。
+        """
+        module = _load_module(
+            _ROOT / "tools" / "verify_goal028_closeout.py", "goal103_early028_probe_green"
+        )
+        markers = [
+            *getattr(module, "UNCOVERED_MARKERS", ()),
+            *getattr(module, "RESIDUAL_MARKERS", ()),
+        ]
+        assert markers, "该验证器必须声明它要的标记（否则本反证没有对象）"
+        goal_path = tmp_path / getattr(module, "GOAL")
+        goal_path.parent.mkdir(parents=True, exist_ok=True)
+        goal_path.write_bytes(("\n".join(markers) + "\n").encode("utf-8"))
+
+        verdicts = list(module.record_verdicts(tmp_path))
+        failed = [(item.name, item.ok) for item in verdicts if not item.ok]
+        # EC 状态行不在标记集里 ⇒ 那几条仍会红；本判据只要求**标记类**断言转绿。
+        marker_names = {name for name, _ok in failed}
+        marked = ("uncovered-enumerated", "residuals-enumerated")
+        assert not any(name in marker_names for name in marked), (
+            "标记写回后，标记类断言必须转绿（否则判据没有真的读那些标记）",
+            failed,
         )

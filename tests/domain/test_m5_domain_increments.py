@@ -36,6 +36,9 @@ DOCUMENTED_EVENT_TYPES = {
     "model.resolved",
     "model.drift_detected",
     "budget.reserved",
+    # GOAL-20261101-103 EC-01：相级进度两个事件（同轮写进 EVENT_MODEL.md 词表）。
+    "phase.started",
+    "phase.completed",
     "task.created",
     "task.leased",
     "task.heartbeat",
@@ -261,5 +264,7 @@ class TestEventTypeInventory:
         # 34 → 36（GOAL-004 cycle 3 新增 run.degraded / task.failed 两个**已写进
         # EVENT_MODEL.md 词表**的事件类型）→ 37（GOAL-004 cycle 7 新增 run.resume_failed：
         # 续跑失败被补偿的记录）→ 38（GOAL-006 cycle 6 新增 run.resume_compensation_failed：
-        # 补偿**本身**失败被留痕的记录）；门禁本身不变，只是随词表同步。
-        assert len(actual) == 38
+        # 补偿**本身**失败被留痕的记录）→ 40（GOAL-20261101-103 EC-01 新增 phase.started /
+        # phase.completed：相级进度）。**门禁本身不变**（判据仍是「枚举 == 文档词表且键数
+        # 逐字」）；每次加事件都必须同时改 EVENT_MODEL.md —— 这正是这条判据的用途。
+        assert len(actual) == 40

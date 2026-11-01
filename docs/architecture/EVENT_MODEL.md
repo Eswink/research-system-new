@@ -14,6 +14,8 @@ model.probed
 model.resolved
 model.drift_detected
 budget.reserved
+phase.started
+phase.completed
 task.created
 task.leased
 task.heartbeat
@@ -53,6 +55,22 @@ run.resume_compensation_failed
 `GET /runs/{id}` 的 `execution` 读面回读的正是这份 payload（不另存副本）。
 语义 digest 必须在事件里：执行期失败收敛的 run 没有 `RunOutcome`
 可读，只能从事件链把 run 行的冻结引用补回来（GOAL-004 cycle 4 = EC-04）。
+
+`phase.started` / `phase.completed` 是**相级进度**（GOAL-20261101-103 EC-01）。加它们之前，
+一次 run 停在第几相只能从 `task.created` 的序列**推断**，而产品读面（`RunDetailDto`）与前端
+都只能读到「这条 run 是 RUNNING」。两向语义由判据钉住：
+
+- `phase.started` 在该相**第一个任务开始前**发，payload = `phase_id` / `strategy` /
+  `contract_ids`；被 human gate 或暂停信号拦下的相**不发**（它没有开始执行）；
+- `phase.completed` 在该相**全部任务终态后**发，payload = `phase_id` / `outcome` /
+  `artifact_ids`（`outcome` 是闭集 `SUCCEEDED` / `DEGRADED`）；
+- 组内**失败 / 停车 / 重排**⇒ **不发** `completed`。这条是核心边界：若「相结束了」与
+  「相成功了」用同一条事件表达，一次停在第 9 相的 run 在事件链上就会看起来像「9 相全走完」。
+- `phase_id` 为空的组（resume 重建路径不携带相身份）**不发**两条事件中的任何一条 ——
+  否则读面会多出一个不存在的相。
+
+同一条通道（既有 outbox），不另开事件总线；payload 只有身份，不含任何内容
+（制品 **id** 不是制品内容，与 `task.created` 的 `task_id` 同层）。
 
 `model.probed`（GOAL-010 EC-04 起**真的会发出**；此前只是声明过的枚举成员）：run 收敛后，
 若这次执行的会话**观测到** provider 侧报告的 model 名，就把指纹四要素（返回 model 名 /

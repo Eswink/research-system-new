@@ -32,6 +32,7 @@ from services.api.run_execution import (
 )
 from services.api.run_execution_view import run_execution_dto
 from services.api.run_pause_view import paused_dispatch_view
+from services.api.run_phase_view import run_phases_dto
 from services.api.run_rebuild_view import rebuild_readiness_dto
 
 router = APIRouter(prefix="/runs", tags=["runs"])
@@ -64,6 +65,9 @@ def _detail_dto(
         if with_execution and projection is not None
         else None
     )
+    # GOAL-20261101-103 EC-01：相级进度（**仅详情路径**，与 `execution` 同一条 N+1 理由：
+    # 列表路径逐 run 解析冻结协议正文 + 扫制品表会放大成 N 次内部读）。
+    phases = run_phases_dto(run, projection, deps.artifacts) if with_execution else None
     return RunDetailDto(
         id=run.id.value,
         project_id=run.project_id,
@@ -78,6 +82,7 @@ def _detail_dto(
         dispatch=dispatch,
         rebuild=rebuild_readiness_dto(run),
         execution=execution,
+        phases=phases,
         program_id=run.program_id,
         program_index=run.program_index,
         created_at=run.created_at.value.isoformat(),

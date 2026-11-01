@@ -13,6 +13,10 @@ export interface EventStreamState {
 /** 服务端 run_events.py 实际发出的具名 event: 帧（带 run_id 且有发布点）。 */
 export const NAMED_SSE_EVENTS = [
   "manifest.frozen",
+  // GOAL-20261101-103 EC-01：相级进度。不加这两个名字 ⇒ 帧到了浏览器也**不被监听**
+  // （原生 EventSource 只交出 addEventListener 过的具名帧）⇒ 进度条永远停在首帧快照。
+  "phase.started",
+  "phase.completed",
   "task.created",
   "task.leased",
   "task.completed",

@@ -27,6 +27,8 @@ export const RUN: RunDetailDto = {
   },
   // GOAL-20261008-037 EC-01：独立 run（不属于任何研究程序）—— 与后端 DTO 同步。
   program_id: null, program_index: null,
+  // GOAL-20261101-103 EC-01：相级进度（本夹具协议无相 ⇒ 空数组；null 才是"读不到"）。
+  phases: [],
   created_at: "2026-09-09T00:00:00Z", updated_at: "2026-09-09T00:00:00Z",
   // GOAL-005 cycle 6 = EC-06：这条 run 带冻结正文 ⇒ 重建能力自足（不缺事实）。
   rebuild: { status: "SELF_CONTAINED", missing: [] },

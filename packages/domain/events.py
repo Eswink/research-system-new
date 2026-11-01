@@ -27,6 +27,14 @@ class EventType(StrEnum):
     MODEL_RESOLVED = "model.resolved"
     MODEL_DRIFT_DETECTED = "model.drift_detected"
     BUDGET_RESERVED = "budget.reserved"
+    # GOAL-20261101-103 EC-01：**相级进度**。加这两个成员之前，一次 run 停在第几相
+    # 只能从 `task.created` 的序列**推断**，而产品读面（`RunDetailDto`）与前端都只能说
+    # 「这条 run 是 RUNNING」⇒「走到哪一步」不是一等事实。
+    # 两向语义（判据钉住）：`phase.started` 在该相**第一个任务开始前**发；
+    # `phase.completed` 在该相**全部任务终态后**发 —— 组内失败 / 停车 / 重排**不发**
+    # completed（否则「相完成了」可被伪造）。走既有 outbox 通道，不另开事件总线。
+    PHASE_STARTED = "phase.started"
+    PHASE_COMPLETED = "phase.completed"
     TASK_CREATED = "task.created"
     TASK_LEASED = "task.leased"
     TASK_HEARTBEAT = "task.heartbeat"

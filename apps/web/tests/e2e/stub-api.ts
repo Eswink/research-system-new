@@ -19,16 +19,29 @@ export { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 /** 收集未匹配请求，测试结束断言为空。 */
 export const unmatchedRequests: string[] = [];
 
-function match(path: string, method: string): StubRoute["handler"] | null {
+function match(path: string, method: string): StubRoute | null {
   for (const route of ROUTES) {
     if (route.method === method && route.pattern.test(path)) {
-      return route.handler;
+      return route;
     }
   }
   return null;
 }
 
-function fulfill(route: Route, status: number, body: unknown): void {
+interface FulfillOptions {
+  status: number;
+  body: unknown;
+  /** 文本制品正文：逐字原文（不带 JSON 引号/转义），与真后端的 `text/markdown` 一致。 */
+  text?: boolean;
+}
+
+function fulfill(route: Route, { status, body, text = false }: FulfillOptions): void {
+  if (text) {
+    void route
+      .fulfill({ status, contentType: "text/markdown; charset=utf-8", body: String(body) })
+      .catch(() => undefined);
+    return;
+  }
   void route
     .fulfill({ status, contentType: "application/json", body: JSON.stringify(body) })
     .catch(() => undefined);
@@ -54,18 +67,20 @@ export async function stubApi(page: Page): Promise<void> {
       bodyText: post ?? "",
     });
     if (gate.reject !== undefined) {
-      fulfill(route, gate.reject.status, gate.reject.body);
+      fulfill(route, { status: gate.reject.status, body: gate.reject.body });
       return;
     }
-    const handler = match(path, method);
-    if (handler === null) {
+    const handler = match(path, method);    if (handler === null) {
       unmatchedRequests.push(`${method} ${url.pathname}`);
-      fulfill(route, 500, {
-        type: "about:blank",
-        title: "Unstubbed Request",
+      fulfill(route, {
         status: 500,
-        detail: `No stub for ${method} ${path}`,
-        instance: path,
+        body: {
+          type: "about:blank",
+          title: "Unstubbed Request",
+          status: 500,
+          detail: `No stub for ${method} ${path}`,
+          instance: path,
+        },
       });
       return;
     }
@@ -75,11 +90,11 @@ export async function stubApi(page: Page): Promise<void> {
     } catch {
       body = undefined;
     }
-    const result = handler(url, body);
+    const result = handler.handler(url, body);
     if (gate.ticket !== undefined) {
       recordMutation(gate.ticket, result);
     }
-    fulfill(route, result.status, result.body);
+    fulfill(route, { status: result.status, body: result.body, text: handler.bodyKind === "text" });
   });
 }
 

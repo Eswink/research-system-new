@@ -25,10 +25,12 @@ from packages.application.ports.budget_ledger import BudgetLedger
 from packages.application.ports.evidence_ledger import EvidenceLedger
 from packages.application.ports.telemetry_sink import TelemetrySink
 from packages.application.ports.workflow_engine import WorkflowEngine
+from packages.application.run_orchestration import phase_progress
 from packages.application.run_orchestration.commands import StartRunCommand
 from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome, handoff_digests
 from packages.application.run_orchestration.phase_capabilities import execute_run_chain_capabilities
 from packages.application.run_orchestration.phase_pause import (
+    park_for_retry,
     pause_for_human_gate,
     pause_if_requested,
 )
@@ -71,6 +73,11 @@ from packages.domain.run_state import ResearchRunState
 from packages.domain.tasks import ResearchTask, TaskContract
 
 SessionSpec = tuple[ResearchTask, TaskContract, SessionSpecContext]
+#: 实验 / 报告两个确定性执行缝的同型签名（GOAL-20261101-103：原本两条逐字重复的长注解，
+#: 提成别名以守住本文件的 450 行硬上限；语义未变）。
+TaskExecutionFactory = Callable[
+    [ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,15 +93,11 @@ class PhaseRunnerDeps:
     review_findings: Any | None = None
     # GOAL-20261008-038 EC-04：跨轮消费的前序结论读取器（`(run_id) -> (结论, run_id)`）。
     prior_conclusion: Any | None = None
-    experiment_task: (
-        Callable[[ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult] | None
-    ) = None
+    experiment_task: TaskExecutionFactory | None = None
     #: GOAL-20261014-077 EC-02：**报告汇编**阶段的执行缝（与 `experiment_task` 同型同层）。
     #: None（缺省）= 没接。此时契约里**声明了** `report` 的任务以**点名拒绝**收敛
     #: （fail-closed，不静默回退到会话 —— 否则「声明了汇编」与「真的汇编了」会分叉）。
-    report_task: (
-        Callable[[ResearchTask, TaskContract, SessionSpecContext, str], TaskExecutionResult] | None
-    ) = None
+    report_task: TaskExecutionFactory | None = None
     #: GOAL-20261014-078 EC-01：检索内容 → 会话上下文的装配器（每任务求值；
     #: 理由与实现见 `retrieval_context.py`）。None ⇒ 不带检索上下文（逐字节不变）。
     retrieval_context: Callable[[str], Any] | None = None
@@ -229,6 +232,10 @@ def _execute_one_pass(
         held = pause_if_requested(deps, ctx, groups[index:], outcomes)
         if held is not None:
             return held
+        # GOAL-20261101-103 EC-01：**相开始**（在本组首个 task.created 之前）。
+        # 放在两种 parking 判定之*后*：被 human gate 或暂停信号拦下的组**没有开始执行**，
+        # 发 started 会让读面把「等审批」误读成「正在跑」。
+        phase_progress.emit_phase_started(deps, ctx, group)
         failure = _execute_phase_group(
             deps,
             ctx,
@@ -313,6 +320,9 @@ def _execute_phase_group(
         if rejection is not None:
             phase_op.set_outcome(OperationOutcome.FAILED, "panel_rejected")
             return rejection  # type: ignore[no-any-return]
+        # GOAL-20261101-103 EC-01：本组**真的跑完**（无失败/停车/重排）⇒ 发相级完成事件。
+        # 两个失败分支都在上面的 `return` 里离开了，故这里发「完成」不是伪造。
+        phase_progress.emit_phase_completed(deps, ctx, group, run)
     return None
 
 
@@ -369,7 +379,7 @@ def _run_group_task(
             TaskContext(task=task, contract=contract, spec_context=spec_context, ctx=ctx),
         )
     if step.retry_deferred:
-        return _park_for_retry(deps, ctx, group, position, run)
+        return park_for_retry(deps, ctx, group, position, run)
     if step.tolerated_failure is not None:
         # 契约声明了容忍（`on_task_failure: CONTINUE`）：失败记账后继续跑，
         # run 最后收敛 DEGRADED（见 execute_phases），不在这里假装成功。
@@ -385,32 +395,6 @@ def _run_group_task(
         return step.failure  # type: ignore[no-any-return]
     record_success(run, task, step)
     return None
-
-
-def _park_for_retry(
-    deps: PhaseRunnerDeps,
-    ctx: PhaseContext,
-    group: tuple[SessionSpec, ...],
-    position: int,
-    run: _GroupRun,
-) -> RunOutcome:
-    """把"重排还没到期"的 run 停在 PAUSED，而不是判失败（PLAN-20260915-081）。
-
-    失败的任务与其后全部 specs 一起交回 service 暂存供 resume。不能判失败：`FAILED`
-    是终态（不在迁移表里），一落 FAILED 那条 `RETRY_SCHEDULED` 就再没有派发方会来取。
-    """
-    if deps.on_pause is not None:
-        deps.on_pause(tuple(group[position:]) + tuple(spec for chunk in run.tail for spec in chunk))
-    return RunOutcome(
-        run_id=ctx.run_id,
-        state=ResearchRunState.State.PAUSED,
-        message=(
-            f"task {group[position][0].id.value} retry scheduled; run parked until the retry is due"
-        ),
-        tasks=tuple(run.outcomes),
-        manifest_digest=ctx.frozen_manifest_digest,
-        system_failure=False,
-    )
 
 
 def _execute_one_task(deps: PhaseRunnerDeps, tctx: TaskContext) -> PhaseStep:

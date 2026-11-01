@@ -74,8 +74,7 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-037 EC-05：收口验证器 + 它复用的本轮断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal037_closeout_assertions.py",
     "tools/verify_goal037_closeout.py",
-    # GOAL-031…20261021 的收口验证器 / 断言集 / 读取器：同一纪律逐轮登记
-    # （纯收紧 ⇒ 只增不删；登记即进四道门射程）。各行原文曾逐轮重复，此处合并。
+    # GOAL-031…20261021 收口验证器 / 断言集 / 读取器：同一纪律（纯收紧 ⇒ 只增不删）。
     "tools/goal038_closeout_assertions.py",
     "tools/verify_goal038_closeout.py",
     "tools/goal039_closeout_assertions.py",
@@ -197,9 +196,8 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-20261026-097 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal097_closeout_assertions.py",
     "tools/verify_goal097_closeout.py",
-    # GOAL-20261027-098 靶子 3：**回填** 076 / 090 / 095 三个从未存在的验证器
-    # （GOAL-096 的 `W-3` 记的就是这件事；`_CUTOFF_SEQ = 64` 让它们不判红）。
-    # 纳入射程 = 它们此后过四道门（规模 / lint / format / mypy）⇒ 回填不是免检。
+    # GOAL-098 靶子 3：**回填** 076 / 090 / 095 三个从未存在的验证器（GOAL-096 的 `W-3`
+    # 就是这件事；`_CUTOFF_SEQ = 64` 让它们不判红）。纳入射程 ⇒ 此后过四道门。
     "tools/goal076_closeout_assertions.py",
     "tools/verify_goal076_closeout.py",
     "tools/goal090_closeout_assertions.py",
@@ -216,8 +214,11 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal100_closeout.py",
     "tools/goal101_closeout_assertions.py",  # GOAL-20261030-101 EC-05（同批：verify_goal101）
     "tools/verify_goal101_closeout.py",
-    "tools/verify_goal102_closeout.py",  # GOAL-20261031-102 EC-05：同批 goal102_closeout_assertions
+    "tools/verify_goal102_closeout.py",
     "tools/goal102_closeout_assertions.py",
+    # GOAL-103 EC-07：验证器 + 断言集（纯收紧）。
+    "tools/goal103_closeout_assertions.py",
+    "tools/verify_goal103_closeout.py",
     "tools/charter_progress.py",
     "tools/check_ledger_run_attribution.py",
 )

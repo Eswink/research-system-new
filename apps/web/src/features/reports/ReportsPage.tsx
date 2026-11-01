@@ -4,6 +4,7 @@ import { EmptyState } from "../../components/States";
 import { useResource } from "../../hooks/useResource";
 import { useI18n } from "../../i18n/useI18n";
 import type { PageContext } from "../../navigation/pageContext";
+import { ManuscriptPanel, hasManuscript } from "./ManuscriptPanel";
 import { ReportBody } from "./ReportBody";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
@@ -19,6 +20,9 @@ export function ReportsPage({ ctx }: { ctx: PageContext }) {
   const runId = ctx.selectedRunId;
   const key = runId === "" ? null : runId;
   const deliverable = useResource(key, () => api.runDeliverable(runId));
+  // GOAL-20261101-103 EC-04：手稿链读面（与本页既有 deliverable 并行取；两者互不依赖 ——
+  // 有手稿而不跑过 M12 的 run 也必须能读，反之亦然）。
+  const artifacts = useResource(key, () => api.listRunArtifacts(runId));
   return (
     <section className={styles.page} data-testid="reports-page">
       <PageHeader
@@ -45,6 +49,13 @@ export function ReportsPage({ ctx }: { ctx: PageContext }) {
       />
       {runId === "" && (
         <EmptyState message={zh ? "选择运行以阅读报告" : "Select a run to read its report"} />
+      )}
+      {runId !== "" && (
+        <ResourceBoundary state={artifacts}>
+          {(artifacts.data ?? []).length > 0 && hasManuscript(artifacts.data ?? []) && (
+            <ManuscriptPanel artifacts={artifacts.data ?? []} />
+          )}
+        </ResourceBoundary>
       )}
       {runId !== "" && (
         <ResourceBoundary state={deliverable}>

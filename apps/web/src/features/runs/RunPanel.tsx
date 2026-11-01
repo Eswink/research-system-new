@@ -10,6 +10,7 @@ import { PageHeader } from "../shared/PageHeader";
 import { RunQueryBar } from "../shared/RunQueryBar";
 import type { RunSelectionProps } from "../shared/useSelectedRun";
 import { RunActions } from "./RunActions";
+import { PhaseProgress } from "./PhaseProgress";
 import { RebuildReadiness } from "./RebuildReadiness";
 import { TimelineView } from "./TimelineView";
 import { useRunTimeline } from "./useRunTimeline";
@@ -36,6 +37,11 @@ function RunPanelsection({ zh, flow }: RunPanelsectionProps) {
       </ResourceBoundary>
       <ResourceBoundary state={flow.run}>
         {flow.run.data !== null && <RebuildReadiness rebuild={flow.run.data.rebuild} />}
+      </ResourceBoundary>
+      {/* GOAL-20261101-103 EC-03：**相级进度**（十一相各一节点）。
+          插在任务列表之前：用户问的第一件事是「走到哪一步」，任务表是它的明细。 */}
+      <ResourceBoundary state={flow.run}>
+        {flow.run.data !== null && <PhaseProgress phases={flow.run.data.phases} />}
       </ResourceBoundary>
       {flow.runId === "" ? (
         <div data-testid="runs-empty">

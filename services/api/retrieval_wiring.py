@@ -64,12 +64,24 @@ RETMAX_ENV = "RESEARCHOS_RETMAX"
 MAX_RETMAX = 100
 
 
-def configured_retmax(environ: Any | None = None) -> int:
-    """配置面 → `retmax`（未设 / 空 ⇒ `DEFAULT_RETMAX`；非法 ⇒ **点名**拒绝）。
+def configured_retmax(environ: Any | None = None, *, project_retmax: int | None = None) -> int:
+    """四级回落 → `retmax`：**显式参数 > 项目声明 > 环境变量 > `DEFAULT_RETMAX`**。
+
+    GOAL-20261101-103 EC-05 把「项目声明」插在环境变量**之前**：在此之前 `retmax` 只到
+    进程级 env ⇒ 同一控制面上的两个项目无法有不同的检索深度。插入这一级的硬约束是
+    **不声明项目设置时逐字段不变**：`project_retmax is None` ⇒ 代码路径与改动前完全一致
+    （下一行就是 `environ` 分支），所以既有装配方、既有判据、既有真跑读数全部不动。
 
     为什么非法值要抛而不是回落默认：静默回落会让「把条数调成 50」与「拼错了变量名」在
-    读数上不可区分 —— 那正是本仓反复修掉的那类含混。
+    读数上不可区分 —— 那正是本仓反复修掉的那类含混。**项目声明也走同一条范围判定**
+    （`1…MAX_RETMAX`）：一个规则、一个错误消息来源，不给项目面开后门。
     """
+    if project_retmax is not None:
+        if not 1 <= project_retmax <= MAX_RETMAX:
+            raise ValueError(
+                f"project retmax must be between 1 and {MAX_RETMAX}, got {project_retmax}"
+            )
+        return project_retmax
     raw = (environ if environ is not None else os.environ).get(RETMAX_ENV)
     text = str(raw or "").strip()
     if not text:
@@ -102,7 +114,9 @@ def retrieval_providers(*, artifacts: Any, credentials: Any) -> dict[str, Any]:
     }
 
 
-def retrieval_calls(retmax: int | None = None) -> tuple[Any, ...]:
+def retrieval_calls(
+    retmax: int | None = None, *, project_retmax: int | None = None
+) -> tuple[Any, ...]:
     """出厂检索的两步链：检索（query 来自上游问题）→ 读取（ids 来自上一步结果）。
 
     与 `tests/e2e/literature_chain_support.europepmc_calls()` **同形**（那是判据侧对同一
@@ -112,10 +126,13 @@ def retrieval_calls(retmax: int | None = None) -> tuple[Any, ...]:
     `retmax`（GOAL-20261029-100 EC-04）：**缺省 `None` ⇒ 读配置面**（未设环境变量时仍是
     `DEFAULT_RETMAX` = 3，与改动前的字面量 `{"retmax": 3}` 逐字段相同）。显式传值优先于
     配置面 —— 判据据此按压「改配置 ⇒ 调用参数变」。
+
+    `project_retmax`（GOAL-20261101-103 EC-05）：项目级声明。四级回落见
+    `configured_retmax`；**显式 `retmax` 仍然最高**（判据与运维通道不因项目声明而失效）。
     """
     from packages.application.run_orchestration.phase_capabilities import RunChainCall
 
-    hits = configured_retmax() if retmax is None else retmax
+    hits = configured_retmax(project_retmax=project_retmax) if retmax is None else retmax
     if not 1 <= hits <= MAX_RETMAX:
         raise ValueError(f"retmax must be between 1 and {MAX_RETMAX}, got {hits}")
 

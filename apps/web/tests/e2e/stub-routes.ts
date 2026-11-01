@@ -23,6 +23,12 @@ export { DRAFT, ENDPOINT, VALID_YAML } from "./stub-fixtures";
 export interface StubRoute {
   method: string;
   pattern: RegExp;
+  /**
+   * `body` 缺省按 JSON 序列化（既有语义）。**文本制品正文**（`GET /artifacts/{id}/content`）
+   * 是特例：它必须是**逐字原文**，否则 `text/markdown` 会被包成 `"…"`（带引号与转义）——
+   * 那既不是真后端的行为，也会让"渲染 Markdown 正文"这条判据在假输入上变绿。
+   */
+  bodyKind?: "json" | "text";
   handler: (url: URL, body: unknown) => { status: number; body: unknown };
 }
 
@@ -178,20 +184,6 @@ export const ROUTES: readonly StubRoute[] = [
         status: 503,
         detail: "memory store requires the PostgreSQL control plane",
         instance: "/memory",
-      },
-    }),
-  },
-  {
-    method: "GET",
-    pattern: /^\/runs\/[^/]+\/artifacts$/,
-    handler: () => ({
-      status: 503,
-      body: {
-        type: "about:blank",
-        title: "Artifact Store Unavailable",
-        status: 503,
-        detail: "artifact store not configured",
-        instance: "/artifacts",
       },
     }),
   },

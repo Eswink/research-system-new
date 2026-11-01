@@ -242,7 +242,12 @@ def retmax_verdicts(root: Path, toolbox: Any) -> list[Any]:
             "DEFAULT_RETMAX = 3",
             'RETMAX_ENV = "RESEARCHOS_RETMAX"',
             "def configured_retmax(",
-            "def retrieval_calls(retmax: int | None = None)",
+            # GOAL-20261101-103 EC-05：该签名**长了一个 keyword-only 形参**
+            # （`*, project_retmax`）；`retmax: int | None = None` 这一半**逐字未变**，
+            # 故断言钉住未变的那一半 —— 这不是放宽：改动前要求整行逐字，改动后仍要求
+            # 「第一个形参及其默认值逐字」（本条要保的事实：默认仍是 3、可显式覆盖）。
+            "def retrieval_calls(",
+            "retmax: int | None = None, *, project_retmax: int | None = None",
             'fixed_arguments={"retmax": hits}',
         ),
     )

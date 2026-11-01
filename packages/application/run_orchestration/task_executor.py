@@ -93,6 +93,10 @@ class SessionSpecContext:
     # M15 债务清偿:phase 归属(观测 PHASE span 分组/父子链接用);缺省 "" 表示
     # 来源不携带 phase 信息(如 resume 重建路径)——此时 TASK 落回 RUN 父
     phase_id: str = ""
+    # GOAL-20261101-103 EC-01：本相的**策略**（`ProtocolPhase.strategy` 的编译期原样透传）。
+    # `phase.started` 的 payload 带它 ⇒ 读面知道「这一相是单智能体还是并行/映射归约」，
+    # 不必回查协议正文。缺省 "" = 来源不携带相信息（与 `phase_id` 同一条语义）。
+    phase_strategy: str = ""
     # GOAL-010 EC-02：本 phase **声明的输入制品 id**（源头是 `ProtocolPhase.inputs`，
     # 一个此前无消费者的槽位）。它随 spec 走到会话结果注册处，在那里被登记成
     # 「**非**模型自述」的来源：内容由 ArtifactStore 复核、digest 可重算。

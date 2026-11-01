@@ -166,6 +166,27 @@ class RunExecutionDto(BaseModel):
     runtime_fingerprint: RuntimeFingerprintDto | None = None
 
 
+class PhaseProgressDto(BaseModel):
+    """一相的进度读面（GOAL-20261101-103 EC-01）。
+
+    **事实来源**：`state` 由该相各任务的 canonical 状态推出（与 `GET /runs/{id}/tasks`
+    同一份投影），不是前端自己攒的状态机；`artifact_ids` 来自按命名约定
+    `{task_id}:{name}` 归属到本相任务的制品（真实产出，不补占位）；
+    `started_at` / `completed_at` 来自相级事件 `phase.started` / `phase.completed`。
+
+    **四态闭集**（`PHASE_STATES`，按此顺序推导）：`PENDING`（本相无任务，或任务全部
+    还没被领走）/`FAILED`（有任务终局失败或进死信）/`RUNNING`（还有任务未终态）/
+    `SUCCEEDED`（全部终态且无失败）。**不允许**第五个值：多一态就得说明它凭什么存在。
+    """
+
+    phase_id: str
+    strategy: str = ""
+    state: str = "PENDING"
+    artifact_ids: list[str] = Field(default_factory=list)
+    started_at: str | None = None
+    completed_at: str | None = None
+
+
 class RunDetailDto(BaseModel):
     id: str
     project_id: str
@@ -193,8 +214,16 @@ class RunDetailDto(BaseModel):
     # None = 该 run 不属于任何程序（独立 run，既有语义）。
     program_id: str | None = None
     program_index: int | None = None
+    # GOAL-20261101-103 EC-01：相级进度（**仅详情路径**给，与 `execution` 同一条理由：
+    # 列表路径逐 run 解析冻结协议正文会变成 N+1）。`None` = 这份 run 没有冻结协议正文
+    # （旧 run / 未冻结）⇒ **读不到相结构**，不是「零相」。空列表 `[]` 才是「协议里没有相」。
+    phases: list[PhaseProgressDto] | None = None
     created_at: str
     updated_at: str
+
+
+#: `PhaseProgressDto.state` 的**闭集**（判据钉住：DTO 不得出现第五个值）。
+PHASE_STATES: tuple[str, ...] = ("PENDING", "RUNNING", "SUCCEEDED", "FAILED")
 
 
 class TaskDto(BaseModel):
