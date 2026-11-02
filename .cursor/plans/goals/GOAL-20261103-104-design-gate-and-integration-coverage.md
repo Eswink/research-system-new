@@ -42,8 +42,9 @@ exit_criteria:
       light/compact/zh，对角取法：每轴各出现两次）；② `ALL_ROUTES` 新增
       `run-timeline-phases`（`#/run/timeline?run=eleven-phases`），让**填充态**进基线；
       ③ `design-outlines.json` 重生成，新路由含 **11 个** `phase-node`；④ 新增**元素级**
-      像素用例（`toHaveScreenshot` 钉在 `phase-track` 上、`maxDiffPixels: 0` +
-      `scale: "css"` + `animations: "disabled"`）——整页截图把进度条录在折叠线以下，
+      像素用例（`toHaveScreenshot` 钉在 `phase-track` 上、`maxDiffPixels: 196`（= 0.15%，
+      实测夹在「平台噪声 ≤93 px」与「真实颜色改动 563 px」之间）+ `scale: "css"` +
+      `animations: "disabled"`）——整页截图把进度条录在折叠线以下，
       看不见它；⑤ **两个平台**的 PNG 基线都要有（win32 + linux）。
     verify: >-
       win32：`npx playwright test design-fidelity` 3 条全绿（144 张 win32 基线）。
@@ -226,6 +227,7 @@ memory_entries:
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `e9374172` | [M0 41534081970](https://github.com/Eswink/research-system-new/actions/runs/41534081970) / [Push 41534081435](https://github.com/Eswink/research-system-new/actions/runs/41534081435) | **M0 `failure`**（`quality-ubuntu` / `quality-windows` / `console-frontend` 三条红）；Push 全 success | **交付 tip**（七条 EC + 收口资产 + 宪章记账）。三条红逐条分类：① `console-frontend` = **真缺陷**：元素级像素判据用 `maxDiffPixels: 0`，CI ubuntu 报 60 px 字体抗锯齿差 ⇒ 改 196 px（实测夹在噪声 ≤93 与颜色改动 563 之间）；② `quality-*` = **真缺陷**：`unconsumedRegistry.ts` 的旧名仍在提交里（重命名时 `git mv` 失败而回退的 `mv` 留下了已暂存的旧路径），命名门禁点名它；③ 两条 `quality-*` 还叠加 `test_m0_witness_matches_the_tree` 红 —— 见证在跑门后被记录改动，属**流程顺序**而非缺陷。三件一并修在下一提交 |
 
 ## 迭代日志
 
@@ -245,9 +247,11 @@ memory_entries:
 - `W-2`｜**元素级像素门禁只覆盖 `phase-track` 一个组件**：它是本轮唯一「整页看不见但用户
   真的会看」的面。其它折叠线以下的内容（长列表尾部、抽屉、展开态）仍然只有结构签名覆盖，
   没有元素级像素 —— 同类问题在别处存在但没有判据。
-- `W-3`｜**`maxDiffPixels: 0` + `scale: "css"` 只对元素级截图成立**：整页截图仍用
-  `maxDiffPixelRatio: 0.02`（0.36% 的单色改动不会让它红）。把整页阈值也收到 0 会与字体
-  渲染的平台差异冲突，本轮没有为它找安全的中间值。
+- `W-3`｜**元素级阈值是实测标定的，不是零容差**：`maxDiffPixels: 196`（0.15%）夹在
+  「跨机器字体抗锯齿噪声 ≤93 px」与「真实颜色改动 563 px」之间。这个数字**只对这一块
+  元素**成立（1002×131）；整页截图仍用 `maxDiffPixelRatio: 0.02`（0.36% 的单色改动不会
+  让它红），把整页阈值也收到这个量级会与整页的字体渲染差异冲突。两个阈值都没有被
+  系统性地标定过 —— 它们各自只对本轮实测过的两种改动成立。
 - `W-4`｜**路由覆盖判据是「形状同形」而不是「真的被调用」**：它读 client 源码里的路径
   字面量（含一跳 helper 拼装），无法证明那个方法**在 UI 里被调用**。三条 client-only 方法
   因此靠**人写的白名单理由**区分于真消费者 —— 判据只能保证「没有完全没人碰的路由」。

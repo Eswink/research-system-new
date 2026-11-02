@@ -279,6 +279,7 @@ GOAL 的链。）
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `bd1482ce` | [M0 41497683503](https://github.com/Eswink/research-system-new/actions/runs/41497683503) / [Push 41497683397](https://github.com/Eswink/research-system-new/actions/runs/41497683397) | **M0 `success`（8/8 job success）**；**Push 全 success** | **归档轮之后的两项 workflow 修复**（用户 2026-11-03 批准）：`W-7` `console-frontend` 钉 `runs-on: ubuntu-24.04`（26.04 上 Playwright 1.56.1 装不了 chromium ⇒ 两步 e2e 都 skipped）；`W-5` `quality` 的 `timeout-minutes` 20→30。**这一行是事后补登**：该提交推送时本台账已收口，`test_goal_commit_chain_reaches_the_ledger` 在 GOAL-104 的 m0 里抓到「链 13 个、台账 12 个」并点名它 —— 如实补记读数，不改历史、不改判据。 |
 | `24e3418b` | 本地全量 m0 见证（`evidence/M0-WITNESS.json`，重封于 `ef755a99`） | **本地 m0 终态行 `PASS: profile=m0; 23 deterministic checks`**（24 条 `PASS [` 行 = 23 + 计数外的 `release-assets-immutable`）；**零 run（`covered_by: ef755a99`）** —— 同批推送 | 交付提交：相级事件 + `RunDetailDto.phases` + 读面两字段 + 前端两件 + `retmax` 项目级 + §7 论证 + 早期一代射程。首轮见证为**诚实红**（5 个 check：product-lint / format / typecheck / tests / typescript-lint），逐类修复后复跑；第二轮回落后只剩 `python/tests`（5 条真实失败），再修后绿 |
 | `bcc42d9a` | [M0 41325992369](https://github.com/Eswink/research-system-new/actions/runs/41325992369) / [Push 41325992361](https://github.com/Eswink/research-system-new/actions/runs/41325992361) | **M0 `success`（8/8 job success，含 `quality-windows-latest`）**；**Push 全 success** | **真跑取证的封印提交**（GOAL 记录 + 见证）。**这一轮 windows 也绿** ⇒ `W-5` 的 20 分钟窗口在「只改记录」的提交上通常不触发；三次 cancelled 的对照证据见前两条。 |
 | `ea4b94fb` | [M0 41329347922](https://github.com/Eswink/research-system-new/actions/runs/41329347922) / [Push 41329347914](https://github.com/Eswink/research-system-new/actions/runs/41329347914) | **M0 `cancelled`**（七 job `success`，`quality-windows-latest` `cancelled`）；Push 全 `success` | **最终收口 tip**（只改记录 + 见证）。当时它是 HEAD ⇒ 结构例外；**序 72 的归档推送把它推离 HEAD 后，反方向判据点名它**。**它的 windows 是 `W-5` 的第四次实例**：`Run all M0 gates` 卡到 20 分钟被取消（实测 1206 秒 = 20 分 6 秒，日志无测试失败）⇒ 这是「`bcc42d9a` 绿、最终 tip 红」的成因，**不是新一轮缺陷** |
@@ -296,7 +297,7 @@ GOAL 的链。）
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261101-103 | `24e3418b` → `a889872f` → `ef755a99` → `dcf6f764` → `ad17cb22` → `478d39ed` → `79d02c28` → `52f7ed35` → `bcc42d9a` → `ea4b94fb` → `6420d868` → `1274e279`（序 72 归档轮一次付清前三个） | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 105/105 | **M0 `success` 8/8**（`ad17cb22`；此前两条 `cancelled` 证实为 W-5 窗口）；Push success | 无 | 八条 EC 全 PASS；残余 `W-1`…`W-5` 与未覆盖 `U-1`…`U-3` 已登记 | 见 §7「结论」与残余节（续跑取证 / 批量相进度读面 / 阈值标定 / 外部评审面板） |
+| 1 | PLAN-20261101-103 | `24e3418b` → `a889872f` → `ef755a99` → `dcf6f764` → `ad17cb22` → `478d39ed` → `79d02c28` → `52f7ed35` → `bcc42d9a` → `ea4b94fb` → `6420d868` → `1274e279`（序 72 归档轮一次付清前三个）→ `bd1482ce`（归档后两项 workflow 修复） | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 105/105 | **M0 `success` 8/8**（`ad17cb22`；此前两条 `cancelled` 证实为 W-5 窗口）；Push success | 无 | 八条 EC 全 PASS；残余 `W-1`…`W-5` 与未覆盖 `U-1`…`U-3` 已登记 | 见 §7「结论」与残余节（续跑取证 / 批量相进度读面 / 阈值标定 / 外部评审面板） |
 
 
 ## 残余与未覆盖范围

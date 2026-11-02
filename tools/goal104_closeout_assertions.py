@@ -66,7 +66,7 @@ DESIGN_MARKERS: tuple[str, ...] = (
     'name: "run-timeline-phases"',
     "#/run/timeline?run=eleven-phases",
     # 元素级像素判据（整页截图看不见折叠线以下的进度条 —— 实测反证）。
-    "maxDiffPixels: 0",
+    "maxDiffPixels: 196",
     'scale: "css"',
     'getByTestId("phase-track")',
 )

@@ -1820,11 +1820,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261101-103-phase-events-and-frontend-visible-chain.md",
-        "sha256": "448e01155f33405475ade0207bc3001f76c6b63c"
+        "sha256": "cc9c477a0eb5fe32d7d75ccde650de0b7f3be831"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "97de44e0f54f9c1ae48d9ed9257796542fc15731"
+        "sha256": "4730bb5c199d29efddd23984c5ac80ad706932d2"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4316,7 +4316,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "4296d280ca839666937b95cb2ffee4c7b236236f"
+        "sha256": "d9d1f46d8c2c35785743fa9ca20be72c7aa47adf"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -10732,7 +10732,7 @@
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts",
-        "sha256": "3652604c3738369f262834940cfeca7811911002"
+        "sha256": "c4f6ccd0e829c74167e368757fd397ec7cc7a144"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-dark-compact-en-linux.png",
@@ -12237,10 +12237,6 @@
       {
         "path": "apps/web/tests/unit/unconsumed-registry.ts",
         "sha256": "2ce41a1c4b4f80b730c1e8cdbeb3a4e622df537b"
-      },
-      {
-        "path": "apps/web/tests/unit/unconsumedRegistry.ts",
-        "sha256": ""
       },
       {
         "path": "apps/web/tests/unit/wizard-flow.test.ts",
@@ -19588,7 +19584,7 @@
       },
       {
         "path": "tools/goal104_closeout_assertions.py",
-        "sha256": "a3023c122cb1586b24ae6bc4fc44fff69ca40798"
+        "sha256": "daaddc649fb2d6826b68a890be717898e0209186"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -20051,7 +20047,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "bd1482ce193e178a13fd1fcd30be99031b8949e4"
+    "head": "e93741722db461b2da63ab42c607a11cc776ecd6"
   },
   "fingerprint_before": {
     "files": [
@@ -21873,11 +21869,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261101-103-phase-events-and-frontend-visible-chain.md",
-        "sha256": "448e01155f33405475ade0207bc3001f76c6b63c"
+        "sha256": "cc9c477a0eb5fe32d7d75ccde650de0b7f3be831"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "97de44e0f54f9c1ae48d9ed9257796542fc15731"
+        "sha256": "4730bb5c199d29efddd23984c5ac80ad706932d2"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -24369,7 +24365,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "4296d280ca839666937b95cb2ffee4c7b236236f"
+        "sha256": "d9d1f46d8c2c35785743fa9ca20be72c7aa47adf"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -30785,7 +30781,7 @@
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts",
-        "sha256": "3652604c3738369f262834940cfeca7811911002"
+        "sha256": "c4f6ccd0e829c74167e368757fd397ec7cc7a144"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-dark-compact-en-linux.png",
@@ -32290,10 +32286,6 @@
       {
         "path": "apps/web/tests/unit/unconsumed-registry.ts",
         "sha256": "2ce41a1c4b4f80b730c1e8cdbeb3a4e622df537b"
-      },
-      {
-        "path": "apps/web/tests/unit/unconsumedRegistry.ts",
-        "sha256": ""
       },
       {
         "path": "apps/web/tests/unit/wizard-flow.test.ts",
@@ -39641,7 +39633,7 @@
       },
       {
         "path": "tools/goal104_closeout_assertions.py",
-        "sha256": "a3023c122cb1586b24ae6bc4fc44fff69ca40798"
+        "sha256": "daaddc649fb2d6826b68a890be717898e0209186"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -40104,11 +40096,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "bd1482ce193e178a13fd1fcd30be99031b8949e4"
+    "head": "e93741722db461b2da63ab42c607a11cc776ecd6"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "bd1482ce193e178a13fd1fcd30be99031b8949e4",
+  "ran_at_head": "e93741722db461b2da63ab42c607a11cc776ecd6",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

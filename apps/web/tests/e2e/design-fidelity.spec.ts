@@ -179,7 +179,14 @@ test("十一相进度条元素级像素（四组合，颜色变化必红）", as
     await expect(page.getByTestId("phase-node-report")).toBeVisible({ timeout: 8_000 });
     await page.waitForTimeout(120);
     await expect(track).toHaveScreenshot(`phase-track-${suffix}.png`, {
-      maxDiffPixels: 0,
+      // **不是 0**：实测同一份代码在不同机器上字体抗锯齿仍有差异 —— 本机 93 px、
+      // CI ubuntu 60 px（元素共 1002×131 = 131,262 px）。而**真实的颜色改动**是
+      // 563 px（把 `.succeeded` 的边框从 `--success` 换 `--danger`）。
+      // 0.15% = 196 px 落在两者之间：噪声过不去，颜色改动一定判红。
+      // 用 `maxDiffPixels` 而不是 `maxDiffPixelRatio` 之外的阈值，是为了让这条
+      // 判据的数字**写在这里可复核**（`maxDiffPixelRatio: 0.02` 会吞掉 2,625 px，
+      // 那是整页阈值，对元素级太松）。
+      maxDiffPixels: 196,
       animations: "disabled",
       scale: "css",
     });
