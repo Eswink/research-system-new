@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "f8e484348ff683f238b70e26a630244f39edcafd"
+        "sha256": "981c633ef8da8e31150159b60dfb86023d16e530"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1371,8 +1371,12 @@
         "sha256": "d3d947991eb2b54b8e8bc3dae5838e02e227c674"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261103-238-a-css-module-key-can-be-undefined.md",
+        "sha256": "8b1fb26b6e59b967095b98094c9bdeecf33639c4"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "16f82f239c9cbbc81a3ea17dd108571d561bfc7b"
+        "sha256": "d9e6cef71a31627d5bc5610a148c59d08f2b89f4"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1819,8 +1823,12 @@
         "sha256": "448e01155f33405475ade0207bc3001f76c6b63c"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
+        "sha256": "97de44e0f54f9c1ae48d9ed9257796542fc15731"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "d73b6a9347d673ead425540ccf3ff77c6ef759aa"
+        "sha256": "f58dad2dc5e90aa777929a85f838cf6b738899fd"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -2821,6 +2829,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261030-101-two-tree-current.txt",
         "sha256": "f650bde37b91c3779f6a78f5bd9504328157bd5a"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261103-104-next-round-charter.md",
+        "sha256": "3dc726735b5f8f399c05bab5206a44616f4daea6"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -4303,6 +4315,10 @@
         "sha256": "b4af1ca6ef29f5d6a193e40a3cab4b012ba7c6a7"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261103-104-design-gate-and-integration-coverage.md",
+        "sha256": "4296d280ca839666937b95cb2ffee4c7b236236f"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5711,6 +5727,10 @@
         "sha256": "6d5af22be8269670e012baa6dd1963b5131cd733"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261103-104-design-gate-and-integration-coverage.md",
+        "sha256": "328c31da5a4c16858d2470a56f8a7f433462d9de"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -6948,7 +6968,7 @@
       },
       {
         "path": "apps/web/src/api/client.ts",
-        "sha256": "9b0c66f15b309cec4480db900d4c75bd017e747e"
+        "sha256": "a1cde2aa0ff11060640d3e422a0422ceee695969"
       },
       {
         "path": "apps/web/src/api/controlPlaneToken.ts",
@@ -6972,7 +6992,7 @@
       },
       {
         "path": "apps/web/src/api/inspectionClient.ts",
-        "sha256": "a361e0bf631d54515a63c4ae9ac5c1717be7695f"
+        "sha256": "85478781c5583ec4108f74338f274f64cddaa07e"
       },
       {
         "path": "apps/web/src/api/legacyShapes.ts",
@@ -6980,11 +7000,11 @@
       },
       {
         "path": "apps/web/src/api/libraryClient.ts",
-        "sha256": "dad5ba2efa9b107682a41f70047cdd0c13151195"
+        "sha256": "954f81a6237f1d8a7be594758d611cafdbd3336e"
       },
       {
         "path": "apps/web/src/api/memoryClient.ts",
-        "sha256": "c8d60c8b32da6cf0f5e9178dc5f967aada487d45"
+        "sha256": "c6f5a375f734e0b9618fca616d076329d63dd495"
       },
       {
         "path": "apps/web/src/api/modelsClient.ts",
@@ -7015,8 +7035,12 @@
         "sha256": "e9c827bfff335ee3822656d2c6980971cdfdeef3"
       },
       {
+        "path": "apps/web/src/api/programsClient.ts",
+        "sha256": "c724ec36fc44a31dfb145d4daa41ec534fc392c8"
+      },
+      {
         "path": "apps/web/src/api/projectsClient.ts",
-        "sha256": "402309318c06fbec12e7cb32137770c2413fc95d"
+        "sha256": "bf20992d8d82dc5a9d958cd7bdd693389decfa9f"
       },
       {
         "path": "apps/web/src/api/protocolClient.ts",
@@ -7024,7 +7048,7 @@
       },
       {
         "path": "apps/web/src/api/runClient.ts",
-        "sha256": "25f7f465467ceda4a200145f74a7aced9aef93ed"
+        "sha256": "a2e300d5393fbbb233e6f07cdc636a6585922ac4"
       },
       {
         "path": "apps/web/src/api/teamClient.ts",
@@ -7040,7 +7064,7 @@
       },
       {
         "path": "apps/web/src/api/types.ts",
-        "sha256": "b87cf935e359bf312a0dbab3b442a27675efec55"
+        "sha256": "543286cc98743a25bac70ea0679e841102f54047"
       },
       {
         "path": "apps/web/src/api/workspaceSnapshotClient.ts",
@@ -7236,7 +7260,7 @@
       },
       {
         "path": "apps/web/src/features/command-center/CommandCenterPage.module.css",
-        "sha256": "5f412531ac96113287628d3a657a457cd1f8beec"
+        "sha256": "6d414a67f17944e9ab9eafaa19f17f29c7e15690"
       },
       {
         "path": "apps/web/src/features/command-center/CommandCenterPage.tsx",
@@ -10039,12 +10063,20 @@
         "sha256": "3645ca928388d2470e5c2e4d2fef704591c23fac"
       },
       {
+        "path": "apps/web/src/features/projects/ProgramsSection.tsx",
+        "sha256": "3464721dfbdfe58540e803a0f7eda1e3ff13fdaa"
+      },
+      {
         "path": "apps/web/src/features/projects/ProjectDeleteAction.tsx",
         "sha256": "244144667fb0160e39e9c5290c5a85e7590531d3"
       },
       {
+        "path": "apps/web/src/features/projects/ProjectDirectionEditor.tsx",
+        "sha256": "737de9779ac0798771536bda7c703c9b83bc1e6d"
+      },
+      {
         "path": "apps/web/src/features/projects/ProjectsPage.tsx",
-        "sha256": "bacdc425217366b6af0d94affd87830ea6761202"
+        "sha256": "74ed18daecec777e4ee15d29b9a487e21847a71e"
       },
       {
         "path": "apps/web/src/features/projects/useProjectDeletion.ts",
@@ -10192,15 +10224,23 @@
       },
       {
         "path": "apps/web/src/features/runs/PhaseProgress.module.css",
-        "sha256": "d9caa50a4e3be9ec59fdf134854358085513c626"
+        "sha256": "c20d01317a25542f7faa2e31edd24aa50cbc626e"
       },
       {
         "path": "apps/web/src/features/runs/PhaseProgress.tsx",
-        "sha256": "35d630eed848e006fdbd4bddc368931853e56974"
+        "sha256": "0d16ddb46587df1a3dc4a49bd4ed364bc40cf5ef"
       },
       {
         "path": "apps/web/src/features/runs/RebuildReadiness.tsx",
         "sha256": "9e9850431f1cc2ff6858542c3551e810327b89aa"
+      },
+      {
+        "path": "apps/web/src/features/runs/ReviewPanelSection.module.css",
+        "sha256": "8dc01f2b468ac446b0a844634b11fff970604225"
+      },
+      {
+        "path": "apps/web/src/features/runs/ReviewPanelSection.tsx",
+        "sha256": "c27d630cc8b9b20bdee169be84b9918e2065c93f"
       },
       {
         "path": "apps/web/src/features/runs/RunActionButtonRow.tsx",
@@ -10212,7 +10252,7 @@
       },
       {
         "path": "apps/web/src/features/runs/RunPanel.tsx",
-        "sha256": "7db38ce57fcb8f39f42194c5ec27e0489bfe8479"
+        "sha256": "0e8361d62c6390eeb5a77fc64a5db664d1a76622"
       },
       {
         "path": "apps/web/src/features/runs/TimelineView.tsx",
@@ -10236,7 +10276,7 @@
       },
       {
         "path": "apps/web/src/features/runs/useRunTimeline.ts",
-        "sha256": "b38879457a71050e26d7a412b8c6d6a316e947b2"
+        "sha256": "3d1cbc9326fb1f1bf4dedbce617c54ed2a6b45ed"
       },
       {
         "path": "apps/web/src/features/schedules/ScheduleActions.tsx",
@@ -10372,7 +10412,7 @@
       },
       {
         "path": "apps/web/src/features/shared/LivePage.module.css",
-        "sha256": "a5ecb0d07bf2174498af38279966eec94806feb0"
+        "sha256": "d933d0de424ba835b9079f0e6fe68edb8f690a87"
       },
       {
         "path": "apps/web/src/features/shared/PageHeader.module.css",
@@ -10528,7 +10568,7 @@
       },
       {
         "path": "apps/web/src/layout/ConsoleLoading.module.css",
-        "sha256": "cb3f053bed8330b8ccbc604527a53a5b5692cfba"
+        "sha256": "3a3f8a4bb1f82a67709da1ed44a017309a469f87"
       },
       {
         "path": "apps/web/src/layout/ConsoleLoading.tsx",
@@ -10692,7 +10732,15 @@
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts",
-        "sha256": "275d16992a7da19532ae8a458706c0e132aeaae4"
+        "sha256": "3652604c3738369f262834940cfeca7811911002"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-dark-compact-en-linux.png",
+        "sha256": "25581ef8365f7501a9810e364122aa4174ccc6d2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-dark-compact-en-win32.png",
+        "sha256": "ee01dcbe9fda837643ee4cc0209642d61a2172a8"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-dark-normal-zh-linux.png",
@@ -10703,12 +10751,60 @@
         "sha256": "cc3ea02e4c1c3e83832371aaa0aa8b6eb8c15ea1"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-light-compact-zh-linux.png",
+        "sha256": "25581ef8365f7501a9810e364122aa4174ccc6d2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-light-compact-zh-win32.png",
+        "sha256": "ee01dcbe9fda837643ee4cc0209642d61a2172a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-light-normal-en-linux.png",
+        "sha256": "25581ef8365f7501a9810e364122aa4174ccc6d2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-light-normal-en-win32.png",
+        "sha256": "ee01dcbe9fda837643ee4cc0209642d61a2172a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-dark-compact-en-linux.png",
+        "sha256": "30b96e7002e20150b0ebc5305e0fa9ef33df4f36"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-dark-compact-en-win32.png",
+        "sha256": "e9ab5b3a3342a8b5347ba08f618552d86f7aa7e3"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-dark-normal-zh-linux.png",
         "sha256": "30b96e7002e20150b0ebc5305e0fa9ef33df4f36"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-dark-normal-zh-win32.png",
         "sha256": "d2e566685689cf9085d63a1ce01ee8d186fee406"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-light-compact-zh-linux.png",
+        "sha256": "30b96e7002e20150b0ebc5305e0fa9ef33df4f36"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-light-compact-zh-win32.png",
+        "sha256": "e9ab5b3a3342a8b5347ba08f618552d86f7aa7e3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-light-normal-en-linux.png",
+        "sha256": "30b96e7002e20150b0ebc5305e0fa9ef33df4f36"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-light-normal-en-win32.png",
+        "sha256": "e9ab5b3a3342a8b5347ba08f618552d86f7aa7e3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-dark-compact-en-linux.png",
+        "sha256": "543de8eb52da3133b7fd08fab09a078e2afd7f6b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-dark-compact-en-win32.png",
+        "sha256": "e507d47301213e5544cc8c0686237ab9e8ac726d"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-dark-normal-zh-linux.png",
@@ -10719,12 +10815,60 @@
         "sha256": "aa8432c351b6cbc6e947d4a0d5e1eea8dae2f083"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-light-compact-zh-linux.png",
+        "sha256": "543de8eb52da3133b7fd08fab09a078e2afd7f6b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-light-compact-zh-win32.png",
+        "sha256": "fcd33a87d29c660aaf48c9aa133cf8764b1d06d4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-light-normal-en-linux.png",
+        "sha256": "543de8eb52da3133b7fd08fab09a078e2afd7f6b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-light-normal-en-win32.png",
+        "sha256": "e507d47301213e5544cc8c0686237ab9e8ac726d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-dark-compact-en-linux.png",
+        "sha256": "b74fef11f3a6390536bc8462f649c9902cd06063"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-dark-compact-en-win32.png",
+        "sha256": "872530fd2331d93b28b9dfc301f2b5896723b223"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-dark-normal-zh-linux.png",
         "sha256": "b74fef11f3a6390536bc8462f649c9902cd06063"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-dark-normal-zh-win32.png",
         "sha256": "872530fd2331d93b28b9dfc301f2b5896723b223"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-light-compact-zh-linux.png",
+        "sha256": "b74fef11f3a6390536bc8462f649c9902cd06063"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-light-compact-zh-win32.png",
+        "sha256": "c4b332d989d1ec596db89697a80078cda55db37a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-light-normal-en-linux.png",
+        "sha256": "b74fef11f3a6390536bc8462f649c9902cd06063"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-light-normal-en-win32.png",
+        "sha256": "872530fd2331d93b28b9dfc301f2b5896723b223"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-dark-compact-en-linux.png",
+        "sha256": "50295c8a7dfa73f4e15bf169f4db05b0d2a0b067"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-dark-compact-en-win32.png",
+        "sha256": "f637d4e9112a659ac6522e16894199c814660e6d"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-dark-normal-zh-linux.png",
@@ -10735,12 +10879,60 @@
         "sha256": "f637d4e9112a659ac6522e16894199c814660e6d"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-light-compact-zh-linux.png",
+        "sha256": "50295c8a7dfa73f4e15bf169f4db05b0d2a0b067"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-light-compact-zh-win32.png",
+        "sha256": "f637d4e9112a659ac6522e16894199c814660e6d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-light-normal-en-linux.png",
+        "sha256": "50295c8a7dfa73f4e15bf169f4db05b0d2a0b067"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-light-normal-en-win32.png",
+        "sha256": "f637d4e9112a659ac6522e16894199c814660e6d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-dark-compact-en-linux.png",
+        "sha256": "30612909e529430f1f0f22607e3a34d0553c0fd0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-dark-compact-en-win32.png",
+        "sha256": "7ee0e839e69b6e2a26e788b14dfb414e7b857700"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-dark-normal-zh-linux.png",
         "sha256": "30612909e529430f1f0f22607e3a34d0553c0fd0"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-dark-normal-zh-win32.png",
         "sha256": "7ee0e839e69b6e2a26e788b14dfb414e7b857700"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-light-compact-zh-linux.png",
+        "sha256": "30612909e529430f1f0f22607e3a34d0553c0fd0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-light-compact-zh-win32.png",
+        "sha256": "7ee0e839e69b6e2a26e788b14dfb414e7b857700"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-light-normal-en-linux.png",
+        "sha256": "30612909e529430f1f0f22607e3a34d0553c0fd0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-light-normal-en-win32.png",
+        "sha256": "7ee0e839e69b6e2a26e788b14dfb414e7b857700"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-dark-compact-en-linux.png",
+        "sha256": "0d18722864a8f1b079d32dab7a8e620ad1d02dd6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-dark-compact-en-win32.png",
+        "sha256": "730acfea90441c8c2f9525d09d99d558b61d43e7"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-dark-normal-zh-linux.png",
@@ -10751,12 +10943,60 @@
         "sha256": "92ab8c52fb45daed441a5db4c6f798dad41b0be1"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-light-compact-zh-linux.png",
+        "sha256": "0d18722864a8f1b079d32dab7a8e620ad1d02dd6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-light-compact-zh-win32.png",
+        "sha256": "730acfea90441c8c2f9525d09d99d558b61d43e7"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-light-normal-en-linux.png",
+        "sha256": "0d18722864a8f1b079d32dab7a8e620ad1d02dd6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-light-normal-en-win32.png",
+        "sha256": "730acfea90441c8c2f9525d09d99d558b61d43e7"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-dark-compact-en-linux.png",
+        "sha256": "709329ba8317b2a360ffd184a961bd6b8d3f2155"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-dark-compact-en-win32.png",
+        "sha256": "398db4faa4d78dee961655758cd63e6ca4107b4b"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-dark-normal-zh-linux.png",
         "sha256": "030aebc85460220ac227e14472b10dfce997a2d7"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-dark-normal-zh-win32.png",
         "sha256": "73b0625874a2ce03e6e9ed1dd7da3762c8e6cc97"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-light-compact-zh-linux.png",
+        "sha256": "709329ba8317b2a360ffd184a961bd6b8d3f2155"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-light-compact-zh-win32.png",
+        "sha256": "398db4faa4d78dee961655758cd63e6ca4107b4b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-light-normal-en-linux.png",
+        "sha256": "709329ba8317b2a360ffd184a961bd6b8d3f2155"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-light-normal-en-win32.png",
+        "sha256": "398db4faa4d78dee961655758cd63e6ca4107b4b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-dark-compact-en-linux.png",
+        "sha256": "ff652ba140780491d55492ebcc5c6cd93f4d68a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-dark-compact-en-win32.png",
+        "sha256": "f5e753149bbdaf81228d6414f99a782d307035cb"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-dark-normal-zh-linux.png",
@@ -10767,12 +11007,60 @@
         "sha256": "f5e753149bbdaf81228d6414f99a782d307035cb"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-light-compact-zh-linux.png",
+        "sha256": "ff652ba140780491d55492ebcc5c6cd93f4d68a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-light-compact-zh-win32.png",
+        "sha256": "f5e753149bbdaf81228d6414f99a782d307035cb"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-light-normal-en-linux.png",
+        "sha256": "ff652ba140780491d55492ebcc5c6cd93f4d68a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-light-normal-en-win32.png",
+        "sha256": "f5e753149bbdaf81228d6414f99a782d307035cb"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-dark-compact-en-linux.png",
+        "sha256": "664b1592f3dc939d2471e2fb33cea3fea3ab53a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-dark-compact-en-win32.png",
+        "sha256": "d8c6d8127774de8d4432292a560077593a6e4d68"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-dark-normal-zh-linux.png",
         "sha256": "7d74188565148e2fbf0d69eb6f71bbc851e4cbb3"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-dark-normal-zh-win32.png",
         "sha256": "8fcf7eaa1250da416ce2cf32d6a352c409a3901a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-light-compact-zh-linux.png",
+        "sha256": "664b1592f3dc939d2471e2fb33cea3fea3ab53a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-light-compact-zh-win32.png",
+        "sha256": "d8c6d8127774de8d4432292a560077593a6e4d68"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-light-normal-en-linux.png",
+        "sha256": "664b1592f3dc939d2471e2fb33cea3fea3ab53a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-light-normal-en-win32.png",
+        "sha256": "d8c6d8127774de8d4432292a560077593a6e4d68"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-dark-compact-en-linux.png",
+        "sha256": "a2a3251c4a8542ca11cce8b707b4fc6d7ab13e96"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-dark-compact-en-win32.png",
+        "sha256": "b0beb020e98a9a2957cecef23a186b7ac3605fb1"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-dark-normal-zh-linux.png",
@@ -10783,12 +11071,60 @@
         "sha256": "57d8be40c34dab0b02506d354045eff1b4b195c0"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-light-compact-zh-linux.png",
+        "sha256": "a2a3251c4a8542ca11cce8b707b4fc6d7ab13e96"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-light-compact-zh-win32.png",
+        "sha256": "b0beb020e98a9a2957cecef23a186b7ac3605fb1"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-light-normal-en-linux.png",
+        "sha256": "a2a3251c4a8542ca11cce8b707b4fc6d7ab13e96"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-light-normal-en-win32.png",
+        "sha256": "b0beb020e98a9a2957cecef23a186b7ac3605fb1"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-dark-compact-en-linux.png",
+        "sha256": "770f04f463b13f1ff3bfde18318b75c723d631b8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-dark-compact-en-win32.png",
+        "sha256": "350f33639c2d4dd43123b668a78b1776c28060c6"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-dark-normal-zh-linux.png",
         "sha256": "3f1e15850e5e0a5a1e8f1501cbe14426dc86689a"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-dark-normal-zh-win32.png",
         "sha256": "2ab1dc9d2f9fdfd51fb136c75d2073a288e292ae"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-light-compact-zh-linux.png",
+        "sha256": "770f04f463b13f1ff3bfde18318b75c723d631b8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-light-compact-zh-win32.png",
+        "sha256": "350f33639c2d4dd43123b668a78b1776c28060c6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-light-normal-en-linux.png",
+        "sha256": "770f04f463b13f1ff3bfde18318b75c723d631b8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-light-normal-en-win32.png",
+        "sha256": "350f33639c2d4dd43123b668a78b1776c28060c6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-dark-compact-en-linux.png",
+        "sha256": "54fd055c21e91cb18be54d05ee3e89d41d6ba219"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-dark-compact-en-win32.png",
+        "sha256": "49940372bb06290919d7e188c7b5ff7dc7b17bd1"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-dark-normal-zh-linux.png",
@@ -10799,12 +11135,60 @@
         "sha256": "39ed763c457574403707d8a0ac2331c1ebbda2b2"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-light-compact-zh-linux.png",
+        "sha256": "54fd055c21e91cb18be54d05ee3e89d41d6ba219"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-light-compact-zh-win32.png",
+        "sha256": "49940372bb06290919d7e188c7b5ff7dc7b17bd1"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-light-normal-en-linux.png",
+        "sha256": "54fd055c21e91cb18be54d05ee3e89d41d6ba219"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-light-normal-en-win32.png",
+        "sha256": "49940372bb06290919d7e188c7b5ff7dc7b17bd1"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-dark-compact-en-linux.png",
+        "sha256": "7527683da47b82471a82f2db1b6076d7811564a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-dark-compact-en-win32.png",
+        "sha256": "0e87258dff9ac0e57c054a4c31feef6c9179311f"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-dark-normal-zh-linux.png",
         "sha256": "7527683da47b82471a82f2db1b6076d7811564a5"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-dark-normal-zh-win32.png",
         "sha256": "fe637eb5ecdc59e3ca8944136cac0401f5d05aa7"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-light-compact-zh-linux.png",
+        "sha256": "4578964f4ecccaec6aeee6e8e79b824a29eec931"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-light-compact-zh-win32.png",
+        "sha256": "0e87258dff9ac0e57c054a4c31feef6c9179311f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-light-normal-en-linux.png",
+        "sha256": "7527683da47b82471a82f2db1b6076d7811564a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-light-normal-en-win32.png",
+        "sha256": "0e87258dff9ac0e57c054a4c31feef6c9179311f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-dark-compact-en-linux.png",
+        "sha256": "161a1c56e7c0805f695005c89636dc8981720549"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-dark-compact-en-win32.png",
+        "sha256": "df807d0a910ae3fee565db8ed143b78dd6a33dce"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-dark-normal-zh-linux.png",
@@ -10815,12 +11199,60 @@
         "sha256": "df807d0a910ae3fee565db8ed143b78dd6a33dce"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-light-compact-zh-linux.png",
+        "sha256": "9cb3396576a2b55b532a50aa12a61ce6590189e0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-light-compact-zh-win32.png",
+        "sha256": "df807d0a910ae3fee565db8ed143b78dd6a33dce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-light-normal-en-linux.png",
+        "sha256": "9cb3396576a2b55b532a50aa12a61ce6590189e0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-light-normal-en-win32.png",
+        "sha256": "df807d0a910ae3fee565db8ed143b78dd6a33dce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-dark-compact-en-linux.png",
+        "sha256": "986b87a1bcedc8c5e1dad0eed71b5a8dd5032ad4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-dark-compact-en-win32.png",
+        "sha256": "82ea8eba313cc597aff979802fd3292aba2dcf83"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-dark-normal-zh-linux.png",
         "sha256": "986b87a1bcedc8c5e1dad0eed71b5a8dd5032ad4"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-dark-normal-zh-win32.png",
         "sha256": "8c5821fa79d56820d3040f392f859eb65c33fc04"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-light-compact-zh-linux.png",
+        "sha256": "986b87a1bcedc8c5e1dad0eed71b5a8dd5032ad4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-light-compact-zh-win32.png",
+        "sha256": "82ea8eba313cc597aff979802fd3292aba2dcf83"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-light-normal-en-linux.png",
+        "sha256": "986b87a1bcedc8c5e1dad0eed71b5a8dd5032ad4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-light-normal-en-win32.png",
+        "sha256": "82ea8eba313cc597aff979802fd3292aba2dcf83"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-dark-compact-en-linux.png",
+        "sha256": "3cabed927309eb85ec6f52a5b3517fb8b8a980f6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-dark-compact-en-win32.png",
+        "sha256": "b532c480ec8f9882f08d29d79cb85d3532f2ea34"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-dark-normal-zh-linux.png",
@@ -10831,12 +11263,60 @@
         "sha256": "53580bfc20373bac5a0a96f788768f1aa99f5a12"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-light-compact-zh-linux.png",
+        "sha256": "3cabed927309eb85ec6f52a5b3517fb8b8a980f6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-light-compact-zh-win32.png",
+        "sha256": "b532c480ec8f9882f08d29d79cb85d3532f2ea34"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-light-normal-en-linux.png",
+        "sha256": "7b12561f16b105eec3db44a836e57ff59f0d1032"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-light-normal-en-win32.png",
+        "sha256": "1537b79ae6398c8cdb9765d024f040ecb0d4568c"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-dark-compact-en-linux.png",
+        "sha256": "82431f4c4a716bc450c4a36480cf4dfb895be027"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-dark-compact-en-win32.png",
+        "sha256": "0d931df5ee393613f243d7b743d598421d623181"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-dark-normal-zh-linux.png",
         "sha256": "82431f4c4a716bc450c4a36480cf4dfb895be027"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-dark-normal-zh-win32.png",
         "sha256": "0d931df5ee393613f243d7b743d598421d623181"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-light-compact-zh-linux.png",
+        "sha256": "82431f4c4a716bc450c4a36480cf4dfb895be027"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-light-compact-zh-win32.png",
+        "sha256": "0d931df5ee393613f243d7b743d598421d623181"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-light-normal-en-linux.png",
+        "sha256": "82431f4c4a716bc450c4a36480cf4dfb895be027"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-light-normal-en-win32.png",
+        "sha256": "0d931df5ee393613f243d7b743d598421d623181"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-dark-compact-en-linux.png",
+        "sha256": "e24da9d7911dd74cddc2dedbe8e06d28fe74a4da"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-dark-compact-en-win32.png",
+        "sha256": "a6301e4ad96c44010ff8a95251d08996f77ba944"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-dark-normal-zh-linux.png",
@@ -10847,12 +11327,60 @@
         "sha256": "7d16895a7e2ac14f33a7875b0ae5f765c33b2b41"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-light-compact-zh-linux.png",
+        "sha256": "e24da9d7911dd74cddc2dedbe8e06d28fe74a4da"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-light-compact-zh-win32.png",
+        "sha256": "7d27e1dd031cbd2d1f3e064260a9901767d5ecf8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-light-normal-en-linux.png",
+        "sha256": "ae04827057b9dacf8d40b7ef660865f8d7042118"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-light-normal-en-win32.png",
+        "sha256": "7d27e1dd031cbd2d1f3e064260a9901767d5ecf8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-dark-compact-en-linux.png",
+        "sha256": "81f83db7f753b4e67e81d7e36246ee7ce7fb36e9"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-dark-compact-en-win32.png",
+        "sha256": "c065661b67bfbfdbf34f58c9235b412229fc72d5"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-dark-normal-zh-linux.png",
         "sha256": "81f83db7f753b4e67e81d7e36246ee7ce7fb36e9"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-dark-normal-zh-win32.png",
         "sha256": "402c610438aaf2a3957485a1e346795e2e1cb2f3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-light-compact-zh-linux.png",
+        "sha256": "81f83db7f753b4e67e81d7e36246ee7ce7fb36e9"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-light-compact-zh-win32.png",
+        "sha256": "c065661b67bfbfdbf34f58c9235b412229fc72d5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-light-normal-en-linux.png",
+        "sha256": "81f83db7f753b4e67e81d7e36246ee7ce7fb36e9"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-light-normal-en-win32.png",
+        "sha256": "c065661b67bfbfdbf34f58c9235b412229fc72d5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-dark-compact-en-linux.png",
+        "sha256": "d674ca756c1192af7f2332cd1653128711a3e44d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-dark-compact-en-win32.png",
+        "sha256": "f542896adc1d20681e783c1c9a99c6f960f57348"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-dark-normal-zh-linux.png",
@@ -10863,12 +11391,92 @@
         "sha256": "313fbc816b0019bae9a3c602df0b2ffb804829be"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-light-compact-zh-linux.png",
+        "sha256": "d674ca756c1192af7f2332cd1653128711a3e44d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-light-compact-zh-win32.png",
+        "sha256": "f542896adc1d20681e783c1c9a99c6f960f57348"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-light-normal-en-linux.png",
+        "sha256": "d674ca756c1192af7f2332cd1653128711a3e44d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-light-normal-en-win32.png",
+        "sha256": "f542896adc1d20681e783c1c9a99c6f960f57348"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-dark-compact-en-linux.png",
+        "sha256": "4a5028343ed5436da381ec081f0f1dc414efd6a0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-dark-compact-en-win32.png",
+        "sha256": "ae6f65c2e3bdfe16929487d4182ef1d61dff9277"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-dark-normal-zh-linux.png",
         "sha256": "4a5028343ed5436da381ec081f0f1dc414efd6a0"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-dark-normal-zh-win32.png",
         "sha256": "ae6f65c2e3bdfe16929487d4182ef1d61dff9277"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-light-compact-zh-linux.png",
+        "sha256": "4a5028343ed5436da381ec081f0f1dc414efd6a0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-light-compact-zh-win32.png",
+        "sha256": "ae6f65c2e3bdfe16929487d4182ef1d61dff9277"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-light-normal-en-linux.png",
+        "sha256": "4a5028343ed5436da381ec081f0f1dc414efd6a0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-light-normal-en-win32.png",
+        "sha256": "ae6f65c2e3bdfe16929487d4182ef1d61dff9277"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-dark-compact-en-linux.png",
+        "sha256": "b730f70c144db19b8153925c947a12137e836150"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-dark-compact-en-win32.png",
+        "sha256": "eb636d57a7d86835111e5903361b91a416fac132"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-dark-normal-zh-linux.png",
+        "sha256": "b730f70c144db19b8153925c947a12137e836150"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-dark-normal-zh-win32.png",
+        "sha256": "eb636d57a7d86835111e5903361b91a416fac132"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-light-compact-zh-linux.png",
+        "sha256": "b730f70c144db19b8153925c947a12137e836150"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-light-compact-zh-win32.png",
+        "sha256": "eb636d57a7d86835111e5903361b91a416fac132"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-light-normal-en-linux.png",
+        "sha256": "b730f70c144db19b8153925c947a12137e836150"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-light-normal-en-win32.png",
+        "sha256": "eb636d57a7d86835111e5903361b91a416fac132"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-dark-compact-en-linux.png",
+        "sha256": "9f7fbf890c732af1c8d7274537d5d5ab7514d2be"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-dark-compact-en-win32.png",
+        "sha256": "21cb5380e943b4c7637528014ef7afe8e4299958"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-dark-normal-zh-linux.png",
@@ -10879,12 +11487,60 @@
         "sha256": "25e47c1004dae4704b64ac524408aa3321a0684d"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-light-compact-zh-linux.png",
+        "sha256": "9e535a9097b8fb1f09b17ff67ba00aede9119384"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-light-compact-zh-win32.png",
+        "sha256": "21cb5380e943b4c7637528014ef7afe8e4299958"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-light-normal-en-linux.png",
+        "sha256": "9e535a9097b8fb1f09b17ff67ba00aede9119384"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-light-normal-en-win32.png",
+        "sha256": "21cb5380e943b4c7637528014ef7afe8e4299958"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-dark-compact-en-linux.png",
+        "sha256": "a65260b0f602be24144c43bc13a5626df7da4b04"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-dark-compact-en-win32.png",
+        "sha256": "e738f59d9410f577c85bdbc6d6b431c4ea027e2d"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-dark-normal-zh-linux.png",
         "sha256": "a65260b0f602be24144c43bc13a5626df7da4b04"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-dark-normal-zh-win32.png",
         "sha256": "375476f4658aba07b3499c7efa7ed0079c555ef5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-light-compact-zh-linux.png",
+        "sha256": "a65260b0f602be24144c43bc13a5626df7da4b04"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-light-compact-zh-win32.png",
+        "sha256": "e738f59d9410f577c85bdbc6d6b431c4ea027e2d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-light-normal-en-linux.png",
+        "sha256": "a65260b0f602be24144c43bc13a5626df7da4b04"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-light-normal-en-win32.png",
+        "sha256": "e738f59d9410f577c85bdbc6d6b431c4ea027e2d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-dark-compact-en-linux.png",
+        "sha256": "5f161093d71eb8840bb94ada491b0bcae8914387"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-dark-compact-en-win32.png",
+        "sha256": "21c103c521e516dd87b7aec163211b40658ff1f4"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-dark-normal-zh-linux.png",
@@ -10895,12 +11551,60 @@
         "sha256": "740d82dc4c78d599acbe208cc26ade7a59730926"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-light-compact-zh-linux.png",
+        "sha256": "5f161093d71eb8840bb94ada491b0bcae8914387"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-light-compact-zh-win32.png",
+        "sha256": "21c103c521e516dd87b7aec163211b40658ff1f4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-light-normal-en-linux.png",
+        "sha256": "5f161093d71eb8840bb94ada491b0bcae8914387"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-light-normal-en-win32.png",
+        "sha256": "21c103c521e516dd87b7aec163211b40658ff1f4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-dark-compact-en-linux.png",
+        "sha256": "e4fff6379a559bfe411185e69efff8e77e7c5c5a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-dark-compact-en-win32.png",
+        "sha256": "8924285f3ff2e1a9a02c1b1f8f54a41434f600a5"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-dark-normal-zh-linux.png",
         "sha256": "e4fff6379a559bfe411185e69efff8e77e7c5c5a"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-dark-normal-zh-win32.png",
         "sha256": "2845b6344d4a54dd2d8675286fa58766629c2c79"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-light-compact-zh-linux.png",
+        "sha256": "e4fff6379a559bfe411185e69efff8e77e7c5c5a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-light-compact-zh-win32.png",
+        "sha256": "8924285f3ff2e1a9a02c1b1f8f54a41434f600a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-light-normal-en-linux.png",
+        "sha256": "d4b4a4298b2d9bd3a8bae1e1e4c782488a5626da"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-light-normal-en-win32.png",
+        "sha256": "8924285f3ff2e1a9a02c1b1f8f54a41434f600a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-dark-compact-en-linux.png",
+        "sha256": "11aa417635551366253e6c4e61dbe5586ed0a40d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-dark-compact-en-win32.png",
+        "sha256": "7060e9bffd2d4db2ff7dab0979254f37886bb6b3"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-dark-normal-zh-linux.png",
@@ -10911,12 +11615,60 @@
         "sha256": "0a6ecb88a3bce54a1d814a2216e8e97fcb442d70"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-light-compact-zh-linux.png",
+        "sha256": "19a8fa9b0b6ff516cf936dbd257d4288180b3523"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-light-compact-zh-win32.png",
+        "sha256": "7060e9bffd2d4db2ff7dab0979254f37886bb6b3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-light-normal-en-linux.png",
+        "sha256": "0863e99cc7de785bbc0c1c14535d3c08bc939b83"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-light-normal-en-win32.png",
+        "sha256": "1b2106083b83b72d1bae011889608e80f65ecf4c"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-dark-compact-en-linux.png",
+        "sha256": "02cfbc71dc26faa061b91220b4d9a8af7282e1ee"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-dark-compact-en-win32.png",
+        "sha256": "4f650050eea735c3b61c873741a740c28633fb5d"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-dark-normal-zh-linux.png",
-        "sha256": "902b662a375a0bec602d63dc6f72a5eef8a9b39a"
+        "sha256": "02cfbc71dc26faa061b91220b4d9a8af7282e1ee"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-dark-normal-zh-win32.png",
         "sha256": "4f650050eea735c3b61c873741a740c28633fb5d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-light-compact-zh-linux.png",
+        "sha256": "02cfbc71dc26faa061b91220b4d9a8af7282e1ee"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-light-compact-zh-win32.png",
+        "sha256": "4f650050eea735c3b61c873741a740c28633fb5d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-light-normal-en-linux.png",
+        "sha256": "02cfbc71dc26faa061b91220b4d9a8af7282e1ee"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-light-normal-en-win32.png",
+        "sha256": "70ff638f21dfa96eb870d6ff57dc5633eb70f794"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-dark-compact-en-linux.png",
+        "sha256": "5b5e764945a76870793f6ef9ec8e4f10796a584a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-dark-compact-en-win32.png",
+        "sha256": "e769c4d123490b4648c060c1ba74add89b8947ab"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-dark-normal-zh-linux.png",
@@ -10927,12 +11679,60 @@
         "sha256": "82105901909848780fc57cc411cff9a189f5d516"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-light-compact-zh-linux.png",
+        "sha256": "283b63ab48a06cd53b8d0ccbb5a5fbb5b4436673"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-light-compact-zh-win32.png",
+        "sha256": "64a5a2344f4e227be3479b5d2abd9103d4c1e05f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-light-normal-en-linux.png",
+        "sha256": "5b5e764945a76870793f6ef9ec8e4f10796a584a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-light-normal-en-win32.png",
+        "sha256": "e769c4d123490b4648c060c1ba74add89b8947ab"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-dark-compact-en-linux.png",
+        "sha256": "de68eb9ce72f1c2789a3cca73f6563c19c498cf4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-dark-compact-en-win32.png",
+        "sha256": "0047fcc1442e23c825c95fee7ef236442cadd34f"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-dark-normal-zh-linux.png",
         "sha256": "6d4ff25c92e0d6ab0e0f1deeb634ad3fc644a5e7"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-dark-normal-zh-win32.png",
         "sha256": "372a36f590ded8d865d3f4a65bc58632d795a63f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-light-compact-zh-linux.png",
+        "sha256": "de68eb9ce72f1c2789a3cca73f6563c19c498cf4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-light-compact-zh-win32.png",
+        "sha256": "0047fcc1442e23c825c95fee7ef236442cadd34f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-light-normal-en-linux.png",
+        "sha256": "de68eb9ce72f1c2789a3cca73f6563c19c498cf4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-light-normal-en-win32.png",
+        "sha256": "0047fcc1442e23c825c95fee7ef236442cadd34f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-dark-compact-en-linux.png",
+        "sha256": "17f4d174c391aeb20f8de63befb353ae31b0af70"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-dark-compact-en-win32.png",
+        "sha256": "f259407e18aaee8a99fcbd679c05eb79ed34a47c"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-dark-normal-zh-linux.png",
@@ -10943,12 +11743,92 @@
         "sha256": "f259407e18aaee8a99fcbd679c05eb79ed34a47c"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-light-compact-zh-linux.png",
+        "sha256": "17f4d174c391aeb20f8de63befb353ae31b0af70"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-light-compact-zh-win32.png",
+        "sha256": "f259407e18aaee8a99fcbd679c05eb79ed34a47c"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-light-normal-en-linux.png",
+        "sha256": "17f4d174c391aeb20f8de63befb353ae31b0af70"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-light-normal-en-win32.png",
+        "sha256": "f259407e18aaee8a99fcbd679c05eb79ed34a47c"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-dark-compact-en-linux.png",
+        "sha256": "5019c5ba9224db0dc7d8ee876c808474e2230f1b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-dark-compact-en-win32.png",
+        "sha256": "7d0d0486a720cbb2f9ef7b1d709ec6925d05c2ce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-dark-normal-zh-linux.png",
+        "sha256": "ad7c1d7fa48e8c6c638f8d864b00fb96b0c6fe7e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-dark-normal-zh-win32.png",
+        "sha256": "7d0d0486a720cbb2f9ef7b1d709ec6925d05c2ce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-light-compact-zh-linux.png",
+        "sha256": "5019c5ba9224db0dc7d8ee876c808474e2230f1b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-light-compact-zh-win32.png",
+        "sha256": "f6295e010c8e7bd000ad70be5acff20756c3a431"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-light-normal-en-linux.png",
+        "sha256": "5019c5ba9224db0dc7d8ee876c808474e2230f1b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-light-normal-en-win32.png",
+        "sha256": "7d0d0486a720cbb2f9ef7b1d709ec6925d05c2ce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-dark-compact-en-linux.png",
+        "sha256": "1a5384a0abe4f9dbc5fa307bf7ea8058449f0fd3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-dark-compact-en-win32.png",
+        "sha256": "7ed2c102b8e4586a55edb3993e9dfedf643124bf"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-dark-normal-zh-linux.png",
-        "sha256": "4564396b94e673027109b2694f386cf6136fbb08"
+        "sha256": "1a5384a0abe4f9dbc5fa307bf7ea8058449f0fd3"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-dark-normal-zh-win32.png",
         "sha256": "7ed2c102b8e4586a55edb3993e9dfedf643124bf"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-light-compact-zh-linux.png",
+        "sha256": "1a5384a0abe4f9dbc5fa307bf7ea8058449f0fd3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-light-compact-zh-win32.png",
+        "sha256": "7ed2c102b8e4586a55edb3993e9dfedf643124bf"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-light-normal-en-linux.png",
+        "sha256": "4564396b94e673027109b2694f386cf6136fbb08"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-light-normal-en-win32.png",
+        "sha256": "1cf671ac98fc5d2e825781e9095b106cc0900c21"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-dark-compact-en-linux.png",
+        "sha256": "9f6f686214addbd2f1d15cc5b3521ae67ac04a6e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-dark-compact-en-win32.png",
+        "sha256": "ca3a49260ded3457368c397bea841847c170c5b2"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-dark-normal-zh-linux.png",
@@ -10959,12 +11839,52 @@
         "sha256": "ca3a49260ded3457368c397bea841847c170c5b2"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-light-compact-zh-linux.png",
+        "sha256": "9f6f686214addbd2f1d15cc5b3521ae67ac04a6e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-light-compact-zh-win32.png",
+        "sha256": "ca3a49260ded3457368c397bea841847c170c5b2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-light-normal-en-linux.png",
+        "sha256": "9f6f686214addbd2f1d15cc5b3521ae67ac04a6e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-light-normal-en-win32.png",
+        "sha256": "ca3a49260ded3457368c397bea841847c170c5b2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-dark-compact-en-linux.png",
+        "sha256": "32d4a698f05e4c39003c8d593f858a197131e67e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-dark-compact-en-win32.png",
+        "sha256": "b814698079acb528e799769a8b095bc85594e4d2"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-dark-normal-zh-linux.png",
         "sha256": "be5fceb2267eca2105ffb623de0c212a0319ddaf"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-dark-normal-zh-win32.png",
         "sha256": "ec8d244627678bd0eedc417ebb6778ec27a3a07d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-light-compact-zh-linux.png",
+        "sha256": "32d4a698f05e4c39003c8d593f858a197131e67e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-light-compact-zh-win32.png",
+        "sha256": "b814698079acb528e799769a8b095bc85594e4d2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-light-normal-en-linux.png",
+        "sha256": "32d4a698f05e4c39003c8d593f858a197131e67e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-light-normal-en-win32.png",
+        "sha256": "b814698079acb528e799769a8b095bc85594e4d2"
       },
       {
         "path": "apps/web/tests/e2e/design-outline-guard.spec.ts",
@@ -10976,7 +11896,7 @@
       },
       {
         "path": "apps/web/tests/e2e/design-outlines.json",
-        "sha256": "462b419b6da1a14208fd954a48c20d5825176c2c"
+        "sha256": "46f6068c1b207a7919f99375cad23849cf029b57"
       },
       {
         "path": "apps/web/tests/e2e/endpoint-credential-boundary.spec.ts",
@@ -11163,6 +12083,10 @@
         "sha256": "7ee6ceacd47683a2b8d713faca5a5f87e5c483bc"
       },
       {
+        "path": "apps/web/tests/e2e/stub-routes-integration.ts",
+        "sha256": "d495cecd74c739422f97f839dee2e950b02daa2b"
+      },
+      {
         "path": "apps/web/tests/e2e/stub-routes-lineage.ts",
         "sha256": "788106b5d55403f2b1e07a57926e795374035fc8"
       },
@@ -11200,7 +12124,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes.ts",
-        "sha256": "aa2bff850506852ba4fb13318eb287f15d4d9e05"
+        "sha256": "472682a33ba1835b2f61e54e7ba3aee6e1c2a43f"
       },
       {
         "path": "apps/web/tests/e2e/tool-pack-write.spec.ts",
@@ -11231,6 +12155,10 @@
         "sha256": "b766a1e41a5a4f008eccb16f33a131cfc7fcb39d"
       },
       {
+        "path": "apps/web/tests/unit/backend-route-coverage.test.ts",
+        "sha256": "b0298db2d9c6d5b0da6366a46fb193143b3355d2"
+      },
+      {
         "path": "apps/web/tests/unit/console-invariants.test.ts",
         "sha256": "40f7a152093ca4ff0c78ae4aaff8aa7dff083bda"
       },
@@ -11245,6 +12173,10 @@
       {
         "path": "apps/web/tests/unit/control-plane-token.test.ts",
         "sha256": "74a746727f25f08c713548bde57f32f1beefc31f"
+      },
+      {
+        "path": "apps/web/tests/unit/css-token-references.test.ts",
+        "sha256": "a8b2b6f947bdc7d9521c7984a8fe0f2e23fd6b32"
       },
       {
         "path": "apps/web/tests/unit/example-project-draft.test.ts",
@@ -11297,6 +12229,18 @@
       {
         "path": "apps/web/tests/unit/run-event-stream.test.ts",
         "sha256": "e24014fc2c2553e35c431232d0ddf47dc7c2529e"
+      },
+      {
+        "path": "apps/web/tests/unit/unconsumed-registry.test.ts",
+        "sha256": "bd38b76999cc646673be9129235065ad21440a14"
+      },
+      {
+        "path": "apps/web/tests/unit/unconsumed-registry.ts",
+        "sha256": "2ce41a1c4b4f80b730c1e8cdbeb3a4e622df537b"
+      },
+      {
+        "path": "apps/web/tests/unit/unconsumedRegistry.ts",
+        "sha256": ""
       },
       {
         "path": "apps/web/tests/unit/wizard-flow.test.ts",
@@ -11657,6 +12601,10 @@
       {
         "path": "docs/frontend/UI_DESIGN_PROMPTS.md",
         "sha256": "59b56fd4af18219784537edab2763bb52561a50f"
+      },
+      {
+        "path": "docs/frontend/UNCONSUMED.md",
+        "sha256": "9f6fae0b1a1bddee2f47c2870cc17a5d01fbfe91"
       },
       {
         "path": "docs/future/OPTIONAL_EXTERNAL_AGENT_BACKENDS.md",
@@ -17919,12 +18867,16 @@
         "sha256": "bfbcfddf35018ff55da10da56268431c7e0c8508"
       },
       {
+        "path": "tests/tooling/test_charter_residual_w_zero.py",
+        "sha256": "38a27d0fda4cae7b9f85d79f5a2a37fdcc5463dd"
+      },
+      {
         "path": "tests/tooling/test_closeout_assertions_are_in_tree.py",
         "sha256": "cf578ed33e729cd78d8ed52076779a32aade932b"
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "8e6cfb2dbb334b0f551bd69a363b4d29ffc1e91c"
+        "sha256": "198c6d707788b355b149eb94f85e708269128d1b"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -18060,7 +19012,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "425c5d1e8293dca1e5669bf91f1e9b386e2d720b"
+        "sha256": "b00968c6cd87be1f555fb9a44898d946397471c6"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -18184,7 +19136,7 @@
       },
       {
         "path": "tools/charter_parse.py",
-        "sha256": "f48b183e9b655b1cf978a1430812cd45d08dcfe3"
+        "sha256": "39923d5be43fe619acd1d32550498644ef917e16"
       },
       {
         "path": "tools/charter_progress.py",
@@ -18633,6 +19585,10 @@
       {
         "path": "tools/goal103_closeout_assertions.py",
         "sha256": "685fddf5031cd1d0f9bee634178162c5d3684e0b"
+      },
+      {
+        "path": "tools/goal104_closeout_assertions.py",
+        "sha256": "a3023c122cb1586b24ae6bc4fc44fff69ca40798"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -19087,11 +20043,15 @@
         "sha256": "d27f2e6698121bf508ce08b83483dc52ecd46e47"
       },
       {
+        "path": "tools/verify_goal104_closeout.py",
+        "sha256": "879099754c69a05cdc1c3bc0c8534e1b06273d4d"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "67bc41851276db83164c3d758e1af40c09419651"
+    "head": "bd1482ce193e178a13fd1fcd30be99031b8949e4"
   },
   "fingerprint_before": {
     "files": [
@@ -19513,7 +20473,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "f8e484348ff683f238b70e26a630244f39edcafd"
+        "sha256": "981c633ef8da8e31150159b60dfb86023d16e530"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -20464,8 +21424,12 @@
         "sha256": "d3d947991eb2b54b8e8bc3dae5838e02e227c674"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261103-238-a-css-module-key-can-be-undefined.md",
+        "sha256": "8b1fb26b6e59b967095b98094c9bdeecf33639c4"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "16f82f239c9cbbc81a3ea17dd108571d561bfc7b"
+        "sha256": "d9e6cef71a31627d5bc5610a148c59d08f2b89f4"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -20912,8 +21876,12 @@
         "sha256": "448e01155f33405475ade0207bc3001f76c6b63c"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
+        "sha256": "97de44e0f54f9c1ae48d9ed9257796542fc15731"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "d73b6a9347d673ead425540ccf3ff77c6ef759aa"
+        "sha256": "f58dad2dc5e90aa777929a85f838cf6b738899fd"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -21914,6 +22882,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261030-101-two-tree-current.txt",
         "sha256": "f650bde37b91c3779f6a78f5bd9504328157bd5a"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261103-104-next-round-charter.md",
+        "sha256": "3dc726735b5f8f399c05bab5206a44616f4daea6"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -23396,6 +24368,10 @@
         "sha256": "b4af1ca6ef29f5d6a193e40a3cab4b012ba7c6a7"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261103-104-design-gate-and-integration-coverage.md",
+        "sha256": "4296d280ca839666937b95cb2ffee4c7b236236f"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -24804,6 +25780,10 @@
         "sha256": "6d5af22be8269670e012baa6dd1963b5131cd733"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261103-104-design-gate-and-integration-coverage.md",
+        "sha256": "328c31da5a4c16858d2470a56f8a7f433462d9de"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -26041,7 +27021,7 @@
       },
       {
         "path": "apps/web/src/api/client.ts",
-        "sha256": "9b0c66f15b309cec4480db900d4c75bd017e747e"
+        "sha256": "a1cde2aa0ff11060640d3e422a0422ceee695969"
       },
       {
         "path": "apps/web/src/api/controlPlaneToken.ts",
@@ -26065,7 +27045,7 @@
       },
       {
         "path": "apps/web/src/api/inspectionClient.ts",
-        "sha256": "a361e0bf631d54515a63c4ae9ac5c1717be7695f"
+        "sha256": "85478781c5583ec4108f74338f274f64cddaa07e"
       },
       {
         "path": "apps/web/src/api/legacyShapes.ts",
@@ -26073,11 +27053,11 @@
       },
       {
         "path": "apps/web/src/api/libraryClient.ts",
-        "sha256": "dad5ba2efa9b107682a41f70047cdd0c13151195"
+        "sha256": "954f81a6237f1d8a7be594758d611cafdbd3336e"
       },
       {
         "path": "apps/web/src/api/memoryClient.ts",
-        "sha256": "c8d60c8b32da6cf0f5e9178dc5f967aada487d45"
+        "sha256": "c6f5a375f734e0b9618fca616d076329d63dd495"
       },
       {
         "path": "apps/web/src/api/modelsClient.ts",
@@ -26108,8 +27088,12 @@
         "sha256": "e9c827bfff335ee3822656d2c6980971cdfdeef3"
       },
       {
+        "path": "apps/web/src/api/programsClient.ts",
+        "sha256": "c724ec36fc44a31dfb145d4daa41ec534fc392c8"
+      },
+      {
         "path": "apps/web/src/api/projectsClient.ts",
-        "sha256": "402309318c06fbec12e7cb32137770c2413fc95d"
+        "sha256": "bf20992d8d82dc5a9d958cd7bdd693389decfa9f"
       },
       {
         "path": "apps/web/src/api/protocolClient.ts",
@@ -26117,7 +27101,7 @@
       },
       {
         "path": "apps/web/src/api/runClient.ts",
-        "sha256": "25f7f465467ceda4a200145f74a7aced9aef93ed"
+        "sha256": "a2e300d5393fbbb233e6f07cdc636a6585922ac4"
       },
       {
         "path": "apps/web/src/api/teamClient.ts",
@@ -26133,7 +27117,7 @@
       },
       {
         "path": "apps/web/src/api/types.ts",
-        "sha256": "b87cf935e359bf312a0dbab3b442a27675efec55"
+        "sha256": "543286cc98743a25bac70ea0679e841102f54047"
       },
       {
         "path": "apps/web/src/api/workspaceSnapshotClient.ts",
@@ -26329,7 +27313,7 @@
       },
       {
         "path": "apps/web/src/features/command-center/CommandCenterPage.module.css",
-        "sha256": "5f412531ac96113287628d3a657a457cd1f8beec"
+        "sha256": "6d414a67f17944e9ab9eafaa19f17f29c7e15690"
       },
       {
         "path": "apps/web/src/features/command-center/CommandCenterPage.tsx",
@@ -29132,12 +30116,20 @@
         "sha256": "3645ca928388d2470e5c2e4d2fef704591c23fac"
       },
       {
+        "path": "apps/web/src/features/projects/ProgramsSection.tsx",
+        "sha256": "3464721dfbdfe58540e803a0f7eda1e3ff13fdaa"
+      },
+      {
         "path": "apps/web/src/features/projects/ProjectDeleteAction.tsx",
         "sha256": "244144667fb0160e39e9c5290c5a85e7590531d3"
       },
       {
+        "path": "apps/web/src/features/projects/ProjectDirectionEditor.tsx",
+        "sha256": "737de9779ac0798771536bda7c703c9b83bc1e6d"
+      },
+      {
         "path": "apps/web/src/features/projects/ProjectsPage.tsx",
-        "sha256": "bacdc425217366b6af0d94affd87830ea6761202"
+        "sha256": "74ed18daecec777e4ee15d29b9a487e21847a71e"
       },
       {
         "path": "apps/web/src/features/projects/useProjectDeletion.ts",
@@ -29285,15 +30277,23 @@
       },
       {
         "path": "apps/web/src/features/runs/PhaseProgress.module.css",
-        "sha256": "d9caa50a4e3be9ec59fdf134854358085513c626"
+        "sha256": "c20d01317a25542f7faa2e31edd24aa50cbc626e"
       },
       {
         "path": "apps/web/src/features/runs/PhaseProgress.tsx",
-        "sha256": "35d630eed848e006fdbd4bddc368931853e56974"
+        "sha256": "0d16ddb46587df1a3dc4a49bd4ed364bc40cf5ef"
       },
       {
         "path": "apps/web/src/features/runs/RebuildReadiness.tsx",
         "sha256": "9e9850431f1cc2ff6858542c3551e810327b89aa"
+      },
+      {
+        "path": "apps/web/src/features/runs/ReviewPanelSection.module.css",
+        "sha256": "8dc01f2b468ac446b0a844634b11fff970604225"
+      },
+      {
+        "path": "apps/web/src/features/runs/ReviewPanelSection.tsx",
+        "sha256": "c27d630cc8b9b20bdee169be84b9918e2065c93f"
       },
       {
         "path": "apps/web/src/features/runs/RunActionButtonRow.tsx",
@@ -29305,7 +30305,7 @@
       },
       {
         "path": "apps/web/src/features/runs/RunPanel.tsx",
-        "sha256": "7db38ce57fcb8f39f42194c5ec27e0489bfe8479"
+        "sha256": "0e8361d62c6390eeb5a77fc64a5db664d1a76622"
       },
       {
         "path": "apps/web/src/features/runs/TimelineView.tsx",
@@ -29329,7 +30329,7 @@
       },
       {
         "path": "apps/web/src/features/runs/useRunTimeline.ts",
-        "sha256": "b38879457a71050e26d7a412b8c6d6a316e947b2"
+        "sha256": "3d1cbc9326fb1f1bf4dedbce617c54ed2a6b45ed"
       },
       {
         "path": "apps/web/src/features/schedules/ScheduleActions.tsx",
@@ -29465,7 +30465,7 @@
       },
       {
         "path": "apps/web/src/features/shared/LivePage.module.css",
-        "sha256": "a5ecb0d07bf2174498af38279966eec94806feb0"
+        "sha256": "d933d0de424ba835b9079f0e6fe68edb8f690a87"
       },
       {
         "path": "apps/web/src/features/shared/PageHeader.module.css",
@@ -29621,7 +30621,7 @@
       },
       {
         "path": "apps/web/src/layout/ConsoleLoading.module.css",
-        "sha256": "cb3f053bed8330b8ccbc604527a53a5b5692cfba"
+        "sha256": "3a3f8a4bb1f82a67709da1ed44a017309a469f87"
       },
       {
         "path": "apps/web/src/layout/ConsoleLoading.tsx",
@@ -29785,7 +30785,15 @@
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts",
-        "sha256": "275d16992a7da19532ae8a458706c0e132aeaae4"
+        "sha256": "3652604c3738369f262834940cfeca7811911002"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-dark-compact-en-linux.png",
+        "sha256": "25581ef8365f7501a9810e364122aa4174ccc6d2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-dark-compact-en-win32.png",
+        "sha256": "ee01dcbe9fda837643ee4cc0209642d61a2172a8"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-dark-normal-zh-linux.png",
@@ -29796,12 +30804,60 @@
         "sha256": "cc3ea02e4c1c3e83832371aaa0aa8b6eb8c15ea1"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-light-compact-zh-linux.png",
+        "sha256": "25581ef8365f7501a9810e364122aa4174ccc6d2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-light-compact-zh-win32.png",
+        "sha256": "ee01dcbe9fda837643ee4cc0209642d61a2172a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-light-normal-en-linux.png",
+        "sha256": "25581ef8365f7501a9810e364122aa4174ccc6d2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/command-center-light-normal-en-win32.png",
+        "sha256": "ee01dcbe9fda837643ee4cc0209642d61a2172a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-dark-compact-en-linux.png",
+        "sha256": "30b96e7002e20150b0ebc5305e0fa9ef33df4f36"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-dark-compact-en-win32.png",
+        "sha256": "e9ab5b3a3342a8b5347ba08f618552d86f7aa7e3"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-dark-normal-zh-linux.png",
         "sha256": "30b96e7002e20150b0ebc5305e0fa9ef33df4f36"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-dark-normal-zh-win32.png",
         "sha256": "d2e566685689cf9085d63a1ce01ee8d186fee406"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-light-compact-zh-linux.png",
+        "sha256": "30b96e7002e20150b0ebc5305e0fa9ef33df4f36"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-light-compact-zh-win32.png",
+        "sha256": "e9ab5b3a3342a8b5347ba08f618552d86f7aa7e3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-light-normal-en-linux.png",
+        "sha256": "30b96e7002e20150b0ebc5305e0fa9ef33df4f36"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/evidence-claims-light-normal-en-win32.png",
+        "sha256": "e9ab5b3a3342a8b5347ba08f618552d86f7aa7e3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-dark-compact-en-linux.png",
+        "sha256": "543de8eb52da3133b7fd08fab09a078e2afd7f6b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-dark-compact-en-win32.png",
+        "sha256": "e507d47301213e5544cc8c0686237ab9e8ac726d"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-dark-normal-zh-linux.png",
@@ -29812,12 +30868,60 @@
         "sha256": "aa8432c351b6cbc6e947d4a0d5e1eea8dae2f083"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-light-compact-zh-linux.png",
+        "sha256": "543de8eb52da3133b7fd08fab09a078e2afd7f6b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-light-compact-zh-win32.png",
+        "sha256": "fcd33a87d29c660aaf48c9aa133cf8764b1d06d4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-light-normal-en-linux.png",
+        "sha256": "543de8eb52da3133b7fd08fab09a078e2afd7f6b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-audit-light-normal-en-win32.png",
+        "sha256": "e507d47301213e5544cc8c0686237ab9e8ac726d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-dark-compact-en-linux.png",
+        "sha256": "b74fef11f3a6390536bc8462f649c9902cd06063"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-dark-compact-en-win32.png",
+        "sha256": "872530fd2331d93b28b9dfc301f2b5896723b223"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-dark-normal-zh-linux.png",
         "sha256": "b74fef11f3a6390536bc8462f649c9902cd06063"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-dark-normal-zh-win32.png",
         "sha256": "872530fd2331d93b28b9dfc301f2b5896723b223"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-light-compact-zh-linux.png",
+        "sha256": "b74fef11f3a6390536bc8462f649c9902cd06063"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-light-compact-zh-win32.png",
+        "sha256": "c4b332d989d1ec596db89697a80078cda55db37a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-light-normal-en-linux.png",
+        "sha256": "b74fef11f3a6390536bc8462f649c9902cd06063"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/govern-budget-light-normal-en-win32.png",
+        "sha256": "872530fd2331d93b28b9dfc301f2b5896723b223"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-dark-compact-en-linux.png",
+        "sha256": "50295c8a7dfa73f4e15bf169f4db05b0d2a0b067"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-dark-compact-en-win32.png",
+        "sha256": "f637d4e9112a659ac6522e16894199c814660e6d"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-dark-normal-zh-linux.png",
@@ -29828,12 +30932,60 @@
         "sha256": "f637d4e9112a659ac6522e16894199c814660e6d"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-light-compact-zh-linux.png",
+        "sha256": "50295c8a7dfa73f4e15bf169f4db05b0d2a0b067"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-light-compact-zh-win32.png",
+        "sha256": "f637d4e9112a659ac6522e16894199c814660e6d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-light-normal-en-linux.png",
+        "sha256": "50295c8a7dfa73f4e15bf169f4db05b0d2a0b067"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-cost-analytics-light-normal-en-win32.png",
+        "sha256": "f637d4e9112a659ac6522e16894199c814660e6d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-dark-compact-en-linux.png",
+        "sha256": "30612909e529430f1f0f22607e3a34d0553c0fd0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-dark-compact-en-win32.png",
+        "sha256": "7ee0e839e69b6e2a26e788b14dfb414e7b857700"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-dark-normal-zh-linux.png",
         "sha256": "30612909e529430f1f0f22607e3a34d0553c0fd0"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-dark-normal-zh-win32.png",
         "sha256": "7ee0e839e69b6e2a26e788b14dfb414e7b857700"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-light-compact-zh-linux.png",
+        "sha256": "30612909e529430f1f0f22607e3a34d0553c0fd0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-light-compact-zh-win32.png",
+        "sha256": "7ee0e839e69b6e2a26e788b14dfb414e7b857700"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-light-normal-en-linux.png",
+        "sha256": "30612909e529430f1f0f22607e3a34d0553c0fd0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/insights-reports-light-normal-en-win32.png",
+        "sha256": "7ee0e839e69b6e2a26e788b14dfb414e7b857700"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-dark-compact-en-linux.png",
+        "sha256": "0d18722864a8f1b079d32dab7a8e620ad1d02dd6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-dark-compact-en-win32.png",
+        "sha256": "730acfea90441c8c2f9525d09d99d558b61d43e7"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-dark-normal-zh-linux.png",
@@ -29844,12 +30996,60 @@
         "sha256": "92ab8c52fb45daed441a5db4c6f798dad41b0be1"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-light-compact-zh-linux.png",
+        "sha256": "0d18722864a8f1b079d32dab7a8e620ad1d02dd6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-light-compact-zh-win32.png",
+        "sha256": "730acfea90441c8c2f9525d09d99d558b61d43e7"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-light-normal-en-linux.png",
+        "sha256": "0d18722864a8f1b079d32dab7a8e620ad1d02dd6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-datasets-light-normal-en-win32.png",
+        "sha256": "730acfea90441c8c2f9525d09d99d558b61d43e7"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-dark-compact-en-linux.png",
+        "sha256": "709329ba8317b2a360ffd184a961bd6b8d3f2155"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-dark-compact-en-win32.png",
+        "sha256": "398db4faa4d78dee961655758cd63e6ca4107b4b"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-dark-normal-zh-linux.png",
         "sha256": "030aebc85460220ac227e14472b10dfce997a2d7"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-dark-normal-zh-win32.png",
         "sha256": "73b0625874a2ce03e6e9ed1dd7da3762c8e6cc97"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-light-compact-zh-linux.png",
+        "sha256": "709329ba8317b2a360ffd184a961bd6b8d3f2155"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-light-compact-zh-win32.png",
+        "sha256": "398db4faa4d78dee961655758cd63e6ca4107b4b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-light-normal-en-linux.png",
+        "sha256": "709329ba8317b2a360ffd184a961bd6b8d3f2155"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-endpoints-light-normal-en-win32.png",
+        "sha256": "398db4faa4d78dee961655758cd63e6ca4107b4b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-dark-compact-en-linux.png",
+        "sha256": "ff652ba140780491d55492ebcc5c6cd93f4d68a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-dark-compact-en-win32.png",
+        "sha256": "f5e753149bbdaf81228d6414f99a782d307035cb"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-dark-normal-zh-linux.png",
@@ -29860,12 +31060,60 @@
         "sha256": "f5e753149bbdaf81228d6414f99a782d307035cb"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-light-compact-zh-linux.png",
+        "sha256": "ff652ba140780491d55492ebcc5c6cd93f4d68a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-light-compact-zh-win32.png",
+        "sha256": "f5e753149bbdaf81228d6414f99a782d307035cb"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-light-normal-en-linux.png",
+        "sha256": "ff652ba140780491d55492ebcc5c6cd93f4d68a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-lineage-light-normal-en-win32.png",
+        "sha256": "f5e753149bbdaf81228d6414f99a782d307035cb"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-dark-compact-en-linux.png",
+        "sha256": "664b1592f3dc939d2471e2fb33cea3fea3ab53a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-dark-compact-en-win32.png",
+        "sha256": "d8c6d8127774de8d4432292a560077593a6e4d68"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-dark-normal-zh-linux.png",
         "sha256": "7d74188565148e2fbf0d69eb6f71bbc851e4cbb3"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-dark-normal-zh-win32.png",
         "sha256": "8fcf7eaa1250da416ce2cf32d6a352c409a3901a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-light-compact-zh-linux.png",
+        "sha256": "664b1592f3dc939d2471e2fb33cea3fea3ab53a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-light-compact-zh-win32.png",
+        "sha256": "d8c6d8127774de8d4432292a560077593a6e4d68"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-light-normal-en-linux.png",
+        "sha256": "664b1592f3dc939d2471e2fb33cea3fea3ab53a8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-model-registry-light-normal-en-win32.png",
+        "sha256": "d8c6d8127774de8d4432292a560077593a6e4d68"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-dark-compact-en-linux.png",
+        "sha256": "a2a3251c4a8542ca11cce8b707b4fc6d7ab13e96"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-dark-compact-en-win32.png",
+        "sha256": "b0beb020e98a9a2957cecef23a186b7ac3605fb1"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-dark-normal-zh-linux.png",
@@ -29876,12 +31124,60 @@
         "sha256": "57d8be40c34dab0b02506d354045eff1b4b195c0"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-light-compact-zh-linux.png",
+        "sha256": "a2a3251c4a8542ca11cce8b707b4fc6d7ab13e96"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-light-compact-zh-win32.png",
+        "sha256": "b0beb020e98a9a2957cecef23a186b7ac3605fb1"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-light-normal-en-linux.png",
+        "sha256": "a2a3251c4a8542ca11cce8b707b4fc6d7ab13e96"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-notebooks-light-normal-en-win32.png",
+        "sha256": "b0beb020e98a9a2957cecef23a186b7ac3605fb1"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-dark-compact-en-linux.png",
+        "sha256": "770f04f463b13f1ff3bfde18318b75c723d631b8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-dark-compact-en-win32.png",
+        "sha256": "350f33639c2d4dd43123b668a78b1776c28060c6"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-dark-normal-zh-linux.png",
         "sha256": "3f1e15850e5e0a5a1e8f1501cbe14426dc86689a"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-dark-normal-zh-win32.png",
         "sha256": "2ab1dc9d2f9fdfd51fb136c75d2073a288e292ae"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-light-compact-zh-linux.png",
+        "sha256": "770f04f463b13f1ff3bfde18318b75c723d631b8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-light-compact-zh-win32.png",
+        "sha256": "350f33639c2d4dd43123b668a78b1776c28060c6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-light-normal-en-linux.png",
+        "sha256": "770f04f463b13f1ff3bfde18318b75c723d631b8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-prompts-light-normal-en-win32.png",
+        "sha256": "350f33639c2d4dd43123b668a78b1776c28060c6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-dark-compact-en-linux.png",
+        "sha256": "54fd055c21e91cb18be54d05ee3e89d41d6ba219"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-dark-compact-en-win32.png",
+        "sha256": "49940372bb06290919d7e188c7b5ff7dc7b17bd1"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-dark-normal-zh-linux.png",
@@ -29892,12 +31188,60 @@
         "sha256": "39ed763c457574403707d8a0ac2331c1ebbda2b2"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-light-compact-zh-linux.png",
+        "sha256": "54fd055c21e91cb18be54d05ee3e89d41d6ba219"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-light-compact-zh-win32.png",
+        "sha256": "49940372bb06290919d7e188c7b5ff7dc7b17bd1"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-light-normal-en-linux.png",
+        "sha256": "54fd055c21e91cb18be54d05ee3e89d41d6ba219"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/library-setup-light-normal-en-win32.png",
+        "sha256": "49940372bb06290919d7e188c7b5ff7dc7b17bd1"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-dark-compact-en-linux.png",
+        "sha256": "7527683da47b82471a82f2db1b6076d7811564a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-dark-compact-en-win32.png",
+        "sha256": "0e87258dff9ac0e57c054a4c31feef6c9179311f"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-dark-normal-zh-linux.png",
         "sha256": "7527683da47b82471a82f2db1b6076d7811564a5"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-dark-normal-zh-win32.png",
         "sha256": "fe637eb5ecdc59e3ca8944136cac0401f5d05aa7"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-light-compact-zh-linux.png",
+        "sha256": "4578964f4ecccaec6aeee6e8e79b824a29eec931"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-light-compact-zh-win32.png",
+        "sha256": "0e87258dff9ac0e57c054a4c31feef6c9179311f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-light-normal-en-linux.png",
+        "sha256": "7527683da47b82471a82f2db1b6076d7811564a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/notifications-light-normal-en-win32.png",
+        "sha256": "0e87258dff9ac0e57c054a4c31feef6c9179311f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-dark-compact-en-linux.png",
+        "sha256": "161a1c56e7c0805f695005c89636dc8981720549"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-dark-compact-en-win32.png",
+        "sha256": "df807d0a910ae3fee565db8ed143b78dd6a33dce"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-dark-normal-zh-linux.png",
@@ -29908,12 +31252,60 @@
         "sha256": "df807d0a910ae3fee565db8ed143b78dd6a33dce"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-light-compact-zh-linux.png",
+        "sha256": "9cb3396576a2b55b532a50aa12a61ce6590189e0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-light-compact-zh-win32.png",
+        "sha256": "df807d0a910ae3fee565db8ed143b78dd6a33dce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-light-normal-en-linux.png",
+        "sha256": "9cb3396576a2b55b532a50aa12a61ce6590189e0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-alerts-light-normal-en-win32.png",
+        "sha256": "df807d0a910ae3fee565db8ed143b78dd6a33dce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-dark-compact-en-linux.png",
+        "sha256": "986b87a1bcedc8c5e1dad0eed71b5a8dd5032ad4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-dark-compact-en-win32.png",
+        "sha256": "82ea8eba313cc597aff979802fd3292aba2dcf83"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-dark-normal-zh-linux.png",
         "sha256": "986b87a1bcedc8c5e1dad0eed71b5a8dd5032ad4"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-dark-normal-zh-win32.png",
         "sha256": "8c5821fa79d56820d3040f392f859eb65c33fc04"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-light-compact-zh-linux.png",
+        "sha256": "986b87a1bcedc8c5e1dad0eed71b5a8dd5032ad4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-light-compact-zh-win32.png",
+        "sha256": "82ea8eba313cc597aff979802fd3292aba2dcf83"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-light-normal-en-linux.png",
+        "sha256": "986b87a1bcedc8c5e1dad0eed71b5a8dd5032ad4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-compute-light-normal-en-win32.png",
+        "sha256": "82ea8eba313cc597aff979802fd3292aba2dcf83"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-dark-compact-en-linux.png",
+        "sha256": "3cabed927309eb85ec6f52a5b3517fb8b8a980f6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-dark-compact-en-win32.png",
+        "sha256": "b532c480ec8f9882f08d29d79cb85d3532f2ea34"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-dark-normal-zh-linux.png",
@@ -29924,12 +31316,60 @@
         "sha256": "53580bfc20373bac5a0a96f788768f1aa99f5a12"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-light-compact-zh-linux.png",
+        "sha256": "3cabed927309eb85ec6f52a5b3517fb8b8a980f6"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-light-compact-zh-win32.png",
+        "sha256": "b532c480ec8f9882f08d29d79cb85d3532f2ea34"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-light-normal-en-linux.png",
+        "sha256": "7b12561f16b105eec3db44a836e57ff59f0d1032"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-data-health-light-normal-en-win32.png",
+        "sha256": "1537b79ae6398c8cdb9765d024f040ecb0d4568c"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-dark-compact-en-linux.png",
+        "sha256": "82431f4c4a716bc450c4a36480cf4dfb895be027"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-dark-compact-en-win32.png",
+        "sha256": "0d931df5ee393613f243d7b743d598421d623181"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-dark-normal-zh-linux.png",
         "sha256": "82431f4c4a716bc450c4a36480cf4dfb895be027"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-dark-normal-zh-win32.png",
         "sha256": "0d931df5ee393613f243d7b743d598421d623181"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-light-compact-zh-linux.png",
+        "sha256": "82431f4c4a716bc450c4a36480cf4dfb895be027"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-light-compact-zh-win32.png",
+        "sha256": "0d931df5ee393613f243d7b743d598421d623181"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-light-normal-en-linux.png",
+        "sha256": "82431f4c4a716bc450c4a36480cf4dfb895be027"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-incidents-light-normal-en-win32.png",
+        "sha256": "0d931df5ee393613f243d7b743d598421d623181"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-dark-compact-en-linux.png",
+        "sha256": "e24da9d7911dd74cddc2dedbe8e06d28fe74a4da"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-dark-compact-en-win32.png",
+        "sha256": "a6301e4ad96c44010ff8a95251d08996f77ba944"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-dark-normal-zh-linux.png",
@@ -29940,12 +31380,60 @@
         "sha256": "7d16895a7e2ac14f33a7875b0ae5f765c33b2b41"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-light-compact-zh-linux.png",
+        "sha256": "e24da9d7911dd74cddc2dedbe8e06d28fe74a4da"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-light-compact-zh-win32.png",
+        "sha256": "7d27e1dd031cbd2d1f3e064260a9901767d5ecf8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-light-normal-en-linux.png",
+        "sha256": "ae04827057b9dacf8d40b7ef660865f8d7042118"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-integrations-light-normal-en-win32.png",
+        "sha256": "7d27e1dd031cbd2d1f3e064260a9901767d5ecf8"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-dark-compact-en-linux.png",
+        "sha256": "81f83db7f753b4e67e81d7e36246ee7ce7fb36e9"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-dark-compact-en-win32.png",
+        "sha256": "c065661b67bfbfdbf34f58c9235b412229fc72d5"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-dark-normal-zh-linux.png",
         "sha256": "81f83db7f753b4e67e81d7e36246ee7ce7fb36e9"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-dark-normal-zh-win32.png",
         "sha256": "402c610438aaf2a3957485a1e346795e2e1cb2f3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-light-compact-zh-linux.png",
+        "sha256": "81f83db7f753b4e67e81d7e36246ee7ce7fb36e9"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-light-compact-zh-win32.png",
+        "sha256": "c065661b67bfbfdbf34f58c9235b412229fc72d5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-light-normal-en-linux.png",
+        "sha256": "81f83db7f753b4e67e81d7e36246ee7ce7fb36e9"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-matrix-light-normal-en-win32.png",
+        "sha256": "c065661b67bfbfdbf34f58c9235b412229fc72d5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-dark-compact-en-linux.png",
+        "sha256": "d674ca756c1192af7f2332cd1653128711a3e44d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-dark-compact-en-win32.png",
+        "sha256": "f542896adc1d20681e783c1c9a99c6f960f57348"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-dark-normal-zh-linux.png",
@@ -29956,12 +31444,92 @@
         "sha256": "313fbc816b0019bae9a3c602df0b2ffb804829be"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-light-compact-zh-linux.png",
+        "sha256": "d674ca756c1192af7f2332cd1653128711a3e44d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-light-compact-zh-win32.png",
+        "sha256": "f542896adc1d20681e783c1c9a99c6f960f57348"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-light-normal-en-linux.png",
+        "sha256": "d674ca756c1192af7f2332cd1653128711a3e44d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-observability-light-normal-en-win32.png",
+        "sha256": "f542896adc1d20681e783c1c9a99c6f960f57348"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-dark-compact-en-linux.png",
+        "sha256": "4a5028343ed5436da381ec081f0f1dc414efd6a0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-dark-compact-en-win32.png",
+        "sha256": "ae6f65c2e3bdfe16929487d4182ef1d61dff9277"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-dark-normal-zh-linux.png",
         "sha256": "4a5028343ed5436da381ec081f0f1dc414efd6a0"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-dark-normal-zh-win32.png",
         "sha256": "ae6f65c2e3bdfe16929487d4182ef1d61dff9277"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-light-compact-zh-linux.png",
+        "sha256": "4a5028343ed5436da381ec081f0f1dc414efd6a0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-light-compact-zh-win32.png",
+        "sha256": "ae6f65c2e3bdfe16929487d4182ef1d61dff9277"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-light-normal-en-linux.png",
+        "sha256": "4a5028343ed5436da381ec081f0f1dc414efd6a0"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/ops-schedules-light-normal-en-win32.png",
+        "sha256": "ae6f65c2e3bdfe16929487d4182ef1d61dff9277"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-dark-compact-en-linux.png",
+        "sha256": "b730f70c144db19b8153925c947a12137e836150"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-dark-compact-en-win32.png",
+        "sha256": "eb636d57a7d86835111e5903361b91a416fac132"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-dark-normal-zh-linux.png",
+        "sha256": "b730f70c144db19b8153925c947a12137e836150"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-dark-normal-zh-win32.png",
+        "sha256": "eb636d57a7d86835111e5903361b91a416fac132"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-light-compact-zh-linux.png",
+        "sha256": "b730f70c144db19b8153925c947a12137e836150"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-light-compact-zh-win32.png",
+        "sha256": "eb636d57a7d86835111e5903361b91a416fac132"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-light-normal-en-linux.png",
+        "sha256": "b730f70c144db19b8153925c947a12137e836150"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/phase-track-light-normal-en-win32.png",
+        "sha256": "eb636d57a7d86835111e5903361b91a416fac132"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-dark-compact-en-linux.png",
+        "sha256": "9f7fbf890c732af1c8d7274537d5d5ab7514d2be"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-dark-compact-en-win32.png",
+        "sha256": "21cb5380e943b4c7637528014ef7afe8e4299958"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-dark-normal-zh-linux.png",
@@ -29972,12 +31540,60 @@
         "sha256": "25e47c1004dae4704b64ac524408aa3321a0684d"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-light-compact-zh-linux.png",
+        "sha256": "9e535a9097b8fb1f09b17ff67ba00aede9119384"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-light-compact-zh-win32.png",
+        "sha256": "21cb5380e943b4c7637528014ef7afe8e4299958"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-light-normal-en-linux.png",
+        "sha256": "9e535a9097b8fb1f09b17ff67ba00aede9119384"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-overview-light-normal-en-win32.png",
+        "sha256": "21cb5380e943b4c7637528014ef7afe8e4299958"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-dark-compact-en-linux.png",
+        "sha256": "a65260b0f602be24144c43bc13a5626df7da4b04"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-dark-compact-en-win32.png",
+        "sha256": "e738f59d9410f577c85bdbc6d6b431c4ea027e2d"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-dark-normal-zh-linux.png",
         "sha256": "a65260b0f602be24144c43bc13a5626df7da4b04"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-dark-normal-zh-win32.png",
         "sha256": "375476f4658aba07b3499c7efa7ed0079c555ef5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-light-compact-zh-linux.png",
+        "sha256": "a65260b0f602be24144c43bc13a5626df7da4b04"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-light-compact-zh-win32.png",
+        "sha256": "e738f59d9410f577c85bdbc6d6b431c4ea027e2d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-light-normal-en-linux.png",
+        "sha256": "a65260b0f602be24144c43bc13a5626df7da4b04"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-protocol-light-normal-en-win32.png",
+        "sha256": "e738f59d9410f577c85bdbc6d6b431c4ea027e2d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-dark-compact-en-linux.png",
+        "sha256": "5f161093d71eb8840bb94ada491b0bcae8914387"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-dark-compact-en-win32.png",
+        "sha256": "21c103c521e516dd87b7aec163211b40658ff1f4"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-dark-normal-zh-linux.png",
@@ -29988,12 +31604,60 @@
         "sha256": "740d82dc4c78d599acbe208cc26ade7a59730926"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-light-compact-zh-linux.png",
+        "sha256": "5f161093d71eb8840bb94ada491b0bcae8914387"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-light-compact-zh-win32.png",
+        "sha256": "21c103c521e516dd87b7aec163211b40658ff1f4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-light-normal-en-linux.png",
+        "sha256": "5f161093d71eb8840bb94ada491b0bcae8914387"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/plan-team-light-normal-en-win32.png",
+        "sha256": "21c103c521e516dd87b7aec163211b40658ff1f4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-dark-compact-en-linux.png",
+        "sha256": "e4fff6379a559bfe411185e69efff8e77e7c5c5a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-dark-compact-en-win32.png",
+        "sha256": "8924285f3ff2e1a9a02c1b1f8f54a41434f600a5"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-dark-normal-zh-linux.png",
         "sha256": "e4fff6379a559bfe411185e69efff8e77e7c5c5a"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-dark-normal-zh-win32.png",
         "sha256": "2845b6344d4a54dd2d8675286fa58766629c2c79"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-light-compact-zh-linux.png",
+        "sha256": "e4fff6379a559bfe411185e69efff8e77e7c5c5a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-light-compact-zh-win32.png",
+        "sha256": "8924285f3ff2e1a9a02c1b1f8f54a41434f600a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-light-normal-en-linux.png",
+        "sha256": "d4b4a4298b2d9bd3a8bae1e1e4c782488a5626da"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-compare-light-normal-en-win32.png",
+        "sha256": "8924285f3ff2e1a9a02c1b1f8f54a41434f600a5"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-dark-compact-en-linux.png",
+        "sha256": "11aa417635551366253e6c4e61dbe5586ed0a40d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-dark-compact-en-win32.png",
+        "sha256": "7060e9bffd2d4db2ff7dab0979254f37886bb6b3"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-dark-normal-zh-linux.png",
@@ -30004,12 +31668,60 @@
         "sha256": "0a6ecb88a3bce54a1d814a2216e8e97fcb442d70"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-light-compact-zh-linux.png",
+        "sha256": "19a8fa9b0b6ff516cf936dbd257d4288180b3523"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-light-compact-zh-win32.png",
+        "sha256": "7060e9bffd2d4db2ff7dab0979254f37886bb6b3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-light-normal-en-linux.png",
+        "sha256": "0863e99cc7de785bbc0c1c14535d3c08bc939b83"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-experiments-light-normal-en-win32.png",
+        "sha256": "1b2106083b83b72d1bae011889608e80f65ecf4c"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-dark-compact-en-linux.png",
+        "sha256": "02cfbc71dc26faa061b91220b4d9a8af7282e1ee"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-dark-compact-en-win32.png",
+        "sha256": "4f650050eea735c3b61c873741a740c28633fb5d"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-dark-normal-zh-linux.png",
-        "sha256": "902b662a375a0bec602d63dc6f72a5eef8a9b39a"
+        "sha256": "02cfbc71dc26faa061b91220b4d9a8af7282e1ee"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-dark-normal-zh-win32.png",
         "sha256": "4f650050eea735c3b61c873741a740c28633fb5d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-light-compact-zh-linux.png",
+        "sha256": "02cfbc71dc26faa061b91220b4d9a8af7282e1ee"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-light-compact-zh-win32.png",
+        "sha256": "4f650050eea735c3b61c873741a740c28633fb5d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-light-normal-en-linux.png",
+        "sha256": "02cfbc71dc26faa061b91220b4d9a8af7282e1ee"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-projects-light-normal-en-win32.png",
+        "sha256": "70ff638f21dfa96eb870d6ff57dc5633eb70f794"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-dark-compact-en-linux.png",
+        "sha256": "5b5e764945a76870793f6ef9ec8e4f10796a584a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-dark-compact-en-win32.png",
+        "sha256": "e769c4d123490b4648c060c1ba74add89b8947ab"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-dark-normal-zh-linux.png",
@@ -30020,12 +31732,60 @@
         "sha256": "82105901909848780fc57cc411cff9a189f5d516"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-light-compact-zh-linux.png",
+        "sha256": "283b63ab48a06cd53b8d0ccbb5a5fbb5b4436673"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-light-compact-zh-win32.png",
+        "sha256": "64a5a2344f4e227be3479b5d2abd9103d4c1e05f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-light-normal-en-linux.png",
+        "sha256": "5b5e764945a76870793f6ef9ec8e4f10796a584a"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/portfolio-runs-history-light-normal-en-win32.png",
+        "sha256": "e769c4d123490b4648c060c1ba74add89b8947ab"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-dark-compact-en-linux.png",
+        "sha256": "de68eb9ce72f1c2789a3cca73f6563c19c498cf4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-dark-compact-en-win32.png",
+        "sha256": "0047fcc1442e23c825c95fee7ef236442cadd34f"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-dark-normal-zh-linux.png",
         "sha256": "6d4ff25c92e0d6ab0e0f1deeb634ad3fc644a5e7"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-dark-normal-zh-win32.png",
         "sha256": "372a36f590ded8d865d3f4a65bc58632d795a63f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-light-compact-zh-linux.png",
+        "sha256": "de68eb9ce72f1c2789a3cca73f6563c19c498cf4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-light-compact-zh-win32.png",
+        "sha256": "0047fcc1442e23c825c95fee7ef236442cadd34f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-light-normal-en-linux.png",
+        "sha256": "de68eb9ce72f1c2789a3cca73f6563c19c498cf4"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-approvals-light-normal-en-win32.png",
+        "sha256": "0047fcc1442e23c825c95fee7ef236442cadd34f"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-dark-compact-en-linux.png",
+        "sha256": "17f4d174c391aeb20f8de63befb353ae31b0af70"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-dark-compact-en-win32.png",
+        "sha256": "f259407e18aaee8a99fcbd679c05eb79ed34a47c"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-dark-normal-zh-linux.png",
@@ -30036,12 +31796,92 @@
         "sha256": "f259407e18aaee8a99fcbd679c05eb79ed34a47c"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-light-compact-zh-linux.png",
+        "sha256": "17f4d174c391aeb20f8de63befb353ae31b0af70"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-light-compact-zh-win32.png",
+        "sha256": "f259407e18aaee8a99fcbd679c05eb79ed34a47c"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-light-normal-en-linux.png",
+        "sha256": "17f4d174c391aeb20f8de63befb353ae31b0af70"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-light-normal-en-win32.png",
+        "sha256": "f259407e18aaee8a99fcbd679c05eb79ed34a47c"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-dark-compact-en-linux.png",
+        "sha256": "5019c5ba9224db0dc7d8ee876c808474e2230f1b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-dark-compact-en-win32.png",
+        "sha256": "7d0d0486a720cbb2f9ef7b1d709ec6925d05c2ce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-dark-normal-zh-linux.png",
+        "sha256": "ad7c1d7fa48e8c6c638f8d864b00fb96b0c6fe7e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-dark-normal-zh-win32.png",
+        "sha256": "7d0d0486a720cbb2f9ef7b1d709ec6925d05c2ce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-light-compact-zh-linux.png",
+        "sha256": "5019c5ba9224db0dc7d8ee876c808474e2230f1b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-light-compact-zh-win32.png",
+        "sha256": "f6295e010c8e7bd000ad70be5acff20756c3a431"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-light-normal-en-linux.png",
+        "sha256": "5019c5ba9224db0dc7d8ee876c808474e2230f1b"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-phases-light-normal-en-win32.png",
+        "sha256": "7d0d0486a720cbb2f9ef7b1d709ec6925d05c2ce"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-dark-compact-en-linux.png",
+        "sha256": "1a5384a0abe4f9dbc5fa307bf7ea8058449f0fd3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-dark-compact-en-win32.png",
+        "sha256": "7ed2c102b8e4586a55edb3993e9dfedf643124bf"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-dark-normal-zh-linux.png",
-        "sha256": "4564396b94e673027109b2694f386cf6136fbb08"
+        "sha256": "1a5384a0abe4f9dbc5fa307bf7ea8058449f0fd3"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-dark-normal-zh-win32.png",
         "sha256": "7ed2c102b8e4586a55edb3993e9dfedf643124bf"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-light-compact-zh-linux.png",
+        "sha256": "1a5384a0abe4f9dbc5fa307bf7ea8058449f0fd3"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-light-compact-zh-win32.png",
+        "sha256": "7ed2c102b8e4586a55edb3993e9dfedf643124bf"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-light-normal-en-linux.png",
+        "sha256": "4564396b94e673027109b2694f386cf6136fbb08"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-timeline-substrate-light-normal-en-win32.png",
+        "sha256": "1cf671ac98fc5d2e825781e9095b106cc0900c21"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-dark-compact-en-linux.png",
+        "sha256": "9f6f686214addbd2f1d15cc5b3521ae67ac04a6e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-dark-compact-en-win32.png",
+        "sha256": "ca3a49260ded3457368c397bea841847c170c5b2"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-dark-normal-zh-linux.png",
@@ -30052,12 +31892,52 @@
         "sha256": "ca3a49260ded3457368c397bea841847c170c5b2"
       },
       {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-light-compact-zh-linux.png",
+        "sha256": "9f6f686214addbd2f1d15cc5b3521ae67ac04a6e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-light-compact-zh-win32.png",
+        "sha256": "ca3a49260ded3457368c397bea841847c170c5b2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-light-normal-en-linux.png",
+        "sha256": "9f6f686214addbd2f1d15cc5b3521ae67ac04a6e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/run-workspace-light-normal-en-win32.png",
+        "sha256": "ca3a49260ded3457368c397bea841847c170c5b2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-dark-compact-en-linux.png",
+        "sha256": "32d4a698f05e4c39003c8d593f858a197131e67e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-dark-compact-en-win32.png",
+        "sha256": "b814698079acb528e799769a8b095bc85594e4d2"
+      },
+      {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-dark-normal-zh-linux.png",
         "sha256": "be5fceb2267eca2105ffb623de0c212a0319ddaf"
       },
       {
         "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-dark-normal-zh-win32.png",
         "sha256": "ec8d244627678bd0eedc417ebb6778ec27a3a07d"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-light-compact-zh-linux.png",
+        "sha256": "32d4a698f05e4c39003c8d593f858a197131e67e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-light-compact-zh-win32.png",
+        "sha256": "b814698079acb528e799769a8b095bc85594e4d2"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-light-normal-en-linux.png",
+        "sha256": "32d4a698f05e4c39003c8d593f858a197131e67e"
+      },
+      {
+        "path": "apps/web/tests/e2e/design-fidelity.spec.ts-snapshots/settings-light-normal-en-win32.png",
+        "sha256": "b814698079acb528e799769a8b095bc85594e4d2"
       },
       {
         "path": "apps/web/tests/e2e/design-outline-guard.spec.ts",
@@ -30069,7 +31949,7 @@
       },
       {
         "path": "apps/web/tests/e2e/design-outlines.json",
-        "sha256": "462b419b6da1a14208fd954a48c20d5825176c2c"
+        "sha256": "46f6068c1b207a7919f99375cad23849cf029b57"
       },
       {
         "path": "apps/web/tests/e2e/endpoint-credential-boundary.spec.ts",
@@ -30256,6 +32136,10 @@
         "sha256": "7ee6ceacd47683a2b8d713faca5a5f87e5c483bc"
       },
       {
+        "path": "apps/web/tests/e2e/stub-routes-integration.ts",
+        "sha256": "d495cecd74c739422f97f839dee2e950b02daa2b"
+      },
+      {
         "path": "apps/web/tests/e2e/stub-routes-lineage.ts",
         "sha256": "788106b5d55403f2b1e07a57926e795374035fc8"
       },
@@ -30293,7 +32177,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes.ts",
-        "sha256": "aa2bff850506852ba4fb13318eb287f15d4d9e05"
+        "sha256": "472682a33ba1835b2f61e54e7ba3aee6e1c2a43f"
       },
       {
         "path": "apps/web/tests/e2e/tool-pack-write.spec.ts",
@@ -30324,6 +32208,10 @@
         "sha256": "b766a1e41a5a4f008eccb16f33a131cfc7fcb39d"
       },
       {
+        "path": "apps/web/tests/unit/backend-route-coverage.test.ts",
+        "sha256": "b0298db2d9c6d5b0da6366a46fb193143b3355d2"
+      },
+      {
         "path": "apps/web/tests/unit/console-invariants.test.ts",
         "sha256": "40f7a152093ca4ff0c78ae4aaff8aa7dff083bda"
       },
@@ -30338,6 +32226,10 @@
       {
         "path": "apps/web/tests/unit/control-plane-token.test.ts",
         "sha256": "74a746727f25f08c713548bde57f32f1beefc31f"
+      },
+      {
+        "path": "apps/web/tests/unit/css-token-references.test.ts",
+        "sha256": "a8b2b6f947bdc7d9521c7984a8fe0f2e23fd6b32"
       },
       {
         "path": "apps/web/tests/unit/example-project-draft.test.ts",
@@ -30390,6 +32282,18 @@
       {
         "path": "apps/web/tests/unit/run-event-stream.test.ts",
         "sha256": "e24014fc2c2553e35c431232d0ddf47dc7c2529e"
+      },
+      {
+        "path": "apps/web/tests/unit/unconsumed-registry.test.ts",
+        "sha256": "bd38b76999cc646673be9129235065ad21440a14"
+      },
+      {
+        "path": "apps/web/tests/unit/unconsumed-registry.ts",
+        "sha256": "2ce41a1c4b4f80b730c1e8cdbeb3a4e622df537b"
+      },
+      {
+        "path": "apps/web/tests/unit/unconsumedRegistry.ts",
+        "sha256": ""
       },
       {
         "path": "apps/web/tests/unit/wizard-flow.test.ts",
@@ -30750,6 +32654,10 @@
       {
         "path": "docs/frontend/UI_DESIGN_PROMPTS.md",
         "sha256": "59b56fd4af18219784537edab2763bb52561a50f"
+      },
+      {
+        "path": "docs/frontend/UNCONSUMED.md",
+        "sha256": "9f6fae0b1a1bddee2f47c2870cc17a5d01fbfe91"
       },
       {
         "path": "docs/future/OPTIONAL_EXTERNAL_AGENT_BACKENDS.md",
@@ -37012,12 +38920,16 @@
         "sha256": "bfbcfddf35018ff55da10da56268431c7e0c8508"
       },
       {
+        "path": "tests/tooling/test_charter_residual_w_zero.py",
+        "sha256": "38a27d0fda4cae7b9f85d79f5a2a37fdcc5463dd"
+      },
+      {
         "path": "tests/tooling/test_closeout_assertions_are_in_tree.py",
         "sha256": "cf578ed33e729cd78d8ed52076779a32aade932b"
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "8e6cfb2dbb334b0f551bd69a363b4d29ffc1e91c"
+        "sha256": "198c6d707788b355b149eb94f85e708269128d1b"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -37153,7 +39065,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "425c5d1e8293dca1e5669bf91f1e9b386e2d720b"
+        "sha256": "b00968c6cd87be1f555fb9a44898d946397471c6"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -37277,7 +39189,7 @@
       },
       {
         "path": "tools/charter_parse.py",
-        "sha256": "f48b183e9b655b1cf978a1430812cd45d08dcfe3"
+        "sha256": "39923d5be43fe619acd1d32550498644ef917e16"
       },
       {
         "path": "tools/charter_progress.py",
@@ -37726,6 +39638,10 @@
       {
         "path": "tools/goal103_closeout_assertions.py",
         "sha256": "685fddf5031cd1d0f9bee634178162c5d3684e0b"
+      },
+      {
+        "path": "tools/goal104_closeout_assertions.py",
+        "sha256": "a3023c122cb1586b24ae6bc4fc44fff69ca40798"
       },
       {
         "path": "tools/m12_ncbi_smoke.py",
@@ -38180,15 +40096,19 @@
         "sha256": "d27f2e6698121bf508ce08b83483dc52ecd46e47"
       },
       {
+        "path": "tools/verify_goal104_closeout.py",
+        "sha256": "879099754c69a05cdc1c3bc0c8534e1b06273d4d"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "67bc41851276db83164c3d758e1af40c09419651"
+    "head": "bd1482ce193e178a13fd1fcd30be99031b8949e4"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "67bc41851276db83164c3d758e1af40c09419651",
+  "ran_at_head": "bd1482ce193e178a13fd1fcd30be99031b8949e4",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

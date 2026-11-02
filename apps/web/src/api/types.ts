@@ -1418,6 +1418,25 @@ export interface MemoryCommittedDto {
   decision: string;
 }
 
+/**
+ * 一条记忆在**给定时点**的时效（GOAL-20261008-039 EC-04；读面于 GOAL-20261103-104
+ * EC-03 接线）。时点由调用方给（`at`）⇒ 同一份数据同一时点判定必相同（不读挂钟）。
+ */
+export interface MemoryValidityDto {
+  id: string;
+  scope: string;
+  validity: string | null;
+  expires_at: string | null;
+  review_after: string | null;
+}
+
+/** 时效读面的信封（逐条判定 + 被问的时点 + 射程说明）。 */
+export interface MemoryValidityViewDto {
+  at: string;
+  scope_note: string;
+  records?: MemoryValidityDto[];
+}
+
 /** WP-C（PLAN-049）策略面只读快照：声明规则 + 门链能力的逐 scope 有效判决。 */
 export interface PolicyRuleViewDto {
   effect: string;

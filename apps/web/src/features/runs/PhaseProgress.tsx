@@ -99,11 +99,11 @@ function PhaseDetail({ phase, zh }: { phase: PhaseProgressDto; zh: boolean }) {
   const strategy = phase.strategy === "" ? "—" : phase.strategy;
   return (
     <div className={phaseStyles.detail} data-testid={`phase-detail-${phase.phase_id}`}>
-      <div className={styles.muted}>
+      <div className={phaseStyles.muted}>
         {zh ? "策略" : "Strategy"}: {strategy}
       </div>
       {phase.artifact_ids.length === 0 ? (
-        <div className={styles.muted} data-testid={`phase-artifacts-empty-${phase.phase_id}`}>
+        <div className={phaseStyles.muted} data-testid={`phase-artifacts-empty-${phase.phase_id}`}>
           {zh ? "本相暂无已登记产物" : "No artifacts recorded for this phase yet"}
         </div>
       ) : (

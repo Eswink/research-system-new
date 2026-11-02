@@ -12,6 +12,7 @@ import type { RunSelectionProps } from "../shared/useSelectedRun";
 import { RunActions } from "./RunActions";
 import { PhaseProgress } from "./PhaseProgress";
 import { RebuildReadiness } from "./RebuildReadiness";
+import { ReviewPanelSection } from "./ReviewPanelSection";
 import { TimelineView } from "./TimelineView";
 import { useRunTimeline } from "./useRunTimeline";
 
@@ -27,6 +28,29 @@ interface RunPanelsectionProps {
   flow: ReturnType<typeof useRunTimeline>;
 }
 
+/**
+ * 两个「这条 run 走到哪」的面板（先后顺序即信息层次）：
+ * 1. **相级进度**（GOAL-20261101-103 EC-03）：十一相各一节点，回答"走到哪一步"；
+ * 2. **评审判词**（GOAL-20261103-104 EC-03）：逐条原文 + 归因模型，回答"过没过门"。
+ * 任务表是这两者的明细，因此都排在它前面。抽成独立组件是为了守住 50 行函数门。
+ */
+function RunProgressSections({ flow }: { flow: ReturnType<typeof useRunTimeline> }) {
+  return (
+    <>
+      <ResourceBoundary state={flow.run}>
+        {flow.run.data !== null && <PhaseProgress phases={flow.run.data.phases} />}
+      </ResourceBoundary>
+      {flow.runId === "" ? null : (
+        <ReviewPanelSection
+          findings={flow.reviews.data}
+          loading={flow.reviews.phase === "loading"}
+          error={flow.reviews.error}
+        />
+      )}
+    </>
+  );
+}
+
 function RunPanelsection({ zh, flow }: RunPanelsectionProps) {
   return (
     <section className={styles.page} data-testid="run-panel">
@@ -38,11 +62,7 @@ function RunPanelsection({ zh, flow }: RunPanelsectionProps) {
       <ResourceBoundary state={flow.run}>
         {flow.run.data !== null && <RebuildReadiness rebuild={flow.run.data.rebuild} />}
       </ResourceBoundary>
-      {/* GOAL-20261101-103 EC-03：**相级进度**（十一相各一节点）。
-          插在任务列表之前：用户问的第一件事是「走到哪一步」，任务表是它的明细。 */}
-      <ResourceBoundary state={flow.run}>
-        {flow.run.data !== null && <PhaseProgress phases={flow.run.data.phases} />}
-      </ResourceBoundary>
+      <RunProgressSections flow={flow} />
       {flow.runId === "" ? (
         <div data-testid="runs-empty">
           <EmptyState

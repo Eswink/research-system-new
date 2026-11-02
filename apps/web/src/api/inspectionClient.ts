@@ -12,6 +12,7 @@ import type {
   ExportBundleDto,
   LineageDto,
   ProjectLineageDto,
+  ReviewFindingDto,
 } from "./types";
 
 export const inspectionClient = {
@@ -41,5 +42,14 @@ export const inspectionClient = {
   },
   projectLineage(projectId: string = getActiveProjectId()): Promise<ProjectLineageDto> {
     return request(`/projects/${encodeURIComponent(projectId)}/lineage`, { method: "GET" });
+  },
+  /**
+   * 本 run 的逐条验收判词（GOAL-20261103-104 EC-03）。
+   *
+   * 读的是**域函数逐字给出的判词**；前端**不做聚合** —— `aggregate_panel` 是领域逻辑
+   * （平票 ⇒ advisory 为 None、无身份者不进票、单评审不聚合），前端复刻必然漂移。
+   */
+  reviews(runId: string): Promise<ReviewFindingDto[]> {
+    return request(`/runs/${encodeURIComponent(runId)}/reviews`, { method: "GET" });
   },
 };

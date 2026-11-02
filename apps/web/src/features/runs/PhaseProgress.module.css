@@ -78,3 +78,11 @@
   flex-direction: column;
   gap: 6px;
 }
+
+/* 局部 `.muted`（GOAL-20261103-104 EC-01）：此前 PhaseDetail 引的是 `LivePage.module.css`
+   的 `styles.muted`，而那个共享模块**没有** `.muted` ⇒ 两处渲染成 `className={undefined}`。
+   CSS-module 的类型是 `{ readonly [key: string]: string }` ⇒ 任何键都过 typecheck ⇒
+   **静默失效**。定义成局部类（不往共享模块里塞）以免改变 20+ 个既有调用方的观感。 */
+.muted {
+  color: var(--fg-muted);
+}

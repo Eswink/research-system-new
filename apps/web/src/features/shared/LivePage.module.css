@@ -211,5 +211,5 @@
 
 .diffHunk {
   display: block;
-  color: var(--text-dim);
+  color: var(--fg-faint);
 }

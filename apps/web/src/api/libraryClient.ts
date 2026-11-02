@@ -36,4 +36,13 @@ export const libraryClient = {
       { idempotencyKey: newIdempotencyKey() },
     );
   },
+  /**
+   * 单件资源读面（GOAL-20261103-104 EC-03；服务端能力，前端暂不暴露）。
+   *
+   * 库页面用列表 + 行内字段已够，没有单独的详情页需求。**加这个方法不叫「有消费者」**
+   * —— 它在 `docs/frontend/UNCONSUMED.md` 里被如实登记为未消费。
+   */
+  detail(resourceId: string): Promise<LibraryResourceDto> {
+    return request(`/library/${encodeURIComponent(resourceId)}`, { method: "GET" });
+  },
 };

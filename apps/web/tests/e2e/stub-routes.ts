@@ -6,6 +6,7 @@
 
 import { BUDGET_ROUTES } from "./stub-routes-budget";
 import { EXPERIMENT_QUEUE_ROUTES } from "./stub-routes-experiments";
+import { INTEGRATION_ROUTES } from "./stub-routes-integration";
 import { LINEAGE_ROUTES } from "./stub-routes-lineage";
 import { OPS_ROUTES } from "./stub-routes-ops";
 import { POLICY_ROUTES } from "./stub-routes-policy";
@@ -316,4 +317,7 @@ export const ROUTES: readonly StubRoute[] = [
   ...RUN_ROUTES,
   // PLAN-058 WP-D: workspace snapshot capability / files / file-level diff (G8).
   ...WORKSPACE_ROUTES,
+  // GOAL-20261103-104 EC-03: direction / programs / reviews + the three
+  // client-only routes (stubbed so `assertNoUnmatched` stays a real signal).
+  ...INTEGRATION_ROUTES,
 ];

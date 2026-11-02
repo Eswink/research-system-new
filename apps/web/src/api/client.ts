@@ -24,6 +24,7 @@ import { opsViewClient } from "./opsViewClient";
 import { opsControlClient } from "./opsControlClient";
 import { policyClient } from "./policyClient";
 import { projectsClient } from "./projectsClient";
+import { programsClient } from "./programsClient";
 import { protocolClient, type ProtocolSource } from "./protocolClient";
 import { runClient } from "./runClient";
 import { teamClient } from "./teamClient";
@@ -45,6 +46,7 @@ import type {
   ModelCreateDto,
   ModelReadDto,
   ModelUpdateDto,
+  ProjectDirectionUpdateDto,
   ProjectSettingsDto,
   ResourceKind,
   ResourceType,
@@ -97,6 +99,15 @@ export const api = {
     payload: { name?: string | null; status?: "ACTIVE" | "ARCHIVED" | null },
   ) => projectsClient.update(projectId, payload),
   deleteProject: (projectId: string) => projectsClient.remove(projectId),
+  /** 研究方向专用写面（GOAL-20261103-104 EC-03）：只动 `direction`，`null` = 清除。 */
+  setProjectDirection: (projectId: string, payload: ProjectDirectionUpdateDto) =>
+    projectsClient.setDirection(projectId, payload),
+
+  // ── programs（GOAL-20261103-104 EC-03：四条路由此前零消费者）──
+  listPrograms: (projectId?: string) => programsClient.list(projectId),
+  programDetail: (programId: string) => programsClient.detail(programId),
+  /** 推进一轮：服务端按上一轮判词决定继续/停，并回传决定本身。 */
+  advanceProgram: (programId: string) => programsClient.advance(programId),
 
   // ── team ──
   listRoles: () => teamClient.listRoles(),
@@ -149,6 +160,8 @@ export const api = {
   runExport: (runId: string) => inspectionClient.export(runId),
   runDeliverable: (runId: string) => inspectionClient.deliverable(runId),
   runLineage: (runId: string) => inspectionClient.lineage(runId),
+  /** 逐条验收判词（GOAL-20261103-104 EC-03）：读原文，前端不聚合。 */
+  runReviews: (runId: string) => inspectionClient.reviews(runId),
   projectLineage: (projectId?: string) => inspectionClient.projectLineage(projectId),
 
   // ── tool providers（PLAN-043 只读目录；PLAN-060 注册治理写面）──

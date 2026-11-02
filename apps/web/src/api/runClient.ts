@@ -86,6 +86,20 @@ export const runClient = {
   events(runId: string): Promise<RunEventDto[]> {
     return request(`/runs/${encodeURIComponent(runId)}/events`, { method: "GET" });
   },
+  /**
+   * 重试一个失败任务（GOAL-20261103-104 EC-03；服务端能力，前端暂不暴露）。
+   *
+   * 登记在 `docs/frontend/UNCONSUMED.md`：现有 UI 只有 run 级 pause/resume/cancel，
+   * 「挑单个 task 重试」要先有任务级故障处置交互，本轮不做。
+   * **加这个方法不叫「有消费者」** —— 白名单条目才是它的如实登记。
+   */
+  retryTask(taskId: string): Promise<TaskDto> {
+    return request(
+      `/tasks/${encodeURIComponent(taskId)}/retry`,
+      { method: "POST" },
+      { idempotencyKey: newIdempotencyKey() },
+    );
+  },
   listApprovals(): Promise<ApprovalDto[]> {
     return request("/approvals", { method: "GET" });
   },

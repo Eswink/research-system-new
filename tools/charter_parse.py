@@ -168,15 +168,28 @@ def residuals(lines: Sequence[str]) -> tuple[Residual, ...]:
 
 
 def check_residuals(items: Sequence[Residual]) -> None:
-    """编号必须是 `W-1…W-N` 的**连续**序列（断号 ⇒ 有人删/漏了一条）。"""
+    """编号必须是**连续**序列（断号 ⇒ 有人删/漏了一条）。
+
+    **起点可以是 0 或 1**（2026-11-03 实测）：`W-0` 是本仓已写下的形态 —— 它记的是
+    「**真跑才发现并已修**」的那条实现缺陷，与「仍未修」的残余并列写在同一节里
+    （GOAL-082 / 103 与更早两条）。读取器此前只认 `1…N` ⇒ GOAL-103 拒于
+    `RESIDUAL_GAP`（读到 `[0, 1, …, 5]`）。这里的判据**不是「必须从 1 开始」**，而是
+    「**不得断号**」（删一条却忘改编号才是要抓的事）⇒ 起点 0/1 都接受，断号照拒。
+    """
     numbers = [item.number for item in items]
     if not numbers:
         raise Refusal("RESIDUAL_EMPTY", "残余节里没有任何 `W-NN` 条目（也没有「无残余」标记）")
-    expected = list(range(1, len(numbers) + 1))
+    start = numbers[0]
+    expected = list(range(start, start + len(numbers)))
     if numbers != expected:
         raise Refusal(
             "RESIDUAL_GAP",
             f"`W` 编号不连续：读到 {numbers}，应是 {expected}（断号 = 有残余被删或漏写）",
+        )
+    if start not in (0, 1):
+        raise Refusal(
+            "RESIDUAL_GAP",
+            f"`W` 编号起点既不是 0 也不是 1：读到 {numbers}（起点是任意的就不叫编号了）",
         )
 
 

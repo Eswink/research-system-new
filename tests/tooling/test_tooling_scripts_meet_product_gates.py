@@ -204,11 +204,9 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal090_closeout.py",
     "tools/goal095_closeout_assertions.py",
     "tools/verify_goal095_closeout.py",
-    # GOAL-20261027-098 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
-    "tools/goal098_closeout_assertions.py",
+    "tools/goal098_closeout_assertions.py",  # GOAL-098 EC-05（纯收紧）
     "tools/verify_goal098_closeout.py",
-    # GOAL-20261028-099 EC-05：收口验证器 + 它复用的本轮断言集（纯收紧 ⇒ 只增不删）。
-    "tools/goal099_closeout_assertions.py",
+    "tools/goal099_closeout_assertions.py",  # GOAL-099 EC-05（纯收紧）
     "tools/verify_goal099_closeout.py",
     "tools/goal100_closeout_assertions.py",
     "tools/verify_goal100_closeout.py",
@@ -219,6 +217,8 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-103 EC-07：验证器 + 断言集（纯收紧）。
     "tools/goal103_closeout_assertions.py",
     "tools/verify_goal103_closeout.py",
+    "tools/goal104_closeout_assertions.py",  # GOAL-104 EC-05（纯收紧）
+    "tools/verify_goal104_closeout.py",
     "tools/charter_progress.py",
     "tools/check_ledger_run_attribution.py",
 )

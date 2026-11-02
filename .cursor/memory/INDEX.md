@@ -251,3 +251,4 @@
 - [MEM-20261101-235](entries/MEM-20261101-235-reconstructing-artifacts-drops-fields.md) — 手写重建 Artifact 的白名单丢字段；frozen dataclass 加字段后逐处补齐 + 存储面判据
 - [MEM-20261101-236](entries/MEM-20261101-236-project-config-needs-a-per-run-hook.md) — 项目级配置不能在进程级装配面取值（会把第一个项目的设置施加给之后所有项目）
 - [MEM-20261101-237](entries/MEM-20261101-237-declared-but-never-constructed-judge-the-call-site.md) — 「声明了但从未构造」要判调用行：字段在树 ≠ 接线在
+- [MEM-20261103-238](entries/MEM-20261103-238-a-css-module-key-can-be-undefined.md) — CSS-module 的键可以不存在：styles.<key> 与 var(--x) 拼错都过 typecheck ⇒ 要有文本判据

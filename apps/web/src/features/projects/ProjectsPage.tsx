@@ -12,6 +12,8 @@ import { useI18n } from "../../i18n/useI18n";
 import styles from "../shared/LivePage.module.css";
 import { PageHeader } from "../shared/PageHeader";
 import { ProjectDeleteAction } from "./ProjectDeleteAction";
+import { ProjectDirectionEditor } from "./ProjectDirectionEditor";
+import { ProgramsSection } from "./ProgramsSection";
 
 /** 项目集（PLAN-041 WP-C + PLAN-061）：真实注册表（列表/创建/归档/删除/切换）。 */
 export function ProjectsPage() {
@@ -30,6 +32,8 @@ export function ProjectsPage() {
         )}
       </ResourceBoundary>
       {projects.error !== null && <ErrorState message={projects.error} />}
+      {/* GOAL-20261103-104 EC-03：研究程序的最小读面（列表 + 推进一轮）。 */}
+      <ProgramsSection projectId={getActiveProjectId()} />
     </section>
   );
 }
@@ -167,6 +171,8 @@ function ProjectRow({
         </button>
         <ProjectDeleteAction project={project} onDeleted={onChanged} />
       </div>
+      {/* GOAL-20261103-104 EC-03：研究方向此前只能在建项目时设定、之后改不了。 */}
+      <ProjectDirectionEditor project={project} onChanged={onChanged} />
     </li>
   );
 }
