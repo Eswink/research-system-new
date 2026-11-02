@@ -17,7 +17,12 @@ jobs:
   quality:
     name: quality-${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    # 20 -> 30 (W-5, 2026-11-03).  The Windows leg kept being killed at the ceiling
+    # with no failing test: `ea4b94fb` ran 1206 s (20 min 6 s) inside
+    # `Run all M0 gates` and GitHub reported `cancelled`.  8 of 25 ledger rows for the
+    # recent goals are this shape, all needing attempt 2 to go green, so it is a
+    # predictable cost rather than noise.  No threshold or check was touched.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -277,7 +282,18 @@ jobs:
 
   console-frontend:
     name: console-frontend
-    runs-on: ubuntu-latest
+    # **Pinned, not `ubuntu-latest`** (W-7, 2026-11-03).  `ubuntu-latest` rolled from
+    # 24.04 to 26.04 and Playwright 1.56.1 refuses to install there:
+    #   `Error: ERROR: Playwright does not support chromium on ubuntu26.04-x64`
+    # Source: playwright-core@1.56.1 lib/server/utils/hostPlatform.js:77-79 maps
+    # `major < 26` to ubuntu24.04 and everything newer to a platform whose
+    # `isOfficiallySupportedPlatform` is `false`, so `install --with-deps` exits 1.
+    # Consequence while it lasted: `Console e2e` and `Console live API e2e` were both
+    # **skipped**, so the 34-route pixel gate and the DOM-outline signature gate never
+    # ran in CI at all.
+    # Chose pinning over upgrading Playwright: upgrading bumps the bundled Chromium and
+    # would force re-recording all 136 screenshots on two platforms.  24.04 is LTS.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
 
     steps:
