@@ -109,6 +109,14 @@ GOAL-20261103-105 的七个 EC。按**提交面**分三个 cycle：
   `records` 1097 / `config_db` 1 / `logs` 940）。
 - **全量 m0**：见 GOAL 的 CI 台账（本文件收口时按实测填终态行）。
 
+## 收口审计修复
+
+收口审计抓到一条**未达成**的逐字要求，已修：`citation_sufficiency.py` 曾自带第三份
+`_CITATION = re.compile(...)`（且上一行注释自称「直接复用」）。现改为与
+`_SENTENCE_SPLIT` 同行导入 `_CITATION`，并给收口验证器加两向判据
+（`readings-do-not-redefine-the-citation-grammar` / `readings-import-the-shared-citation-grammar`），
+按压留证。详见 `RECHECK-20261103-105` 的 `D-7` 与 GOAL 残余 `W-4`。
+
 ## 状态历史
 
 | 日期 | 状态 | 说明 |

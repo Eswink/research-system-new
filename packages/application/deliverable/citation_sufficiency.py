@@ -36,22 +36,18 @@ Methods 可能完全恰当。本模块产出的是**可数的形态**，不是�
 
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
-from packages.application.deliverable.manuscript_quality import _SENTENCE_SPLIT
+from packages.application.deliverable.manuscript_quality import _CITATION, _SENTENCE_SPLIT
 
 #: 逐句读数的射程：这三节是**主张**所在（abstract / conclusion 是总结面，
 #: related_work / methods 的引用密度与主张强度不是同一件事）。
 CITED_SECTIONS: tuple[str, ...] = ("introduction", "results", "discussion")
 
-#: 引用标记的语法。**与 `manuscript.CITATION_PATTERN` / `manuscript_quality._CITATION`
-#: 逐字相同**（第三份出现的理由是那两处各在自己的模块里、互相不 import；这里再写一份
-#: 会变成**第四份**，所以直接复用：本模块 import `manuscript_quality`，方向与手稿模块
-#: 一致 —— `manuscript_quality` 不 import 本模块）。判据
-#: `test_the_citation_grammar_is_the_same_one` 钉住三者同形。
-_CITATION = re.compile(r"\[(\d+)\]")
+#: 引用标记的语法**不在这里定义**：`_CITATION` 与 `_SENTENCE_SPLIT` 一起从
+#: `manuscript_quality` 导入（那一份与 `manuscript.CITATION_PATTERN` 逐字同形，
+#: 由 `test_the_citation_grammar_is_the_same_one` 钉住）。本模块**不写第三份正则**。
 
 #: 每句最少几个引用标记。**`None` = 不判**。
 #:

@@ -123,6 +123,30 @@ GOAL-20261103-105 的七条 EC 逐条取证。**两路以上**（`verify_paths` 
   修法：从 `git show HEAD:` 取回序 72 的**原文**按字节插回，并核对 CRLF 计数与
   「71 → 72 → 73」的相邻关系。教训：**程序表追加不要用替换定位，要用行插入**。
 
+- **`D-7`｜靶子 1 第 2 项被实现成「第三份正则」（收口审计抓到，已修）。**
+  `citation_sufficiency.py` 第一版从 `manuscript_quality` 导入了 `_SENTENCE_SPLIT`，
+  却在同一文件里又写了一份 `_CITATION = re.compile(r"\[(\d+)\]")` —— 而它**上一行的注释**
+  写着「这里再写一份会变成第四份，所以直接复用」。注释与代码自相矛盾，且这条偏差没有
+  登记成任何 `W-NN`。这正是本轮要求里**唯一**逐字点名的产品约束（「别写第三份正则」），
+  所以收口审计判它不通过是对的。
+  修法：删掉定义，`_CITATION` 并入既有导入行。**同形从「巧合」变成「结构」** ——
+  实测 `cs._CITATION is manuscript_quality._CITATION` 为 `True`（此前只是 pattern 字符串相等）。
+  判据同步补强：`tools/goal105_closeout_assertions.py` 原先把 **`"_CITATION = re.compile"`
+  当作「复用在场」的标记**（钉的正是错误形态）；现在改成
+  `readings-do-not-redefine-the-citation-grammar`（本模块不得重定义）+
+  `readings-import-the-shared-citation-grammar`（导入在场）两向。
+
+  **按压过程本身抓出了两个判据缺陷**（这才是这条记录值得留的部分）：
+  1. 第一版判据用 `assert "_CITATION = re.compile" not in source`。注入一份副本
+     `_CITATION = __import__('re').compile(_SHARED.pattern)` ⇒ **10 条判据全绿**
+     （字符串写法不同）。字符串标记式判据会被改名绕过。
+  2. 改成判 `cs._CITATION is manuscript_quality._CITATION` ⇒ 副本**仍然全绿**。
+     原因：`re.compile` 对同一 pattern 有**模块级缓存**，副本与原件是同一个对象。
+     所以 `is` 也判不出「是不是抄了一份」。
+  3. 最终判**源码 AST**（`_recompiles_the_grammar()` / `_recompiled_grammar_lines()`）：
+     本模块里不得出现「对引用语法再做一次编译」。注入同一副本 ⇒ 测试与收口验证器
+     **都**判红，并逐字点名 `__import__('re').compile(_SHARED.pattern)`。
+
 ## 反证臂汇总（**判据咬得住**的证据）
 
 | 判据 | 注入 | 极性 |

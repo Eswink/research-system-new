@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 import pytest
 
@@ -140,18 +141,63 @@ def test_the_three_names_are_the_ones_the_spec_declares() -> None:
     } <= set(cs.CALIBRATION_SOURCES)
 
 
-def test_the_citation_grammar_is_the_same_one() -> None:
-    """本模块的引用正则与手稿模块**同形**（不写第四份语法）。"""
+def test_the_citation_grammar_is_the_same_object_not_a_copy() -> None:
+    """本模块的引用语法是**同一个对象**（不是一份「同形」的副本）。
+
+    「pattern 相等」是**弱**判据：一份复制出来的定义同样相等，而复制正是本轮被收口
+    审计抓到的缺陷形态（靶子 1 第 2 项：「别写第三份正则」）。`is` 判的是**结构**——
+    只要有人在本模块里再 `re.compile` 一次，这条立刻红，不需要等 pattern 漂移。
+
+    `getattr` 而不是 `cs._CITATION`：该名字是从 `manuscript_quality` 导入的私有别名，
+    strict mypy 不把它算作本模块的**显式导出**（`attr-defined`）；判据要判的是运行时
+    对象恒等，用 `getattr` 取更贴切。
+    """
+    shared = getattr(cs, "_CITATION")  # noqa: B009 - 直取导入别名（见 docstring）
     probe = "Alpha [1]. Beta [23]. Gamma [not-a-mark]."
-    assert [m.group(1) for m in cs._CITATION.finditer(probe)] == [
+    assert shared is _CITATION, "本模块必须**导入** `manuscript_quality._CITATION`，不得自带一份"
+    assert shared.pattern == CITATION_PATTERN.pattern == _CITATION.pattern
+    assert [m.group(1) for m in shared.finditer(probe)] == [
         m.group(1) for m in CITATION_PATTERN.finditer(probe)
     ]
-    assert [m.group(1) for m in cs._CITATION.finditer(probe)] == [
-        m.group(1) for m in _CITATION.finditer(probe)
-    ]
-    # 三者的 pattern 逐字相同（不只是"等价"）：改一处就必须同轮改三处。
-    assert cs._CITATION.pattern == CITATION_PATTERN.pattern == _CITATION.pattern
-    assert isinstance(cs._CITATION, re.Pattern)
+    assert isinstance(shared, re.Pattern)
+
+    # **`is` 不够**：`re.compile` 对同一 pattern 有内部缓存，一份用
+    # `re.compile(_SHARED.pattern)` 造出来的副本会拿到**同一个对象** ⇒ 上面那条 `is`
+    # 仍然绿（实测：把副本注入后 10 条判据全绿）。所以这里改判**源码面**：
+    # 本模块的 AST 里不得出现「对引用语法再做一次编译」。
+    assert _recompiles_the_grammar() == [], (
+        "本模块不得对引用语法再做一次 `re.compile`（re 的模块级缓存会让副本与原件是"
+        "同一个对象，运行时判不出来 ⇒ 只能判源码）"
+    )
+
+
+def _recompiles_the_grammar() -> list[str]:
+    """本模块源码里**自己编译**引用语法的行（空 = 只用导入的那一份）。
+
+    判 `ast.Call` 且 `func` 是 `re.compile` / `<alias>.compile`，**且**至少一个实参的
+    `repr` 里出现 `[(` 形态的引用语法。这样 `re.compile(_SHARED.pattern)` 这种
+    「抄一份同 pattern」的写法也会被抓到 —— 逐个字符串标记去匹配是抓不到的
+    （实测：`"_CITATION = re.compile" not in source` 被改名写法绕过）。
+    """
+    import ast
+
+    source = (
+        Path("packages/application/deliverable/citation_sufficiency.py")
+        .read_bytes()
+        .decode("utf-8")
+    )
+    found: list[str] = []
+    for node in ast.walk(ast.parse(source)):
+        if not isinstance(node, ast.Call):
+            continue
+        target = node.func
+        name = getattr(target, "attr", None) or getattr(target, "id", "")
+        if name != "compile":
+            continue
+        arguments = " ".join(ast.dump(arg) for arg in node.args)
+        if "pattern" in arguments or r"\d" in arguments:
+            found.append(ast.get_source_segment(source, node) or "<unknown>")
+    return found
 
 
 def test_the_fifth_item_stays_in_not_judged() -> None:

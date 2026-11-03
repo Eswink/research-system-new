@@ -32,10 +32,19 @@ READINGS_MARKERS: tuple[str, ...] = (
     "MIN_CITATIONS_PER_REFERENCE",
     "MIN_SUPPORT_PER_SECTION",
     "CALIBRATION_SOURCES",
-    # 复用的切分器与引用语法（不写第三份）。
-    "from packages.application.deliverable.manuscript_quality import _SENTENCE_SPLIT",
-    "_CITATION = re.compile",
+    # 复用的切分器与引用语法（**导入**，不是再写一份 —— 靶子 1 第 2 项的逐字要求）。
+    "from packages.application.deliverable.manuscript_quality import _CITATION, _SENTENCE_SPLIT",
 )
+#: 引用语法**不得**在本模块里重新定义（第三份正则）。
+#:
+#: 这一条是靶子 1 第 2 项的**逐字**要求 —— 「复用 `manuscript.CITATION_PATTERN` 或
+#: `manuscript_quality._CITATION`，**别写第三份正则**」。只判「导入在场」不够：
+#: 定义 + 导入可以同时存在（后一句覆盖前一句 ⇒「同形」是巧合，不是结构）。
+#:
+#: **不用字符串标记**：实测把定义的写法改成 `_CITATION = __import__('re').compile(...)`
+#: 就绕过了任何「字面量在场」的检查。所以改判 **AST**：本模块里不得出现
+#: 「对引用语法再做一次编译」（见 `_recompiled_grammar_lines`）。
+GRAMMAR_COMPILE_ARGS: tuple[str, ...] = ("pattern", r"\d")
 #: 三个常量**必须是 `None`**（仓内零真实语料 ⇒ 不许拍阈值）。
 THRESHOLD_ASSIGNMENTS: tuple[str, ...] = (
     "MIN_MARKS_PER_SENTENCE: int | None = None",
@@ -215,6 +224,59 @@ def _file_verdicts(toolbox: Any, root: Path, cases: dict[str, tuple[str, ...]]) 
     return verdicts
 
 
+def _recompiled_grammar_lines(source: str) -> list[str]:
+    """本模块源码里**自己编译引用语法**的片段（空 = 只用导入的那一份）。
+
+    判 `ast.Call` 且函数名是 `compile`，且至少一个实参的 dump 里带引用语法的特征
+    （`pattern` 属性或 `\d`）。字符串标记 (`"_CITATION = re.compile" not in src`) 会被
+    改名写法绕过 —— 实测 `_CITATION = __import__('re').compile(...)` 全绿通过，
+    所以这里走 AST。
+    """
+    import ast
+
+    found: list[str] = []
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:  # 语法错由别的判据负责，这里不重复报
+        return found
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        name = getattr(node.func, "attr", None) or getattr(node.func, "id", "")
+        if name != "compile":
+            continue
+        arguments = " ".join(ast.dump(arg) for arg in node.args)
+        if any(token in arguments for token in GRAMMAR_COMPILE_ARGS):
+            found.append(ast.get_source_segment(source, node) or "<unknown>")
+    return found
+
+
+def _citation_grammar_verdicts(toolbox: Any, root: Path) -> list[Any]:
+    """引用语法**只有一份**：本模块导入它，且不再自己定义（靶子 1 第 2 项逐字要求）。
+
+    两向：① 导入语句在场（复用是真的）；② 本模块里**没有**任何 `re.compile` 形式的
+    引用语法定义（没有第三份）。缺一条都判红 —— 「导入了但又被同名定义覆盖」正是
+    本轮被收口验证器抓到过的形态，那时同形是巧合而不是结构。
+    """
+    source = _text(root, READINGS_MODULE)
+    redefinitions = _recompiled_grammar_lines(source)
+    return [
+        _verdict(
+            toolbox,
+            "readings-import-the-shared-citation-grammar",
+            "from packages.application.deliverable.manuscript_quality import" in source
+            and "_CITATION" in source,
+            "引用语法必须从 `manuscript_quality` 导入（别写第三份正则）",
+        ),
+        _verdict(
+            toolbox,
+            "readings-do-not-redefine-the-citation-grammar",
+            not redefinitions,
+            f"本模块不得重新定义引用语法（实测命中：{redefinitions}）",
+        ),
+    ]
+
+
 def _threshold_verdicts(toolbox: Any, root: Path) -> list[Any]:
     """三个阈值**必须**留 `None`（不许拍阈值）+ `NOT_JUDGED` 五项逐字不动。"""
     source = _text(root, READINGS_MODULE)
@@ -366,6 +428,7 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
             },
         )
     )
+    verdicts.extend(_citation_grammar_verdicts(toolbox, root))
     verdicts.extend(_threshold_verdicts(toolbox, root))
     verdicts.extend(_catalog_verdicts(toolbox, root))
     verdicts.extend(_schema_verdicts(toolbox, root))
