@@ -10,7 +10,8 @@ owners:
   - root-agent
 subagent_parallel_limit: 3
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261103-105-citation-readings-and-review-driven-revision.md
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20261103-239-a-field-default-is-not-a-declaration.md
 ---
 
 # PLAN-20261103-105
@@ -29,16 +30,16 @@ GOAL-20261103-105 的七个 EC。按**提交面**分三个 cycle：
 
 ## 交付面（checkbox）
 
-- [ ] WP-A `ProjectSettings.retmax: int | None = None` + `_retmax_of` 缺省 None（EC-03①）
-- [ ] WP-B 三条缺陷判据 + 改写 `test_project_settings_defaults_retmax_to_three`（EC-03①）
-- [ ] WP-C `citation_sufficiency.py` 三个读数 + 四条判据（EC-01）
-- [ ] WP-D 脚注透出三个读数 + 逐字一致判据（EC-02）
-- [ ] WP-E `ProtocolPhase.run_chain_arguments` + `CompiledPhase` + schema + spec 搬运
+- [x] WP-A `ProjectSettings.retmax: int | None = None` + `_retmax_of` 缺省 None（EC-03①）
+- [x] WP-B 三条缺陷判据 + 改写 `test_project_settings_defaults_retmax_to_three`（EC-03①）
+- [x] WP-C `citation_sufficiency.py` 三个读数 + 四条判据（EC-01）
+- [x] WP-D 脚注透出三个读数 + 逐字一致判据（EC-02）
+- [x] WP-E `ProtocolPhase.run_chain_arguments` + `CompiledPhase` + schema + spec 搬运
       + 优先级决策 + 三条判据（EC-03②③）
-- [ ] WP-F `validate_action_references(points=...)` 实词重叠 + 四条判据（EC-04）
-- [ ] WP-G `MANUSCRIPT_QUALITY.md` §6 残余补句，§7 不动（EC-05）
-- [ ] WP-H `verify_goal105_closeout.py` + `goal105_closeout_assertions.py` + 登记（EC-06）
-- [ ] WP-I 宪章记账（EC-07）
+- [x] WP-F `validate_action_references(points=...)` 实词重叠 + 四条判据（EC-04）
+- [x] WP-G `MANUSCRIPT_QUALITY.md` §6 残余补句，§7 不动（EC-05）
+- [x] WP-H `verify_goal105_closeout.py` + `goal105_closeout_assertions.py` + 登记（EC-06）
+- [x] WP-I 宪章记账（EC-07）
 
 ## 复检
 

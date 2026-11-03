@@ -129,7 +129,8 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261103-105-citation-readings-and-review-driven-revision.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261103-105-citation-readings-and-review-driven-revision.md
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20261103-239-a-field-default-is-not-a-declaration.md
 ---
 
 # GOAL-20261103-105 —— 引用充分性结构读数 + retmax 缺省抹平修复 + 判词驱动改稿
