@@ -1824,7 +1824,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "8eaeb43a48fc13acd7253be1cd4fc943ee4853a3"
+        "sha256": "878fe8e3005ba64ec66581d62915ca64766f3cc4"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -20051,7 +20051,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "04e1f75e88908649682d2c6bb0279af609f5e3be"
+    "head": "e7d189a06dd6a8125297301a09fd7513bda2f4fd"
   },
   "fingerprint_before": {
     "files": [
@@ -21877,7 +21877,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "8eaeb43a48fc13acd7253be1cd4fc943ee4853a3"
+        "sha256": "878fe8e3005ba64ec66581d62915ca64766f3cc4"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -40104,11 +40104,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "04e1f75e88908649682d2c6bb0279af609f5e3be"
+    "head": "e7d189a06dd6a8125297301a09fd7513bda2f4fd"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "04e1f75e88908649682d2c6bb0279af609f5e3be",
+  "ran_at_head": "e7d189a06dd6a8125297301a09fd7513bda2f4fd",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
