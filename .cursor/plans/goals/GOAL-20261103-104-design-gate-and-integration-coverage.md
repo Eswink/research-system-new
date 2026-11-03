@@ -118,7 +118,7 @@ exit_criteria:
       `timeout-minutes: 20` 的回退形态。收口验证器按 **job 定位**判（`workflow-<job>-fix-intact`）
       —— 不扫全文件，因为 `eval-gate` / `container-quality` 等 job 合法地写着这两个回退形态。
       **执行纪律 5.9 的凭据面同轮取证**：`tools/credential_audit.py` 四面 **`offenders=0`**
-      （`tracked` 5055 文件 / 命中 105 / 放行 105 / offenders 0；`records` 1092 / 5 / 5 / 0；
+      （`tracked` 5056 文件 / 命中 105 / 放行 105 / offenders 0；`records` 1092 / 5 / 5 / 0；
       `config_db` 1 / 0 / 0 / 0；`logs` 938 / 0 / 0 / 0；终态行
       `PASS: 四面扫描无明文凭据命中（放行项已逐条给理由）`）。
     status: PASS
@@ -234,7 +234,7 @@ memory_entries:
 | `e9374172` | [M0 41534081970](https://github.com/Eswink/research-system-new/actions/runs/41534081970) / [Push 41534081435](https://github.com/Eswink/research-system-new/actions/runs/41534081435) | **M0 `failure`**（`quality-ubuntu` / `quality-windows` / `console-frontend` 三条红）；Push 全 success | **交付 tip**（七条 EC + 收口资产 + 宪章记账）。三条红逐条分类：① `console-frontend` = **真缺陷**：元素级像素判据用 `maxDiffPixels: 0`，CI ubuntu 报 60 px 字体抗锯齿差 ⇒ 改 196 px（实测夹在噪声 ≤93 与颜色改动 563 之间）；② `quality-*` = **真缺陷**：`unconsumedRegistry.ts` 的旧名仍在提交里（重命名时 `git mv` 失败而回退的 `mv` 留下了已暂存的旧路径），命名门禁点名它；③ 两条 `quality-*` 还叠加 `test_m0_witness_matches_the_tree` 红 —— 见证在跑门后被记录改动，属**流程顺序**而非缺陷。三件一并修在下一提交 |
 | `1c10386b` | [M0 41546893623](https://github.com/Eswink/research-system-new/actions/runs/41546893623) / [Push 41546892869](https://github.com/Eswink/research-system-new/actions/runs/41546892869) | **M0 `success`（8/8 job success）**；**Push 全 success** | **收口 tip**（三件 CI 红逐类修好后）。`console-frontend` 的 `Console e2e` 与 `Console live API e2e` **两步都 `success`** —— 这正是 `W-7` 的目的：此前 34 路由像素门禁在 CI 上**从未执行**。本地见证终态行 `PASS: profile=m0; 23 deterministic checks`（`1c10386b`，跑门期间树未变）。 |
 | `04e1f75e` | [M0 41553868343](https://github.com/Eswink/research-system-new/actions/runs/41553868343) / [Push 41553868965](https://github.com/Eswink/research-system-new/actions/runs/41553868965) | **M0 `success`（8/8 job success）**；**Push 全 success** | **ACHIEVED 封印提交**（只改 GOAL 状态 / 台账行 / 见证）。本地见证终态行 `PASS: profile=m0; 23 deterministic checks`（跑门期间树未变）；两树复检 82 判词 `sha256` 相同（`1f1d14f7022f70fc003cef0b7e451a669faa28c82d158f3bd3281561c2a475ca`）。 |
-| `e7d189a0` | [M0 41561959463](https://github.com/Eswink/research-system-new/actions/runs/41561959463) / [Push 41561958805](https://github.com/Eswink/research-system-new/actions/runs/41561958805) | **M0 `success`（8/8 job success）**；**Push 全 success** | **凭据面补齐后的收口 tip**：执行纪律 5.9 的 `credential_audit.py` 四面实测 `offenders=0`（5055 / 1092 / 1 / 938 文件；命中 110 条全落白名单），并升级为判据 `credential-faces-clean`（**它自己跑审计**，不依赖记录里的散文）。本地见证 `PASS: profile=m0; 23 deterministic checks`；两树复检 **82** 判词 `sha256` 相同（`1f1d14f7022f70fc003cef0b7e451a669faa28c82d158f3bd3281561c2a475ca`）。 |
+| `e7d189a0` | [M0 41561959463](https://github.com/Eswink/research-system-new/actions/runs/41561959463) / [Push 41561958805](https://github.com/Eswink/research-system-new/actions/runs/41561958805) | **M0 `success`（8/8 job success）**；**Push 全 success** | **凭据面补齐后的收口 tip**：执行纪律 5.9 的 `credential_audit.py` 四面实测 `offenders=0`（当轮 5055 / 1092 / 1 / 938 文件；命中 110 条全落白名单。此后新增判据模块 ⇒ 终局 `tracked` = **5056**），并升级为判据 `credential-faces-clean`（**它自己跑审计**，不依赖记录里的散文）。本地见证 `PASS: profile=m0; 23 deterministic checks`；两树复检 **82** 判词 `sha256` 相同（`1f1d14f7022f70fc003cef0b7e451a669faa28c82d158f3bd3281561c2a475ca`）。 |
 
 ## 迭代日志
 
@@ -252,7 +252,7 @@ memory_entries:
 - **安全/凭据**：零变化（无新凭据、无新出网面、无新工具面）。新增的读面方法都落在既有
   路由的既有鉴权面；`ProgramsSection` 的「推进一轮」调用的是**已有**的写面。
   **实测依据**（执行纪律 5.9，不是断言）：`tools/credential_audit.py` 四面 `offenders=0` ——
-  `tracked` 5055 文件（命中 105 / **放行 105 / offenders 0**）、`records` 1092（5 / 5 / **0**）、
+  `tracked` 5056 文件（命中 105 / **放行 105 / offenders 0**）、`records` 1092（5 / 5 / **0**）、
   `config_db` 1（0 / 0 / **0**）、`logs` 938（0 / 0 / **0**）；终态行
   `PASS: 四面扫描无明文凭据命中（放行项已逐条给理由）`。放行数**单独统计**——没有用
   「没扫到」冒充通过。

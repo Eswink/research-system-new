@@ -65,7 +65,7 @@ GOAL-20261103-104 的七条 EC 逐条取证。**两路以上**（`verify_paths` 
 | EC-05 | `_VERIFIERS` / `IN_SCOPE` 两处登记 | 各 1 条命中 | PASS |
 | EC-06 | `MAINLINE.md` 四处记账 | 程序表序 72 / 阶梯行收录 / 进展行 / 修订行 5 格 | PASS |
 | EC-07 | `W-7` / `W-5` 核对 | `runs-on: ubuntu-24.04` ×1、`timeout-minutes: 30` ×1；无回退形态 | PASS |
-| 执行纪律 5.9 | 凭据四面审计（`tools/credential_audit.py`） | **`offenders=0`（四面全部 0）**：`tracked` 5055 文件 / 命中 105 / **放行 105 / offenders 0**；`records` 1092 文件 / 命中 5 / 放行 5 / **offenders 0**；`config_db` 1 文件 / 命中 0 / **offenders 0**；`logs` 938 文件 / 命中 0 / **offenders 0**。终态行 `PASS: 四面扫描无明文凭据命中（放行项已逐条给理由）` | PASS |
+| 执行纪律 5.9 | 凭据四面审计（`tools/credential_audit.py`） | **`offenders=0`（四面全部 0）**：`tracked` 5055 文件（`e7d189a0` 那一轮）/ 命中 105 / **放行 105 / offenders 0**；`records` 1092 文件 / 命中 5 / 放行 5 / **offenders 0**；`config_db` 1 文件 / 命中 0 / **offenders 0**；`logs` 938 文件 / 命中 0 / **offenders 0**。终态行 `PASS: 四面扫描无明文凭据命中（放行项已逐条给理由）` | PASS |
 
 ## 本轮真跑暴露并修掉的缺陷
 
@@ -114,7 +114,7 @@ uv run --frozen --no-sync python -B tools/credential_audit.py
 实测输出（四个面**逐个**报告，缺面时记 `not_present` 而非 PASS）：
 
 ```text
-tracked    status=scanned        files= 5055 binary=395 hits=105 allowed=105 offenders=  0
+tracked    status=scanned        files= 5056 binary=395 hits=105 allowed=105 offenders=  0
 records    status=scanned        files= 1092 binary=  0 hits=  5 allowed=  5 offenders=  0
 config_db  status=scanned        files=    1 binary=  0 hits=  0 allowed=  0 offenders=  0
 logs       status=scanned        files=  938 binary=  0 hits=  0 allowed=  0 offenders=  0
