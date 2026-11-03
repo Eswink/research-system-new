@@ -220,15 +220,30 @@ def _rows_above_are_not_older(progress: str) -> bool:
 
 
 def _revision_row_verdicts(root: Path) -> list[Any]:
-    """修订记录：本 GOAL 那一行在场（5 格、表内连续由宪章判据另判）。"""
+    """修订记录：本 GOAL 那一行在场（5 格、表内连续由宪章判据另判）。
+
+    **活跃面或归档均可**（序 73 归档轮实测）：宪章只保留最近三条，本 GOAL 的修订行
+    在后续归档轮会被移进 `archive/MAINLINE-*-revisions-*.md`。断言问的是「当初有没有
+    写这一行、写成了几格」，不是「它现在还在活跃面吗」——后者是归档惯例的正常结果，
+    判成负是**假负**（资产绑错了面，按 MEM 规则改断言，不是放宽）。
+    """
     charter = TOOLBOX.text(root, ".cursor/plans/goals/MAINLINE.md")
-    rows = [line for line in charter.splitlines() if line.startswith("| 2026-11-01 | 70（新增）")]
+    haystacks = [charter]
+    archive = root / ".cursor" / "plans" / "goals" / "archive"
+    for path in sorted(archive.glob("*.md")):
+        haystacks.append(path.read_text(encoding="utf-8"))
+    rows = [
+        line
+        for haystack in haystacks
+        for line in haystack.splitlines()
+        if line.startswith("| 2026-11-01 | 70（新增）")
+    ]
     ok = bool(rows) and rows[0].strip().startswith("|") and len(rows[0].strip("|").split("|")) == 5
     return [
         TOOLBOX.verdict(
             "revision-row-records-this-goal",
             ok,
-            "宪章「修订记录」必须有本 GOAL 的一行（5 格）",
+            "宪章「修订记录」必须有本 GOAL 的一行（5 格；活跃面或归档均可）",
         ),
     ]
 
