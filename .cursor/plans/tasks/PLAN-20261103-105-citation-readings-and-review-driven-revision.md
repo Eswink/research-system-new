@@ -2,14 +2,14 @@
 id: PLAN-20261103-105
 slug: citation-readings-and-review-driven-revision
 title: GOAL-105 子计划 —— 引用充分性读数 + retmax 缺省抹平 + 判词驱动改稿
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-11-03
 updated_at: 2026-11-03
 parent_goal: GOAL-20261103-105
 owners:
   - root-agent
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261103-105-citation-readings-and-review-driven-revision.md
 memory_entries: []
 ---
 

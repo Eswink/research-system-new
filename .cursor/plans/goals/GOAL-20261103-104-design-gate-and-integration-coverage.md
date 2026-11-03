@@ -240,12 +240,13 @@ memory_entries:
 | `2b13b649` | [M0 41580292093](https://github.com/Eswink/research-system-new/actions/runs/41580292093) / [Push 41580291452](https://github.com/Eswink/research-system-new/actions/runs/41580291452) | **M0 `success`（8/8 job success）**；**Push 全 success** | **收口 tip**（只改 GOAL 记录 + 见证）：为 `1f9cb9a0` 与 `f4be0b4e` 补台账两行、同步迭代日志 `commits` 格到六条、重封见证。当时它是 HEAD ⇒ 结构例外；**序 73 的归档推送把它推离 HEAD 后**，反方向判据按 5.2 点名它，本行即按该点名补记。**这一轮 `quality-windows-latest` 是 `success` 而非 `cancelled`** —— `W-5` 的 timeout 30 修复（`bd1482ce`）在这一轮生效 |
 | `202aa9c6` | 与 `a5e6e61c` **同一次 push**（无独立 run） | 该推送的读数见下一行；**本行不冒领** | **序 73 归档**（宪章两表各移出最旧一行）：新建 `archive/MAINLINE-2026-11-01-progress-102-only.md` 与 `archive/MAINLINE-2026-11-01-revisions-70-only.md`（原文搬运、仅修相对链接基准），指针插在**各表最后一个数据行之后**（不是表后），写回 `sha256=e157a5b8…`。两表各剩 2 行、短行 0、CRLF 430/430/430。**主题点名 `goal104` 是因为它改的是那个 GOAL 的记账面**；这一行由反方向判据在其被推离 HEAD 后点名补记 |
 | `a5e6e61c` | [M0 41601984903](https://github.com/Eswink/research-system-new/actions/runs/41601984903) / [Push 41601984192](https://github.com/Eswink/research-system-new/actions/runs/41601984192) | **M0 `success`（8/8 job success，含 `console-frontend`）**；**Push 全 success（3/3）** | **归档轮的收口 tip**（两笔记录面欠账一次付清）：① 为 `2b13b649` 补台账行并同步迭代日志 `commits` 格到七条；② `tools/verify_goal102_closeout.py` 的修订行断言改读「活跃面 + 归档」—— 归档把 GOAL-102 那一行搬走后它判负，是**假负**（断言绑错了面），不是回归。本地见证 `PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、`tree changed during the run: False` |
+| `80a3e614` | 与 `b712a989` **同一次 push**（无独立 run） | 该推送的读数见序 73 台账；**本行不冒领** | **归档轮的两笔台账欠账一次付清**（只改 `.cursor/`）：为 `2b13b649` 与 `a5e6e61c` 补台账行并同步迭代日志 `commits` 格；本条由反方向判据在它被序 73 的推送推离 HEAD 后点名补记（`test_goal_commit_chain_reaches_the_ledger` 实测点名「链 10 个，台账 9 个」）。**没有冒领 CI**：它与序 73 的交付提交同一次 push，`head_sha` 指向后者 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261103-104 | `e9374172` → `1c10386b` → `04e1f75e` → `e7d189a0` → `1f9cb9a0` → `f4be0b4e` → `2b13b649` → `202aa9c6` → `a5e6e61c` | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 97/97 + e2e 106/106 + linux 容器 3/3 | **M0 `success` 8/8**（`1c10386b`；`e9374172` 三条红已逐类修好）；Push success | 三条红：像素容差 0 在 CI 假红（改 196 px）、旧文件名残留、见证顺序 | 七条 EC 全 PASS；残余 `W-1`…`W-4` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」（四组合全积、元素级覆盖扩面、阈值标定、路由「真的被调用」） |
+| 1 | PLAN-20261103-104 | `e9374172` → `1c10386b` → `04e1f75e` → `e7d189a0` → `1f9cb9a0` → `f4be0b4e` → `2b13b649` → `202aa9c6` → `a5e6e61c` → `80a3e614` | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 97/97 + e2e 106/106 + linux 容器 3/3 | **M0 `success` 8/8**（`1c10386b`；`e9374172` 三条红已逐类修好）；Push success | 三条红：像素容差 0 在 CI 假红（改 196 px）、旧文件名残留、见证顺序 | 七条 EC 全 PASS；残余 `W-1`…`W-4` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」（四组合全积、元素级覆盖扩面、阈值标定、路由「真的被调用」） |
 
 ## 影响报告
 
