@@ -212,12 +212,14 @@ P4 不冒充语义）把 `NOT_JUDGED` 五项逐项判过：1/2/3 只能人评（
 | `cc010ce3` | 待推送 | —（推送后回填） | **重封见证**（只改 `.cursor/`）：台账写入改动了受判面内容 ⇒ 见证失配是**流程顺序**而非缺陷，按 7.1 在记录定稿后重跑 m0 并只提交见证。本地终态行 `PASS: profile=m0; 23 deterministic checks`、`PASS [` 24 行 |
 | `a9c845f2` | 待推送 | —（推送后回填） | **台账补齐**：为 `38b92a7b` / `cc010ce3` 各一行；CI 读数一律写「待推送」——那两个提交没有 run，冒领就是编造证据 |
 | `33017ab8` | 待推送 | —（推送后回填） | **两向对账的同一笔钱**：台账行的 `提交` 格与迭代日志的 `commits` 格必须互相覆盖（一个判据查台账→日志，另一个查日志→台账）|
+| `1803b066` | 待推送 | —（推送后回填） | **台账链最后一对**：`a9c845f2` / `33017ab8` 入账并把两者写进迭代日志的 `commits` 格（两个判据从相反方向读同一条链）|
+| `15f9fb5b` | 待推送 | —（推送后回填） | **见证封印**（只改 `.cursor/`）：全量 m0 `PASS: profile=m0; 23 deterministic checks`、`PASS [` 24 行、树未变。本条由反方向判据在它被下一提交推离 HEAD 后点名补记 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` → `38b92a7b` → `cc010ce3` → `a9c845f2` → `33017ab8` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL | 待推送 | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」|
+| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` → `38b92a7b` → `cc010ce3` → `a9c845f2` → `33017ab8` → `1803b066` → `15f9fb5b` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL | 待推送 | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」|
 
 ## 影响报告
 
