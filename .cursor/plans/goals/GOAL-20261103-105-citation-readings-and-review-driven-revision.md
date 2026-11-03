@@ -215,7 +215,7 @@ P4 不冒充语义）把 `NOT_JUDGED` 五项逐项判过：1/2/3 只能人评（
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL | 待推送 | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」|
+| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` → `38b92a7b` → `cc010ce3` → `a9c845f2` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL | 待推送 | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」|
 
 ## 影响报告
 
