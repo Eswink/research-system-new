@@ -207,7 +207,9 @@ P4 不冒充语义）把 `NOT_JUDGED` 五项逐项判过：1/2/3 只能人评（
 | --- | --- | --- | --- |
 | `b712a989` | 待推送 | —（推送后回填） | **交付 tip**（三件靶子 + 收口资产 + 宪章记账）。本地全量 m0 见证：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 failed、`tree changed during the run: False`（`ran_at_head=80a3e614`）。定向套件 139 passed；`verify_goal105_closeout.py --verdict-only` 0 FAIL；`credential_audit.py` 四面 `offenders=0` |
 | `9c3a0186` | 待推送 | —（推送后回填） | **记录提交**：GOAL-105 收口为 ACHIEVED（七条 EC PASS + 状态历史），并按 7.2 一次付清 GOAL-104 的 tip 债（为 `80a3e614` 补台账行）。**同一轮补全所有已知欠账**，不逐个补 |
-| `73a45692` | 待推送 | —（推送后回填） | **记录提交**：勾选 PLAN 的九项交付（DONE 不得留未勾选）+ 落本轮可复用事实 `MEM-20261103-239`（「字段缺省值不是声明」）并进 INDEX。治理门 `validate.py` 此前点名这两条 |
+| `73a45692` → `38b92a7b` → `cc010ce3` | 待推送 | —（推送后回填） | **记录提交**：勾选 PLAN 的九项交付（DONE 不得留未勾选）+ 落本轮可复用事实 `MEM-20261103-239`（「字段缺省值不是声明」）并进 INDEX。治理门 `validate.py` 此前点名这两条 |
+| `38b92a7b` | 待推送 | —（推送后回填） | **台账补齐**：`9c3a0186` 在两条链上（它的正文点名 GOAL-104 的 tip 债）⇒ 两个台账各一行，同一轮编辑；同步迭代日志 `commits` 格 |
+| `cc010ce3` | 待推送 | —（推送后回填） | **重封见证**（只改 `.cursor/`）：台账写入改动了受判面内容 ⇒ 见证失配是**流程顺序**而非缺陷，按 7.1 在记录定稿后重跑 m0 并只提交见证。本地终态行 `PASS: profile=m0; 23 deterministic checks`、`PASS [` 24 行 |
 
 ## 迭代日志
 
