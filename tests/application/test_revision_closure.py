@@ -68,8 +68,14 @@ def _revised_sections() -> dict[str, str]:
 
 
 def _reply(*, action_cite: str = MANUSCRIPT_V2_NAME, with_revised: bool = True) -> str:
-    """应答会话的受控回复：`author_responses` 块（+ 可选的 `revised_manuscript` 块）。"""
-    action = f"revised the section named in P1; see {action_cite}"
+    """应答会话的受控回复：`author_responses` 块（+ 可选的 `revised_manuscript` 块）。
+
+    `action_taken` **点名评审点说的是什么**（GOAL-105 EC-04 起这是判据）：它必须与
+    `ReviewPoint.text` 共享至少一个实词。此前这里写的是「revised the section named in P1」
+    —— 那句话与评审点（`the related work does not name the planning choice…`）零重叠，
+    是**真的无关**，只是当时没有判据。现在它点名 related work 与 planning choice。
+    """
+    action = f"named the planning choice in the related work; see {action_cite}"
     first = json.dumps(
         {
             "author_responses": [

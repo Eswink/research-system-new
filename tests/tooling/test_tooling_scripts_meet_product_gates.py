@@ -190,14 +190,12 @@ IN_SCOPE: tuple[str, ...] = (
     # GOAL-20261022-094 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
     "tools/goal094_closeout_assertions.py",
     "tools/verify_goal094_closeout.py",
-    # GOAL-20261024-096 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
-    "tools/goal096_closeout_assertions.py",
+    "tools/goal096_closeout_assertions.py",  # GOAL-20261024-096 EC-05（纯收紧）
     "tools/verify_goal096_closeout.py",
-    # GOAL-20261026-097 EC-05：收口验证器 + 断言集（纯收紧 ⇒ 只增不删）。
-    "tools/goal097_closeout_assertions.py",
+    "tools/goal097_closeout_assertions.py",  # GOAL-20261026-097 EC-05（纯收紧）
     "tools/verify_goal097_closeout.py",
-    # GOAL-098 靶子 3：**回填** 076 / 090 / 095 三个从未存在的验证器（GOAL-096 的 `W-3`
-    # 就是这件事；`_CUTOFF_SEQ = 64` 让它们不判红）。纳入射程 ⇒ 此后过四道门。
+    # GOAL-098 靶子 3：回填 076/090/095 三个从未存在的验证器（GOAL-096 的 `W-3`）；
+    # `_CUTOFF_SEQ = 64` 让它们不判红。纳入射程 ⇒ 此后过四道门。
     "tools/goal076_closeout_assertions.py",
     "tools/verify_goal076_closeout.py",
     "tools/goal090_closeout_assertions.py",
@@ -217,8 +215,10 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/goal103_closeout_assertions.py",  # GOAL-103 EC-07（纯收紧）
     "tools/verify_goal103_closeout.py",
     "tools/goal104_closeout_assertions.py",  # GOAL-104 EC-05（纯收紧）
-    "tools/goal104_credential_faces.py",  # 5.9 凭据面（单列：断言集贴 450 行）
+    "tools/goal104_credential_faces.py",  # 5.9 凭据面
     "tools/verify_goal104_closeout.py",
+    "tools/goal105_closeout_assertions.py",  # GOAL-105 EC-06（纯收紧）
+    "tools/verify_goal105_closeout.py",
     "tools/charter_progress.py",
     "tools/check_ledger_run_attribution.py",
 )

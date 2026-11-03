@@ -1376,7 +1376,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "d9e6cef71a31627d5bc5610a148c59d08f2b89f4"
+        "sha256": "96c78009aabe2d500abd01b907ec687652869ffb"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1828,7 +1828,7 @@
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "ef3abe3340e0f47e4ea75bb278677a14ca9787f1"
+        "sha256": "c1433a0a259a1fa9bf81a966ea2d2030c52468b9"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -6076,7 +6076,7 @@
       },
       {
         "path": "adapters/contracts/protocol_loaders.py",
-        "sha256": "0eb3373caa49493c671ad657cc837902309773f8"
+        "sha256": "ac9af182fd4ff309c7b73f51445f87d33628ada8"
       },
       {
         "path": "adapters/contracts/protocol_text_loader.py",
@@ -12460,7 +12460,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "bc222568fd6a70452f2d602c9456c267dfb1462a"
+        "sha256": "e27ed64e4e00d34b57287a1fab6e0a1e85141bae"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -14100,7 +14100,7 @@
       },
       {
         "path": "packages/application/deliverable/manuscript.py",
-        "sha256": "510e9e8e9c789e8acab32f8bf98df11de019d96b"
+        "sha256": "74b64761a63f3355c391b522833043947cd2727f"
       },
       {
         "path": "packages/application/deliverable/manuscript_quality.py",
@@ -14560,7 +14560,7 @@
       },
       {
         "path": "packages/application/ports/resource_catalog.py",
-        "sha256": "cca21dd05a10fea1bb6706b03f5b01269e2cf3ee"
+        "sha256": "3237df6d1ec57e0b8e0aa0ecfc5b65f09ee52150"
       },
       {
         "path": "packages/application/ports/retrieval_index.py",
@@ -14684,7 +14684,7 @@
       },
       {
         "path": "packages/application/protocol_compile/compiler.py",
-        "sha256": "ec4aac9d28fc091a432b9f0fa5cf9d214655509f"
+        "sha256": "2d0720dc29595e27f07d7a50cfe9f9e8afe84f64"
       },
       {
         "path": "packages/application/protocol_compile/cross_phase_inputs.py",
@@ -14812,11 +14812,11 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_call_arguments.py",
-        "sha256": "7210ea93a8dc4d5519a18ed4a756e8f7c6df20b6"
+        "sha256": "ab78321c3e05d66f9eea9f7fbe7b09edada16510"
       },
       {
         "path": "packages/application/run_orchestration/phase_capabilities.py",
-        "sha256": "27c398a408bcd60732d31b336285cfc232797e66"
+        "sha256": "8f1e99804aa3a106a1ec08e2a054c0e3b511c5d1"
       },
       {
         "path": "packages/application/run_orchestration/phase_capability_triggers.py",
@@ -14920,7 +14920,7 @@
       },
       {
         "path": "packages/application/run_orchestration/revision_assembly.py",
-        "sha256": "23b95119cdbd2e88eb6bebde6d02b5a236d6b86c"
+        "sha256": "f4ac47791644a9c7f1b522e19fd550da429ec245"
       },
       {
         "path": "packages/application/run_orchestration/round_loop.py",
@@ -14964,7 +14964,7 @@
       },
       {
         "path": "packages/application/run_orchestration/session_resolution.py",
-        "sha256": "9b3547cb0d525d8231ebfd3c51a1b7e9c57b87da"
+        "sha256": "fcba657691b4fc736cd96d54981139bad8daa5d5"
       },
       {
         "path": "packages/application/run_orchestration/snapshot_migration.py",
@@ -14984,7 +14984,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_executor.py",
-        "sha256": "6e4fe4bcb7fa67534806081c6cde60404d18cbcd"
+        "sha256": "2ea064cd13f3e49c2962874309364121b13037eb"
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
@@ -15172,7 +15172,7 @@
       },
       {
         "path": "packages/domain/protocols.py",
-        "sha256": "252a8f05d8a33d0da245c96477ecd86e3adbbccc"
+        "sha256": "ee5225dc919f37574873437a3a5dea3642b4e71f"
       },
       {
         "path": "packages/domain/redaction.py",
@@ -15344,7 +15344,7 @@
       },
       {
         "path": "schemas/protocol.schema.json",
-        "sha256": "c272d4c65160a50dc9c58cb7982682016357edfe"
+        "sha256": "ef177f6a172b4786937088fff9ddcd20d0ed194f"
       },
       {
         "path": "schemas/real_research_deliverable_v1.schema.json",
@@ -17292,7 +17292,7 @@
       },
       {
         "path": "tests/application/test_retmax_project_setting.py",
-        "sha256": "cdf327a536eaafdc5b51fc1a29eb78c576c72e4b"
+        "sha256": "280fc4eba6b6c1302eac47c8e5caafaed0874dfa"
       },
       {
         "path": "tests/application/test_retrieval_context_read_face.py",
@@ -17324,7 +17324,7 @@
       },
       {
         "path": "tests/application/test_revision_closure.py",
-        "sha256": "68a48d89704f8c4402f4f66ac28f8356e3a26928"
+        "sha256": "6dbbe33863e97658e5c4e745a598d60097f02d04"
       },
       {
         "path": "tests/application/test_run_probe.py",
@@ -18068,7 +18068,7 @@
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
-        "sha256": "aef581cb7671d9585ff1210f124ae3831fe9158e"
+        "sha256": "8ec850f9bdaaf1e529c031dad73eb815bdd9835d"
       },
       {
         "path": "tests/e2e/multi_round_loop_support.py",
@@ -18880,7 +18880,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "198c6d707788b355b149eb94f85e708269128d1b"
+        "sha256": "95a52b683fa16a29cd5fca9c83924a77714f59c6"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -19016,7 +19016,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "cd125b7316b99b874e033b77ca50fdd06052c112"
+        "sha256": "ffb701036b42aa4f4af8a24de4491e8e72ec0302"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -19588,7 +19588,7 @@
       },
       {
         "path": "tools/goal103_closeout_assertions.py",
-        "sha256": "685fddf5031cd1d0f9bee634178162c5d3684e0b"
+        "sha256": "eb55a89075868903d2db052882cbea0b01834ae9"
       },
       {
         "path": "tools/goal104_closeout_assertions.py",
@@ -20059,7 +20059,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "a5e6e61c8931798c2225f6d09f9f2cbccef9e4c6"
+    "head": "80a3e61463713265fb7326ff652ec3768e5b24d7"
   },
   "fingerprint_before": {
     "files": [
@@ -21437,7 +21437,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "d9e6cef71a31627d5bc5610a148c59d08f2b89f4"
+        "sha256": "96c78009aabe2d500abd01b907ec687652869ffb"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -21889,7 +21889,7 @@
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "ef3abe3340e0f47e4ea75bb278677a14ca9787f1"
+        "sha256": "c1433a0a259a1fa9bf81a966ea2d2030c52468b9"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -26137,7 +26137,7 @@
       },
       {
         "path": "adapters/contracts/protocol_loaders.py",
-        "sha256": "0eb3373caa49493c671ad657cc837902309773f8"
+        "sha256": "ac9af182fd4ff309c7b73f51445f87d33628ada8"
       },
       {
         "path": "adapters/contracts/protocol_text_loader.py",
@@ -32521,7 +32521,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "bc222568fd6a70452f2d602c9456c267dfb1462a"
+        "sha256": "e27ed64e4e00d34b57287a1fab6e0a1e85141bae"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -34161,7 +34161,7 @@
       },
       {
         "path": "packages/application/deliverable/manuscript.py",
-        "sha256": "510e9e8e9c789e8acab32f8bf98df11de019d96b"
+        "sha256": "74b64761a63f3355c391b522833043947cd2727f"
       },
       {
         "path": "packages/application/deliverable/manuscript_quality.py",
@@ -34621,7 +34621,7 @@
       },
       {
         "path": "packages/application/ports/resource_catalog.py",
-        "sha256": "cca21dd05a10fea1bb6706b03f5b01269e2cf3ee"
+        "sha256": "3237df6d1ec57e0b8e0aa0ecfc5b65f09ee52150"
       },
       {
         "path": "packages/application/ports/retrieval_index.py",
@@ -34745,7 +34745,7 @@
       },
       {
         "path": "packages/application/protocol_compile/compiler.py",
-        "sha256": "ec4aac9d28fc091a432b9f0fa5cf9d214655509f"
+        "sha256": "2d0720dc29595e27f07d7a50cfe9f9e8afe84f64"
       },
       {
         "path": "packages/application/protocol_compile/cross_phase_inputs.py",
@@ -34873,11 +34873,11 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_call_arguments.py",
-        "sha256": "7210ea93a8dc4d5519a18ed4a756e8f7c6df20b6"
+        "sha256": "ab78321c3e05d66f9eea9f7fbe7b09edada16510"
       },
       {
         "path": "packages/application/run_orchestration/phase_capabilities.py",
-        "sha256": "27c398a408bcd60732d31b336285cfc232797e66"
+        "sha256": "8f1e99804aa3a106a1ec08e2a054c0e3b511c5d1"
       },
       {
         "path": "packages/application/run_orchestration/phase_capability_triggers.py",
@@ -34981,7 +34981,7 @@
       },
       {
         "path": "packages/application/run_orchestration/revision_assembly.py",
-        "sha256": "23b95119cdbd2e88eb6bebde6d02b5a236d6b86c"
+        "sha256": "f4ac47791644a9c7f1b522e19fd550da429ec245"
       },
       {
         "path": "packages/application/run_orchestration/round_loop.py",
@@ -35025,7 +35025,7 @@
       },
       {
         "path": "packages/application/run_orchestration/session_resolution.py",
-        "sha256": "9b3547cb0d525d8231ebfd3c51a1b7e9c57b87da"
+        "sha256": "fcba657691b4fc736cd96d54981139bad8daa5d5"
       },
       {
         "path": "packages/application/run_orchestration/snapshot_migration.py",
@@ -35045,7 +35045,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_executor.py",
-        "sha256": "6e4fe4bcb7fa67534806081c6cde60404d18cbcd"
+        "sha256": "2ea064cd13f3e49c2962874309364121b13037eb"
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
@@ -35233,7 +35233,7 @@
       },
       {
         "path": "packages/domain/protocols.py",
-        "sha256": "252a8f05d8a33d0da245c96477ecd86e3adbbccc"
+        "sha256": "ee5225dc919f37574873437a3a5dea3642b4e71f"
       },
       {
         "path": "packages/domain/redaction.py",
@@ -35405,7 +35405,7 @@
       },
       {
         "path": "schemas/protocol.schema.json",
-        "sha256": "c272d4c65160a50dc9c58cb7982682016357edfe"
+        "sha256": "ef177f6a172b4786937088fff9ddcd20d0ed194f"
       },
       {
         "path": "schemas/real_research_deliverable_v1.schema.json",
@@ -37353,7 +37353,7 @@
       },
       {
         "path": "tests/application/test_retmax_project_setting.py",
-        "sha256": "cdf327a536eaafdc5b51fc1a29eb78c576c72e4b"
+        "sha256": "280fc4eba6b6c1302eac47c8e5caafaed0874dfa"
       },
       {
         "path": "tests/application/test_retrieval_context_read_face.py",
@@ -37385,7 +37385,7 @@
       },
       {
         "path": "tests/application/test_revision_closure.py",
-        "sha256": "68a48d89704f8c4402f4f66ac28f8356e3a26928"
+        "sha256": "6dbbe33863e97658e5c4e745a598d60097f02d04"
       },
       {
         "path": "tests/application/test_run_probe.py",
@@ -38129,7 +38129,7 @@
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
-        "sha256": "aef581cb7671d9585ff1210f124ae3831fe9158e"
+        "sha256": "8ec850f9bdaaf1e529c031dad73eb815bdd9835d"
       },
       {
         "path": "tests/e2e/multi_round_loop_support.py",
@@ -38941,7 +38941,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "198c6d707788b355b149eb94f85e708269128d1b"
+        "sha256": "95a52b683fa16a29cd5fca9c83924a77714f59c6"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -39077,7 +39077,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "cd125b7316b99b874e033b77ca50fdd06052c112"
+        "sha256": "ffb701036b42aa4f4af8a24de4491e8e72ec0302"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -39649,7 +39649,7 @@
       },
       {
         "path": "tools/goal103_closeout_assertions.py",
-        "sha256": "685fddf5031cd1d0f9bee634178162c5d3684e0b"
+        "sha256": "eb55a89075868903d2db052882cbea0b01834ae9"
       },
       {
         "path": "tools/goal104_closeout_assertions.py",
@@ -40120,11 +40120,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "a5e6e61c8931798c2225f6d09f9f2cbccef9e4c6"
+    "head": "80a3e61463713265fb7326ff652ec3768e5b24d7"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "a5e6e61c8931798c2225f6d09f9f2cbccef9e4c6",
+  "ran_at_head": "80a3e61463713265fb7326ff652ec3768e5b24d7",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

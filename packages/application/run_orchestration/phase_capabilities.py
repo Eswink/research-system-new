@@ -57,6 +57,7 @@ from packages.application.preflight.policy_check import policy_scope_for
 from packages.application.run_orchestration.phase_call_arguments import (
     apply_retmax,
     arguments_for,
+    retmax_for_phase,
 )
 from packages.application.run_orchestration.phase_call_arguments import (
     lookup_path as _lookup,
@@ -225,12 +226,14 @@ def execute_run_chain_capabilities(
     没有装配（`deps is None`）或无 run-chain 声明 ⇒ 什么都不做（既有语义逐字节不变）。
     失败**如实上报**（`failure_message` 交给 `failure_step`：容忍策略与失败分类都在那一个
     分叉点上）。**本轮声明优先**（GOAL-034 EC-01）：`spec.round_calls` 非空时替代装配面那
-    一批 ⇒ 每轮可用不同声明（其余判定逐字不变）。**项目级 `retmax`** 在此施加。
+    一批 ⇒ 每轮可用不同声明（其余判定逐字不变）。**`retmax` 五级取值**（GOAL-105 EC-03）：
+    显式参数 > 协议相级 > 项目声明（仅当已声明） > `RESEARCHOS_RETMAX` > 默认，见
+    `phase_call_arguments.retmax_for_phase`。
     """
     if deps is None:
         return CapabilityStepOutcome()
     declared = spec.round_calls or deps.calls
-    declared = apply_retmax(declared, deps.retmax)
+    declared = apply_retmax(declared, retmax_for_phase(spec, deps))
     planned = tuple(call for call in declared if _planned_in_this_phase(call, spec))
     if not planned:
         return CapabilityStepOutcome()

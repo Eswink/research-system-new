@@ -85,6 +85,9 @@ def _compiled_phases(
             capability_execution=phases[phase_id].capability_execution,
             # GOAL-028 EC-01：会话工具绑定同样原样透传（解释在会话解析处）。
             session_tool_bindings=tuple(phases[phase_id].session_tool_bindings),
+            # GOAL-20261103-105 EC-03：相级运行链参数原样透传（同上：编译不解释它）。
+            # `None` = 该相未声明 ⇒ 施加点回落到项目/env/默认。
+            run_chain_arguments=phases[phase_id].run_chain_arguments,
         )
         for phase_id in ordered
     ]

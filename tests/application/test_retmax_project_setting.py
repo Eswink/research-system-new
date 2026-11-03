@@ -125,8 +125,14 @@ def test_a_boolean_project_declaration_is_named() -> None:
 # ----------------------------------------------------------------- ProjectSettings 的字段面
 
 
-def test_project_settings_defaults_retmax_to_three() -> None:
-    """字段缺省 3，且**既有构造点不用改**（`ProjectSettings(...)` 的十处调用现场零改动）。"""
+def test_project_settings_default_retmax_is_undeclared() -> None:
+    """**`None` = 未声明**（GOAL-20261103-105 EC-03 改写了这一条）。
+
+    这条判据此前断言「缺省 3」—— 它钉住的正是本轮修掉的缺陷。缺省 `3` 让「未声明」与
+    「声明 3」不可区分，于是施加点把字段缺省当成一次声明 ⇒ 项目未声明时运行期恒被压成 3。
+    现在缺省必须是 `None`，且**既有构造点不用改**（`ProjectSettings(...)` 的十几处调用现场
+    零改动 —— 它们不传这个字段，语义从「声明 3」变成「未声明」）。
+    """
     settings = ProjectSettings(
         project_id="p1",
         team_template_id="t",
@@ -134,7 +140,32 @@ def test_project_settings_defaults_retmax_to_three() -> None:
         budget_policy_id="b",
         workspace_backend="w",
     )
-    assert settings.retmax == DEFAULT_RETMAX
+    assert settings.retmax is None, "缺省必须是 None（未声明）；缺省 3 会把「未声明」抹平成一次声明"
+    assert settings.retmax != DEFAULT_RETMAX, "未声明与「声明 3」必须是两个不同的事实"
+
+
+def test_an_absent_mapping_key_reads_back_as_undeclared() -> None:
+    """`from_mapping` 缺键 ⇒ `None`（不是 3）：持久化面同样保留「未声明」。"""
+    settings = ProjectSettings.from_mapping(
+        "p1", {"team_template": "t", "budget": "b", "workspace_backend": "w"}
+    )
+    assert settings.retmax is None
+
+
+def test_an_explicit_three_is_distinguishable_from_no_declaration() -> None:
+    """**声明 3** 与 **未声明** 必须可区分 —— 这正是缺陷的判据面。
+
+    声明 3 ⇒ 压过 env；未声明 ⇒ 不施加。两者若折成同一个值，下面两条断言里必有一条红。
+    """
+    declared = ProjectSettings.from_mapping(
+        "p1", {"team_template": "t", "budget": "b", "workspace_backend": "w", "retmax": 3}
+    )
+    undeclared = ProjectSettings.from_mapping(
+        "p1", {"team_template": "t", "budget": "b", "workspace_backend": "w"}
+    )
+    assert declared.retmax == 3 and undeclared.retmax is None
+    assert configured_retmax({RETMAX_ENV: "9"}, project_retmax=declared.retmax) == 3
+    assert configured_retmax({RETMAX_ENV: "9"}, project_retmax=undeclared.retmax) == 9
 
 
 def test_project_settings_round_trips_retmax() -> None:
@@ -164,13 +195,26 @@ def test_the_run_wiring_passes_the_project_declaration() -> None:
     )
     assert "context" in source, "取值必须来自本 run 的 RunContext（项目级声明的唯一正确来源）"
     # 施加点：真正把声明落到调用参数上的那个函数（`phase_call_arguments.apply_retmax`）。
+    # GOAL-20261103-105 EC-03 起，施加的**取值**由 `_retmax_for_phase` 决定（协议相级优先，
+    # `deps.retmax` 只承载项目那一级）—— 所以这里判的是「施加点用的是那个取值函数」，
+    # 而不是某个已经被重构掉的字面调用式。行为由 `test_the_capability_step_really_applies_
+    # the_declaration` 与 `test_retmax_undeclared_is_a_fact.py` 钉住。
     capabilities = (
         Path("packages/application/run_orchestration/phase_capabilities.py")
         .read_bytes()
         .decode("utf-8")
     )
-    assert "apply_retmax(declared, deps.retmax)" in capabilities, (
+    assert "apply_retmax(declared, retmax_for_phase(spec, deps))" in capabilities, (
         "能力步必须真的施加 retmax（否则 `CapabilityDeps.retmax` 是一个死字段）"
+    )
+    # 取值函数必须真的读 `deps.retmax`（项目声明那一级不许被协议相级整条替掉）。
+    arguments = (
+        Path("packages/application/run_orchestration/phase_call_arguments.py")
+        .read_bytes()
+        .decode("utf-8")
+    )
+    assert 'getattr(deps, "retmax", None)' in arguments, (
+        "`retmax_for_phase` 必须回落到 `deps.retmax`（项目声明那一级）"
     )
 
 

@@ -33,11 +33,19 @@ class ProjectSettings:
     # GOAL-20261101-103 EC-05：**每次检索取几条**的项目级声明。
     # 在此之前它只到进程级环境变量（`RESEARCHOS_RETMAX`，GOAL-100 EC-04 落地），
     # ⇒ 同一控制面上的两个项目无法有不同的检索深度。
-    # 缺省 `3`：与 `retrieval_wiring.DEFAULT_RETMAX` 逐字相同 ⇒ 不声明本字段时
-    # **生成的调用表与改动前逐字段一致**（零回归硬约束）。
-    # 合法范围与非法值的处置由 `retrieval_wiring.configured_retmax` 一处判定
+    #
+    # GOAL-20261103-105 EC-03：缺省是 **`None`（= 未声明）**，不是 `3`。
+    # 这是本轮修掉的缺陷：缺省 `3` 让「未声明」与「声明 3」不可区分，而施加点
+    # （`runner_wiring._with_project_retmax` ⇒ `CapabilityDeps.retmax` ⇒
+    # `phase_call_arguments.apply_retmax`）把**字段的缺省值**当成了一次声明 ⇒
+    # 项目未声明时运行期恒被压成 3：`RESEARCHOS_RETMAX=9` 与 `retrieval_calls(7)`
+    # 都在构造期成立、运行期被抹平（同一形态）。
+    # **「未声明」现在是一等事实**：`None` ⇒ 不施加（`apply_retmax` 原样返回入参），
+    # 于是 env / 显式参数各自的臂重新生效。这不是"再叠一层覆盖"：本字段的取值语义
+    # 变了，施加点一个字没改。
+    # 合法范围与非法值的处置仍由 `retrieval_wiring.configured_retmax` 一处判定
     # （本类只**携带**声明，不重复实现取值规则）。
-    retmax: int = 3
+    retmax: int | None = None
 
     def __post_init__(self) -> None:
         if not self.project_id:
@@ -66,16 +74,20 @@ class ProjectSettings:
         )
 
 
-def _retmax_of(project_id: str, raw: object) -> int:
-    """`retmax` 声明的**类型收窄**（缺省 ⇒ 3；非法 ⇒ 点名拒绝）。
+def _retmax_of(project_id: str, raw: object) -> int | None:
+    """`retmax` 声明的**类型收窄**（未声明 ⇒ `None`；非法 ⇒ 点名拒绝）。
+
+    **`None` 是一个有意义的取值**（GOAL-20261103-105 EC-03）：它表示「本项目的设置里
+    没有 `retmax` 这一项」，与「声明了 3」**不是一回事** —— 后者压过环境变量，前者不施加
+    任何东西。把两者折成同一个 `3` 正是本轮修掉的缺陷。
 
     **只做"是不是一个整数声明"这件事**：取值范围（1…`MAX_RETMAX`）的判定留在
     `retrieval_wiring.configured_retmax` —— 一处判好处是不产生两套规则。这里拒绝
     非整数的理由是"它不是这个字段的取值"，与范围无关：`retmax: "three"` 是**拼错**，
-    静默回落 3 会让「把条数调成 5」与「写错一个字」在读数上不可区分。
+    静默当作未声明会让「把条数调成 5」与「写错一个字」在读数上不可区分。
     """
     if raw is None:
-        return 3
+        return None
     if isinstance(raw, bool) or not isinstance(raw, int):
         raise ValueError(f"project {project_id!r} retmax must be an integer, got {raw!r}")
     return raw

@@ -46,6 +46,7 @@ from packages.application.deliverable.manuscript import (
     manuscript_digest,
     validate_manuscript,
 )
+from packages.application.deliverable.manuscript_quality import content_words
 from packages.application.ports.errors import InvalidInputError
 from packages.application.run_orchestration.manuscript_assembly import (
     ASSEMBLED_CREATOR_PREFIX,
@@ -108,15 +109,37 @@ def parse_revised_manuscript(content: str) -> Mapping[str, Any] | None:
 
 
 def validate_action_references(
-    responses: tuple[AuthorResponse, ...], *, known_names: frozenset[str]
+    responses: tuple[AuthorResponse, ...],
+    *,
+    known_names: frozenset[str],
+    points: tuple[Any, ...] | None = None,
 ) -> None:
-    """**每一条** `action_taken` 必须引用改稿制品，且引用的名字必须真的在场（**点名**）。
+    """**每一条** `action_taken` 必须引用改稿制品、名字真的在场、且与它回应的点**不是无关**。
 
-    两条判据、顺序固定：
+    三条判据、顺序固定：
     ① 不许空谈：不含 `manuscript_v2.md` ⇒ 点名那一条应答；
     ② 不许编造：正文里引用的每个 `.md` / `.json` 名字都必须在 `known_names`
-    （本 run 证据投影里真实带着的制品名后缀集合）里。
+    （本 run 证据投影里真实带着的制品名后缀集合）里；
+    ③ **不许无关**（GOAL-20261103-105 EC-04）：`action_taken` 必须与它回应的那条
+    `ReviewPoint.text` 共享至少一个**实词**（复用 `manuscript_quality.content_words`，
+    与引用—主张相关判据同一份词口径）。
+
+    `points` 是**可选**的：缺省 `None` ⇒ 判据 ③ 不跑（既有调用点/既有判据逐字不变）。
+    传了就必须**每条应答都能在点表里找到自己的 `point_id`** —— 找不到是点名拒绝，
+    不是跳过（否则「回应了一条不存在的评审点」会静默通过）。
+
+    **射程（措辞纪律，与 `check_citation_alignment` 同一口径）**：判据 ③ 判的是
+    「回应与评审点**不是无关**」，**不是**「回应**解决了**那个问题」。一篇讲
+    reproducibility 的评审点与一句「已按 reproducibility 相关意见修改」共享该词，
+    但正文可能一个字都没改对。判「解决了」需要语义蕴含 ⇒ 人评或模型评，
+    **本函数不声称做到**。反向读它（「有重叠 ⇒ 改了」）是本函数明令禁止的误读。
+
+    **空真不算通过**（F-5 边界）：若某条 `ReviewPoint.text` 里**没有任何实词**
+    （`content_words(text) == frozenset()` —— 例：全由停用词/短词构成，
+    `"It is to be or not"`），重叠判据**没有对象** ⇒ 点名说明该点不可比较，
+    **不许静默通过**。
     """
+    index = {str(getattr(point, "point_id", "")): point for point in points or ()}
     for item in responses:
         if MANUSCRIPT_V2_NAME not in item.action_taken:
             raise ResponseError(
@@ -130,6 +153,34 @@ def validate_action_references(
                     f"action_taken for {item.point_id} cites {name!r}, which this run does "
                     f"not carry (known artifact names: {sorted(known_names)})"
                 )
+        if points is not None:
+            _require_overlap_with_its_point(item, index)
+
+
+def _require_overlap_with_its_point(item: AuthorResponse, index: Mapping[str, Any]) -> None:
+    """判据 ③ 本体（单列以守住函数长度门）：实词重叠，且**空真必须点名**。"""
+    point = index.get(item.point_id)
+    if point is None:
+        raise ResponseError(
+            f"action_taken for {item.point_id} responds to a review point that this run does "
+            f"not carry (known point ids: {sorted(index)}): an answer to a question nobody "
+            "asked cannot be checked against the review"
+        )
+    text = str(getattr(point, "text", "") or "")
+    wanted = content_words(text)
+    if not wanted:
+        raise ResponseError(
+            f"review point {item.point_id} carries no comparable content word "
+            f"({text[:60]!r}): the overlap criterion has nothing to compare against, and an "
+            "empty comparison is not a pass (name the point in a form that can be checked, or "
+            "respond without claiming a check)"
+        )
+    if not (content_words(item.action_taken) & wanted):
+        raise ResponseError(
+            f"action_taken for {item.point_id} shares no content word with that review point "
+            f"({text[:60]!r}): the stated action is unrelated to what the reviewer asked about "
+            "(this criterion proves 'not unrelated', never 'solved')"
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,6 +201,7 @@ def revision_closure_step(  # noqa: PLR0913 - 装配面：五个 Port + created_
     v2 在**应答信之前**装配（信的引用判据要指着它）。
     """
     from packages.application.run_orchestration.report_facts import evidence_of_run
+    from packages.application.run_orchestration.review_points import review_points_of_run
 
     evidence = evidence_of_run(ledger, run_id) if ledger is not None else ()
     content = response_artifact_content(artifacts, evidence)
@@ -174,7 +226,11 @@ def revision_closure_step(  # noqa: PLR0913 - 装配面：五个 Port + created_
     fresh = evidence_of_run(ledger, run_id) if ledger is not None else ()
     names = _known_names(fresh, v1_id) | {MANUSCRIPT_V2_NAME, MANUSCRIPT_ARTIFACT_NAME}
     try:
-        validate_action_references(responses, known_names=names)
+        # GOAL-20261103-105 EC-04：点表由**同一个** `review_points_of_run` 派生 ——
+        # 「模型看到的点」与「汇编器判重叠的点」因此逐条相同（F-4：那函数就在本模块旁边，
+        # 且它读的是同一份 canonical 事实，不需要新表、不需要改提示词）。
+        points = review_points_of_run(artifacts, ledger, run_id)
+        validate_action_references(responses, known_names=names, points=points)
     except ResponseError as error:
         raise RevisionError(f"the revision citations are unusable: {error}") from error
     return RevisionClosureResult(artifact=artifact, supersedes=v1_id, responses=responses)

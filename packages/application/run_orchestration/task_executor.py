@@ -159,6 +159,10 @@ class SessionSpecContext:
     #: 搬运），这一段是「**这一轮**的评审提出了哪几条、编号是什么」（本 run 内）。
     #: 缺省 `None` ⇒ 提示词逐字节等于既有形态（只有应答相需要它）。
     review_points: Any | None = None
+    #: GOAL-105 EC-03：本相的**运行链调用参数**（源头是协议 phase 的 `run_chain_arguments`，
+    #: 编译期原样透传）。`None` = 未声明 ⇒ 施加点回落到项目声明 / env / 默认。
+    #: 本层只搬运；键的解释在 `phase_capabilities` 的施加点。
+    run_chain_arguments: dict[str, object] | None = None
 
 
 @dataclass(frozen=True, slots=True)

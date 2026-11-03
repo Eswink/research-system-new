@@ -86,6 +86,17 @@
           "type": "array",
           "uniqueItems": true,
           "items": {"$ref": "#/$defs/sessionToolBinding"}
+        },
+        "run_chain_arguments": {
+          "type": "object",
+          "description": "GOAL-20261103-105 EC-03: this phase's run-chain call arguments (protocol-phase level). Declared so a single phase can set e.g. retmax; unset means fall back to the project declaration, then the environment, then the default. Each key is a declared argument, not a free-form bag: an unknown key is refused at load time rather than silently ignored.",
+          "additionalProperties": false,
+          "properties": {
+            "retmax": {
+              "type": "integer",
+              "description": "How many records this phase's retrieval asks for. The range is judged at the application point (one rule, one message), so an out-of-range value is refused with a message naming the protocol phase."
+            }
+          }
         }
       }
     },

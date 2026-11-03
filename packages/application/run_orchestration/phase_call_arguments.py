@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from packages.application.ports.errors import InvalidInputError
 from packages.application.run_orchestration.phase_capability_triggers import (
@@ -105,4 +105,48 @@ def apply_retmax(
     return tuple(applied)
 
 
-__all__ = ["apply_retmax", "arguments_for", "lookup_path"]
+def declared_retmax(run_chain_arguments: object, *, where: str = "protocol phase") -> int | None:
+    """从**协议相级**的 `run_chain_arguments` 取 `retmax`（未声明 ⇒ `None`）。
+
+    **这是这一级的唯一取值点**：它只认 `{"retmax": <int>}` 这一种形态。
+
+    三种拒绝（各自点名，判词都**指出来源是协议相级**）：
+    - 映射本身不是映射 ⇒ 「`run_chain_arguments` 必须是映射」；
+    - `retmax` 不是整数（含 `True` / `"three"`）⇒ 点名「协议相级必须是整数」；
+    - 越界（`0` / `-1` / `101`）⇒ 点名「协议相级必须在 1…`MAX_RETMAX`」。
+
+    **范围常数与 env / 项目面共用 `MAX_RETMAX`**（从 `retrieval_wiring` 取）—— 一个规则、
+    一处上界。不在这里 import 顶层是为了不给 `run_orchestration` 包引入对 `services` 的
+    模块级依赖（分层方向：`services` 依赖 `packages`，不能反过来）。
+    """
+    if run_chain_arguments is None:
+        return None
+    if not isinstance(run_chain_arguments, Mapping):
+        raise InvalidInputError(
+            f"{where} run_chain_arguments must be a mapping, got "
+            f"{type(run_chain_arguments).__name__}"
+        )
+    if "retmax" not in run_chain_arguments:
+        return None
+    raw = run_chain_arguments["retmax"]
+    if isinstance(raw, bool) or not isinstance(raw, int):
+        raise InvalidInputError(f"{where} retmax must be an integer, got {raw!r}")
+    from services.api.retrieval_wiring import MAX_RETMAX
+
+    if not 1 <= raw <= MAX_RETMAX:
+        raise InvalidInputError(f"{where} retmax must be between 1 and {MAX_RETMAX}, got {raw}")
+    return raw
+
+
+def retmax_for_phase(spec: Any, deps: Any) -> int | None:
+    """本相该用哪个 `retmax`（协议相级 > 项目声明；都未声明 ⇒ `None` = **不施加**）。
+
+    `None` 一路传下去是「未声明」的完整表达：`apply_retmax(calls, None)` 原样返回，
+    env / 显式参数各自的臂因此在下游生效（GOAL-20261103-105 EC-03 的缺陷修复即此）。
+    `deps.retmax` 只承载**项目声明那一级**；协议那一级由 `declared_retmax` 判定并校验。
+    """
+    from_phase = declared_retmax(getattr(spec, "run_chain_arguments", None))
+    return from_phase if from_phase is not None else getattr(deps, "retmax", None)
+
+
+__all__ = ["apply_retmax", "arguments_for", "declared_retmax", "lookup_path", "retmax_for_phase"]

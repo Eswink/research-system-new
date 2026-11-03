@@ -11,6 +11,24 @@ from __future__ import annotations
 import json
 import re
 
+#: 回应里点名评审点用词时**跳过**的词（与产品判据同一份口径：实词 = 去停用词后的英文词）。
+#: 这里只用它挑几个「读起来像那个点」的词，**不重实现判据** —— 判据在产品侧
+#: （`manuscript_quality.content_words`），本处产出的是夹具正文。
+_GLUE = frozenset("the and for that this with from does not name into than then".split())
+
+
+def _named_terms(text: str, limit: int = 4) -> str:
+    """从评审点原文里取几个**实词**，让 `action_taken` 与它真的相关（夹具侧）。
+
+    这是**夹具**在「作者据评审点写回应」，不是判据：产品侧的判据只要求**至少一个**
+    实词重叠，这里多给几个是为了让夹具读起来像人写的、并且不依赖某个特定词恰好被选中。
+    """
+    words = [
+        word for word in re.findall(r"[A-Za-z][A-Za-z-]{2,}", text) if word.lower() not in _GLUE
+    ]
+    return " ".join(words[:limit]) or "the reviewer's point"
+
+
 #: 手稿正文（**无任何数字**，只有 `[1]` 引用标记 —— 与合约的两条硬规则一致）。
 MANUSCRIPT_SECTIONS: dict[str, str] = {
     "title": "Retrieval Grounding For Controlled Planning Studies",
@@ -60,7 +78,11 @@ def response_reply(prompt: str) -> str:
     """
     # `prompt` 是 **JSON 序列化后**的 messages（本文件上游 `json.dumps` 过 ⇒ 换行是
     # 字面 `\n` 两字符），所以行首锚不能用 `^`+MULTILINE —— 直接按 `- P<n> (` 取。
-    ids = re.findall(r"- (P\d+) \(([a-z_]+)\): ", prompt)
+    #
+    # GOAL-20261103-105 EC-04：`action_taken` 必须与它回应的那条点**有实词重叠** ——
+    # 所以这里把点的**原文**也取出来，回应里点名它（此前是「revised the section named in
+    # P1」，与任何点都零重叠：那是真实存在的缺陷形态，只是当时没有判据）。
+    ids = re.findall(r"- (P\d+) \(([a-z_]+)\): ([^\"\\\n]+)", prompt)
     block = json.dumps(
         {
             "author_responses": [
@@ -68,10 +90,10 @@ def response_reply(prompt: str) -> str:
                     "point_id": point_id,
                     "response": f"We accept {point_id}: the review is right about this one.",
                     "action_taken": (
-                        f"revised the section named in {point_id}; see manuscript_v2.md"
+                        f"revised the section for {_named_terms(text)}; see manuscript_v2.md"
                     ),
                 }
-                for point_id, _severity in ids
+                for point_id, _severity, text in ids
             ]
         },
         ensure_ascii=False,

@@ -39,6 +39,9 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from packages.application.deliverable.citation_sufficiency import (
+    measure_citation_sufficiency,
+)
 from packages.application.deliverable.manuscript_quality import (
     ManuscriptQuality,
     validate_quality,
@@ -253,7 +256,13 @@ def _header_lines(inputs: ReportInputs, admission: ManuscriptAdmission) -> list[
 def _footnote_lines(
     table: ReferenceTable, rows: tuple[dict[str, str], ...], admission: ManuscriptAdmission
 ) -> list[str]:
-    """文末的**如实登记**（谁写了哪块面、缺什么）。"""
+    """文末的**如实登记**（谁写了哪块面、缺什么、引用分布的可读读数）。
+
+    最后那一段（GOAL-20261103-105 EC-02）是引用充分性的三个**结构读数**：它们由
+    `citation_sufficiency.measure_citation_sufficiency` 算出，**不判负**（阈值留 `None`）。
+    写进脚注的理由与其它几条相同 —— 读手稿的人应当能看到「这份稿子的引用是怎么分布的」，
+    而不必去翻代码；同时它**不**声称「引用充分」（那仍需人评，见 `MANUSCRIPT_QUALITY.md` §7）。
+    """
     lines = [
         "**Who wrote which face (recorded, not asserted)**:",
         "",
@@ -276,7 +285,28 @@ def _footnote_lines(
             f"- **{len(table.problems)} record(s) have incomplete metadata** and are named under "
             "References (not filled in with placeholders)."
         )
+    lines.append(_citation_readings_line(admission.sections))
     return lines
+
+
+def _citation_readings_line(sections: Mapping[str, str]) -> str:
+    """引用分布三条读数的一行（**取数与判据同一份字节**：直接调模块函数）。
+
+    格式固定（判据按它取数）：句数 / 引用标记总数 / 条目数 / 单支撑节。**没有阈值** ——
+    这里只是把读数摆出来，读的人自己看。空手稿也照写（`0` 是读数，不是缺失）。
+    """
+    readings = measure_citation_sufficiency(sections)
+    sentences = len(readings.per_sentence)
+    marks = sum(item.marks for item in readings.per_sentence)
+    references = len(readings.per_reference)
+    single = ", ".join(readings.single_support_sections) or "none"
+    return (
+        "- **Citation distribution (readings, not a judgement)**: "
+        f"{sentences} sentence(s) scored / {marks} mark(s) / {references} cited reference(s) / "
+        f"single-support section(s): {single}. "
+        "These are counts: whether the citation set is **sufficient** is not decided here "
+        "(no threshold is calibrated) — see `docs/architecture/MANUSCRIPT_QUALITY.md` §7."
+    )
 
 
 __all__ = [

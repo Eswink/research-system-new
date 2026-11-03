@@ -202,6 +202,13 @@ class ProtocolPhase:
     # 缺省空 ⇒ 会话工具列表逐字等于（冻结集 − run-chain 排除），即既有语义：
     # 未绑定的 provider id 仍直接交给 SDK，未注册时点名失败。
     session_tool_bindings: list[SessionToolBinding] = field(default_factory=list)
+    # GOAL-20261103-105 EC-03：本 phase 的**运行链调用参数**（协议相级声明）。
+    # 例：`run_chain_arguments: {retmax: 5}` 让**这一相**的检索取 5 条 —— 在此之前
+    # `retmax` 只能从项目设置或进程环境来，协议里写不了 ⇒ 同一 run 的两个检索相
+    # 不可能取不同深度。**只携带、不解释**：哪个键对应哪个参数、值的合法性都在施加点
+    # 判定（`phase_call_arguments` 与 `retrieval_wiring` 的同一套范围规则）。
+    # 缺省 `None` = **未声明**（与「声明了空字典」可区分：后者是声明了但没有键）。
+    run_chain_arguments: dict[str, object] | None = None
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -300,6 +307,9 @@ class CompiledPhase:
     capability_execution: CapabilityExecution = CapabilityExecution.SESSION
     # GOAL-028 EC-01：编译期**原样携带**会话工具绑定（编译不解释它；解释在会话解析处）。
     session_tool_bindings: tuple[SessionToolBinding, ...] = ()
+    # GOAL-20261103-105 EC-03：编译期**原样携带**本相的运行链调用参数（同上：只搬运）。
+    # `None` = 协议未声明这一项 ⇒ 施加点回落到项目/env/默认（既有四级顺序）。
+    run_chain_arguments: dict[str, object] | None = None
 
 
 @dataclass(frozen=True, slots=True)

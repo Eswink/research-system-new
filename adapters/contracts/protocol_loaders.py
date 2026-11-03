@@ -83,7 +83,24 @@ def _phase_from_mapping(raw: dict[str, Any]) -> ProtocolPhase:
         capability_execution=CapabilityExecution(raw.get("capability_execution", "session")),
         # 缺省空：文档不写绑定 ⇒ 既有语义（provider id 直接交给 SDK，未注册即点名失败）。
         session_tool_bindings=_session_tool_bindings(raw.get("session_tool_bindings", [])),
+        # GOAL-20261103-105 EC-03：相级运行链参数（缺键 ⇒ `None` = 未声明，不是空字典）。
+        # **只读不解释**：值的合法性在施加点判定（与 `configured_retmax` 同一套范围规则），
+        # 本层只保证声明不在这步丢掉。
+        run_chain_arguments=_run_chain_arguments(raw.get("run_chain_arguments")),
     )
+
+
+def _run_chain_arguments(raw: object) -> dict[str, object] | None:
+    """读取 phase 的运行链参数（`None` ⇒ 未声明）。
+
+    非映射 ⇒ **点名拒绝**：静默丢弃会让「形状写错了」与「根本没写」在读数上不可区分，
+    而那正是本仓反复修掉的那类含混。
+    """
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ValueError(f"run_chain_arguments must be a mapping, got {type(raw).__name__}")
+    return {str(key): value for key, value in raw.items()}
 
 
 def load_protocol(relative_path: str) -> ProtocolDefinition:

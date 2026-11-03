@@ -159,6 +159,9 @@ def _spec_context(  # noqa: PLR0913 - 装配面：context + phase/agent/role/目
         # GOAL-028 EC-01：本 phase 的会话工具绑定（唯一解释点在这里；adapter 侧消费）。
         # 越界 / 一 provider 两名字 ⇒ 点名的 ValueError。
         session_tool_bindings=session_tool_bindings(context.plan, phase.id),
+        # GOAL-20261103-105 EC-03：本相的运行链参数随 spec 走（协议相级声明）。
+        # 本层只搬运；取值决策在 `execute_run_chain_capabilities`（那里有 deps 可回落）。
+        run_chain_arguments=phase.run_chain_arguments,
         # GOAL-010 EC-02：phase **声明**的输入制品随 spec 走到结果注册处，在那里成为
         # 「非模型自述」的来源。声明在协议里（产品面），校验在注册处（对象必须在库且
         # 内容可重算）——本层只搬运、不解释。

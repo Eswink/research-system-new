@@ -78,12 +78,28 @@ CHAIN_FILES: dict[str, tuple[str, ...]] = {
 }
 
 #: EC-05：`retmax` 项目级 + §7 论证。
+#:
+#: **GOAL-20261103-105 更新（资产跟随代码，不是放宽）**：本组原先钉两个字面形态 —
+#: `retmax: int = 3` 与 `apply_retmax(declared, deps.retmax)` —— 而 GOAL-105 EC-03
+#: **按判据点名修掉了那个缺省**（缺省 3 让「未声明」与「声明 3」不可区分，运行期会把
+#: env 与显式参数一起抹平），并把取值拆到 `retmax_for_phase`。两项都改判**语义等价且
+#: 更强**的标记：① 字段仍在且是可选（`retmax: int | None`）—— 项目级声明这一件事没有
+#: 退回去；② 施加点仍然调用 `apply_retmax` 且仍然读 `deps.retmax`（那是项目那一级的
+#: 载体）。**本轮没有放宽任何判据**：GOAL-103 关心的「项目声明真的到了调用表」由
+#: `tests/application/test_retmax_project_setting.py` 与
+#: `tests/application/test_retmax_undeclared_is_a_fact.py` 两条行为判据继续钉住。
 RETMAX_FILES: dict[str, tuple[str, ...]] = {
-    "packages/application/ports/resource_catalog.py": ("retmax: int = 3", "def _retmax_of("),
+    "packages/application/ports/resource_catalog.py": (
+        "retmax: int | None = None",
+        "def _retmax_of(",
+    ),
     "services/api/retrieval_wiring.py": ("project_retmax: int | None = None",),
-    "packages/application/run_orchestration/phase_call_arguments.py": ("def apply_retmax(",),
+    "packages/application/run_orchestration/phase_call_arguments.py": (
+        "def apply_retmax(",
+        "def retmax_for_phase(",
+    ),
     "packages/application/run_orchestration/phase_capabilities.py": (
-        "apply_retmax(declared, deps.retmax)",
+        "apply_retmax(declared, retmax_for_phase(spec, deps))",
     ),
     "packages/application/run_orchestration/runner_wiring.py": ("_with_project_retmax(",),
     "docs/architecture/MANUSCRIPT_QUALITY.md": ("## 7. 强口径判定",),
