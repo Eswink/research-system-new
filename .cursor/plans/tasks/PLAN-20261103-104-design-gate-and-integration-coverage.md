@@ -45,7 +45,7 @@ GOAL-20261103-104 的七个 EC。按**提交面**分三个 cycle：
 
 收口复检：`tools/verify_goal104_closeout.py --root . --verdict-only`（两树入口跑
 `--script-mode shared`，`verify_paths` ≥ 2 路，见 GOAL 的 `latest_recheck`）。
-实测 **81 判词全 PASS / 0 FAIL**，判词不含树的绝对路径。
+实测 **82 判词全 PASS / 0 FAIL**，判词不含树的绝对路径。
 
 ## 影响报告
 
@@ -102,7 +102,7 @@ GOAL-20261103-104 的七个 EC。按**提交面**分三个 cycle：
     **绿**（0.36% < 2%）、元素级像素**红**（563 px）；
   - 把 `console-frontend` 的 `runs-on` 改回 `ubuntu-latest` ⇒ 收口验证器
     `workflow-console-frontend-fix-intact` 判红并点名两条形态（随后还原，`git diff` 为空）。
-- **收口验证器**：`tools/verify_goal104_closeout.py --root .` ⇒ `SUMMARY total=81
+- **收口验证器**：`tools/verify_goal104_closeout.py --root .` ⇒ `SUMMARY total=82
   failed=0`；`--verdict-only` 输出里 `D:\` / `D:/` 命中 **0**。
 - **Charter**：`tests/tooling/` ⇒ **1751 passed**（唯一失败是 m0 见证未刷新，属流程
   顺序而非缺陷 —— 见证在最后一次全量 m0 后重写）。

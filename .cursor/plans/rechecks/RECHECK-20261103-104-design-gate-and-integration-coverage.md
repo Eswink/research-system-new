@@ -65,6 +65,7 @@ GOAL-20261103-104 的七条 EC 逐条取证。**两路以上**（`verify_paths` 
 | EC-05 | `_VERIFIERS` / `IN_SCOPE` 两处登记 | 各 1 条命中 | PASS |
 | EC-06 | `MAINLINE.md` 四处记账 | 程序表序 72 / 阶梯行收录 / 进展行 / 修订行 5 格 | PASS |
 | EC-07 | `W-7` / `W-5` 核对 | `runs-on: ubuntu-24.04` ×1、`timeout-minutes: 30` ×1；无回退形态 | PASS |
+| 执行纪律 5.9 | 凭据四面审计（`tools/credential_audit.py`） | **`offenders=0`（四面全部 0）**：`tracked` 5055 文件 / 命中 105 / **放行 105 / offenders 0**；`records` 1092 文件 / 命中 5 / 放行 5 / **offenders 0**；`config_db` 1 文件 / 命中 0 / **offenders 0**；`logs` 938 文件 / 命中 0 / **offenders 0**。终态行 `PASS: 四面扫描无明文凭据命中（放行项已逐条给理由）` | PASS |
 
 ## 本轮真跑暴露并修掉的缺陷
 
@@ -94,11 +95,57 @@ GOAL-20261103-104 的七条 EC 逐条取证。**两路以上**（`verify_paths` 
 | `design-fidelity`（元素级像素） | `.succeeded` 边框色改 `--danger` | **红** |
 | `design-fidelity`（结构签名） | 同上（DOM 未动） | 绿（**应当**绿） |
 | `design-outline-guard` | 只改颜色 | 绿（**应当**绿） |
+| `credential-faces-clean` | 把一个非白名单的 `sk-proj-…` 串写进受跟踪文本文件 | **红**
+  （`offenders={'tracked': 1}`、`credential-audit` 退出 1、判词点名该文件与模式名） |
 
 ## 两树复检
 
 `tools/two_tree_recheck.py` 在干净 checkout 上跑同一份验证器，判词逐行 + `sha256` 与
 工作树一致（见证据文件）。**判词不得含树的绝对路径**。
+
+## 凭据面（执行纪律 5.9）
+
+命令：
+
+```bash
+uv run --frozen --no-sync python -B tools/credential_audit.py
+```
+
+实测输出（四个面**逐个**报告，缺面时记 `not_present` 而非 PASS）：
+
+```text
+tracked    status=scanned        files= 5055 binary=395 hits=105 allowed=105 offenders=  0
+records    status=scanned        files= 1092 binary=  0 hits=  5 allowed=  5 offenders=  0
+config_db  status=scanned        files=    1 binary=  0 hits=  0 allowed=  0 offenders=  0
+logs       status=scanned        files=  938 binary=  0 hits=  0 allowed=  0 offenders=  0
+PASS: 四面扫描无明文凭据命中（放行项已逐条给理由）
+```
+
+- **`offenders=0` 在四个面上都成立**，这是本轮「安全/凭据：零变化」这句话的**实测依据**，
+  不是断言。
+- 命中数不为零（`tracked` 105 / `records` 5）但**全部落在 `ALLOWED_SUBSTRINGS` 白名单里**，
+  每条都有理由（一次性容器口令 / `.env.example` 占位 / redaction 单测的杜撰串）。
+  **放行数是单独统计的** —— 没用「没扫到」冒充通过。
+- 本轮新增的 5 个读面/写面方法（`reviews` / `setDirection` / programs 四条 /
+  `library.detail` / `memory.validity` / `retryTask`）与 3 个新判据文件**零凭据面变化**：
+  没有任何新字段携带凭据，`--json` 的 `offenders` 列表为空（复核文件：
+  `scratch/goal104-credential-audit.json`，本次运行 `sha256` 见下）。
+- 输出文件的 `sha256`：`42e91ef8134e7534d511d6848b06f06e2a811f23c63b6c56c121d76d76d3cca5`
+  （文本面的标准输出；机器可读面在同一轮次跑出，四面 `offenders` 同为 0）。
+- **它现在是一条判据，不是一段散文**：`tools/goal104_closeout_assertions.py` 的
+  `credential-faces-clean` 自己**跑**这次审计（`--json`），要求四个面都
+  `status=scanned` 且 `offenders` 为空 —— **只看退出码不够**（少扫一面也退出 0，
+  脚本契约明确「缺面记 `not_present` 而不写成 PASS」）。
+- **两树复检抓到一个真缺陷**：第一版判据要求四个面都 `status=scanned`，而干净
+  checkout 里 `data/**` 与 `scratch/**` 都是 gitignore 的 ⇒ `config_db` / `logs`
+  必然 `not_present` ⇒ clean 侧判红（`not_scanned=['config_db','logs']`），两树对不上。
+  按脚本**自己的契约**修：合法状态是 `scanned` 与 `not_present`；`not_a_git_tree`
+  这类「该扫而扫不成」仍判红。**没有**放宽成「只看退出码」。
+- **反证臂（实测，随后清理）**：把一个非白名单的 `sk-proj-…` 串写进受跟踪的
+  `apps/web/tests/unit/credential-probe.sample.ts` 并 `git add` ⇒ `tracked` 面
+  `offenders=1`、审计退出 1、验证器判
+  `FAIL credential-faces-clean -> offenders={'tracked': 1} exit=1`。
+  删除后四面回到 `offenders=0`。**这条判据咬得住**。
 
 ## 结论
 

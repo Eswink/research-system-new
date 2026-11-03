@@ -214,10 +214,10 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal101_closeout.py",
     "tools/verify_goal102_closeout.py",
     "tools/goal102_closeout_assertions.py",
-    # GOAL-103 EC-07：验证器 + 断言集（纯收紧）。
-    "tools/goal103_closeout_assertions.py",
+    "tools/goal103_closeout_assertions.py",  # GOAL-103 EC-07（纯收紧）
     "tools/verify_goal103_closeout.py",
     "tools/goal104_closeout_assertions.py",  # GOAL-104 EC-05（纯收紧）
+    "tools/goal104_credential_faces.py",  # 5.9 凭据面（单列：断言集贴 450 行）
     "tools/verify_goal104_closeout.py",
     "tools/charter_progress.py",
     "tools/check_ledger_run_attribution.py",

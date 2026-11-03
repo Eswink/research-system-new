@@ -1824,7 +1824,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "84f2f3f90ae12774b3fa3e887af1d2de2139b064"
+        "sha256": "8eaeb43a48fc13acd7253be1cd4fc943ee4853a3"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4316,7 +4316,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "d9d1f46d8c2c35785743fa9ca20be72c7aa47adf"
+        "sha256": "06c282473d1d9c9b112b2af4998111b93c2894ff"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -5728,7 +5728,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "328c31da5a4c16858d2470a56f8a7f433462d9de"
+        "sha256": "0200e059ab61a060ab987881e5640d2cc2035f24"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -19008,7 +19008,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "b00968c6cd87be1f555fb9a44898d946397471c6"
+        "sha256": "cd125b7316b99b874e033b77ca50fdd06052c112"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -19587,6 +19587,10 @@
         "sha256": "daaddc649fb2d6826b68a890be717898e0209186"
       },
       {
+        "path": "tools/goal104_credential_faces.py",
+        "sha256": "38a85b4c039f06708ebab40b03e0b9a082741e43"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -20040,14 +20044,14 @@
       },
       {
         "path": "tools/verify_goal104_closeout.py",
-        "sha256": "879099754c69a05cdc1c3bc0c8534e1b06273d4d"
+        "sha256": "29fa35a7f2f637ce20ec6d0e1cdb8378ecf8d5f3"
       },
       {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "1c10386b6aa8756c5d5ce5041edb8c27da95c2a0"
+    "head": "04e1f75e88908649682d2c6bb0279af609f5e3be"
   },
   "fingerprint_before": {
     "files": [
@@ -21873,7 +21877,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "84f2f3f90ae12774b3fa3e887af1d2de2139b064"
+        "sha256": "8eaeb43a48fc13acd7253be1cd4fc943ee4853a3"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -24365,7 +24369,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "d9d1f46d8c2c35785743fa9ca20be72c7aa47adf"
+        "sha256": "06c282473d1d9c9b112b2af4998111b93c2894ff"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -25777,7 +25781,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "328c31da5a4c16858d2470a56f8a7f433462d9de"
+        "sha256": "0200e059ab61a060ab987881e5640d2cc2035f24"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -39057,7 +39061,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "b00968c6cd87be1f555fb9a44898d946397471c6"
+        "sha256": "cd125b7316b99b874e033b77ca50fdd06052c112"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -39636,6 +39640,10 @@
         "sha256": "daaddc649fb2d6826b68a890be717898e0209186"
       },
       {
+        "path": "tools/goal104_credential_faces.py",
+        "sha256": "38a85b4c039f06708ebab40b03e0b9a082741e43"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -40089,18 +40097,18 @@
       },
       {
         "path": "tools/verify_goal104_closeout.py",
-        "sha256": "879099754c69a05cdc1c3bc0c8534e1b06273d4d"
+        "sha256": "29fa35a7f2f637ce20ec6d0e1cdb8378ecf8d5f3"
       },
       {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "1c10386b6aa8756c5d5ce5041edb8c27da95c2a0"
+    "head": "04e1f75e88908649682d2c6bb0279af609f5e3be"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "1c10386b6aa8756c5d5ce5041edb8c27da95c2a0",
+  "ran_at_head": "04e1f75e88908649682d2c6bb0279af609f5e3be",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

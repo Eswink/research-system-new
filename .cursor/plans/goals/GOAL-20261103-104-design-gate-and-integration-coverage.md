@@ -115,8 +115,12 @@ exit_criteria:
     verify: >-
       `grep -c "runs-on: ubuntu-24.04" .github/workflows/m0-quality.yml` = 1；
       `grep -c "timeout-minutes: 30"` = 1；两者无 `runs-on: ubuntu-latest` /
-      `timeout-minutes: 20` 的回退形态。收口验证器 `workflow-fixes-intact` 与
-      `workflow-not-regressed` 两条判据钉住。
+      `timeout-minutes: 20` 的回退形态。收口验证器按 **job 定位**判（`workflow-<job>-fix-intact`）
+      —— 不扫全文件，因为 `eval-gate` / `container-quality` 等 job 合法地写着这两个回退形态。
+      **执行纪律 5.9 的凭据面同轮取证**：`tools/credential_audit.py` 四面 **`offenders=0`**
+      （`tracked` 5055 文件 / 命中 105 / 放行 105 / offenders 0；`records` 1092 / 5 / 5 / 0；
+      `config_db` 1 / 0 / 0 / 0；`logs` 938 / 0 / 0 / 0；终态行
+      `PASS: 四面扫描无明文凭据命中（放行项已逐条给理由）`）。
     status: PASS
 budget:
   max_cycles: 40
@@ -229,12 +233,35 @@ memory_entries:
 | --- | --- | --- | --- |
 | `e9374172` | [M0 41534081970](https://github.com/Eswink/research-system-new/actions/runs/41534081970) / [Push 41534081435](https://github.com/Eswink/research-system-new/actions/runs/41534081435) | **M0 `failure`**（`quality-ubuntu` / `quality-windows` / `console-frontend` 三条红）；Push 全 success | **交付 tip**（七条 EC + 收口资产 + 宪章记账）。三条红逐条分类：① `console-frontend` = **真缺陷**：元素级像素判据用 `maxDiffPixels: 0`，CI ubuntu 报 60 px 字体抗锯齿差 ⇒ 改 196 px（实测夹在噪声 ≤93 与颜色改动 563 之间）；② `quality-*` = **真缺陷**：`unconsumedRegistry.ts` 的旧名仍在提交里（重命名时 `git mv` 失败而回退的 `mv` 留下了已暂存的旧路径），命名门禁点名它；③ 两条 `quality-*` 还叠加 `test_m0_witness_matches_the_tree` 红 —— 见证在跑门后被记录改动，属**流程顺序**而非缺陷。三件一并修在下一提交 |
 | `1c10386b` | [M0 41546893623](https://github.com/Eswink/research-system-new/actions/runs/41546893623) / [Push 41546892869](https://github.com/Eswink/research-system-new/actions/runs/41546892869) | **M0 `success`（8/8 job success）**；**Push 全 success** | **收口 tip**（三件 CI 红逐类修好后）。`console-frontend` 的 `Console e2e` 与 `Console live API e2e` **两步都 `success`** —— 这正是 `W-7` 的目的：此前 34 路由像素门禁在 CI 上**从未执行**。本地见证终态行 `PASS: profile=m0; 23 deterministic checks`（`1c10386b`，跑门期间树未变）。 |
+| `04e1f75e` | [M0 41553868343](https://github.com/Eswink/research-system-new/actions/runs/41553868343) / [Push 41553868965](https://github.com/Eswink/research-system-new/actions/runs/41553868965) | **M0 `success`（8/8 job success）**；**Push 全 success** | **ACHIEVED 封印提交**（只改 GOAL 状态 / 台账行 / 见证）。本地见证终态行 `PASS: profile=m0; 23 deterministic checks`（跑门期间树未变）；两树复检 82 判词 `sha256` 相同（`1f1d14f7022f70fc003cef0b7e451a669faa28c82d158f3bd3281561c2a475ca`）。 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261103-104 | `e9374172` → `1c10386b` | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 97/97 + e2e 106/106 + linux 容器 3/3 | **M0 `success` 8/8**（`1c10386b`；`e9374172` 三条红已逐类修好）；Push success | 三条红：像素容差 0 在 CI 假红（改 196 px）、旧文件名残留、见证顺序 | 七条 EC 全 PASS；残余 `W-1`…`W-4` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」（四组合全积、元素级覆盖扩面、阈值标定、路由「真的被调用」） |
+| 1 | PLAN-20261103-104 | `e9374172` → `1c10386b` → `04e1f75e` | 定向套件全绿（见 RECHECK 读数）+ 全量 m0 见证 + web 97/97 + e2e 106/106 + linux 容器 3/3 | **M0 `success` 8/8**（`1c10386b`；`e9374172` 三条红已逐类修好）；Push success | 三条红：像素容差 0 在 CI 假红（改 196 px）、旧文件名残留、见证顺序 | 七条 EC 全 PASS；残余 `W-1`…`W-4` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」（四组合全积、元素级覆盖扩面、阈值标定、路由「真的被调用」） |
+
+## 影响报告
+
+（**实测**，非预判。）
+
+- **Domain/API/schema**：**零后端改动**。新增的 `MemoryValidityDto` / `MemoryValidityViewDto`
+  是 `types.ts` 对**既有** OpenAPI schema 的补登记；`docs/api/openapi.m13.json` 零 diff
+  ⇒ `test_openapi_snapshot` 不受影响。
+- **安全/凭据**：零变化（无新凭据、无新出网面、无新工具面）。新增的读面方法都落在既有
+  路由的既有鉴权面；`ProgramsSection` 的「推进一轮」调用的是**已有**的写面。
+  **实测依据**（执行纪律 5.9，不是断言）：`tools/credential_audit.py` 四面 `offenders=0` ——
+  `tracked` 5055 文件（命中 105 / **放行 105 / offenders 0**）、`records` 1092（5 / 5 / **0**）、
+  `config_db` 1（0 / 0 / **0**）、`logs` 938（0 / 0 / **0**）；终态行
+  `PASS: 四面扫描无明文凭据命中（放行项已逐条给理由）`。放行数**单独统计**——没有用
+  「没扫到」冒充通过。
+- **兼容性/迁移**：零 migration。前端新增组件全是**加性**；`.muted` 改局部类**改变观感**
+  （两处此前是 `className={undefined}`），那正是修复的目的。
+- **上游**：零依赖变化（`@playwright/test` 仍 1.56.1；linux 基线在 pinned `noble` 容器里生成）。
+- **视觉基线**：`design-fidelity` 从 68 张（34×2）扩到 **288 张**（35 路由 × 4 组合 × 2 平台
+  \+ 4 张元素级 × 2 平台）。**110 组新增**、2 条路由（`portfolio-projects` /
+  `run-timeline-substrate`）因 DOM 新增而重生成、其余旧基线**逐字节未动**（13 张被重跑
+  产生的 ≤60 px 抗锯齿噪声已 `git checkout` 回退，两平台复跑仍绿）。
 
 ## 残余与未覆盖范围
 
@@ -280,4 +307,4 @@ memory_entries:
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-11-03 | ACTIVE | 建档：序 72；七个 EC |
-| 2026-11-03 | ACHIEVED | 七条 EC 全 PASS；`RECHECK-20261103-104` PASS；全量 m0 `PASS: profile=m0; 23 deterministic checks`；两树复检 81 判词 sha256 相同；CI `1c10386b` M0 8/8 success。残余 `W-1`…`W-4` 与未覆盖 `U-1`…`U-3` 逐条明写 |
+| 2026-11-03 | ACHIEVED | 七条 EC 全 PASS；`RECHECK-20261103-104` PASS；全量 m0 `PASS: profile=m0; 23 deterministic checks`；两树复检 82 判词 sha256 相同；CI `1c10386b` M0 8/8 success。残余 `W-1`…`W-4` 与未覆盖 `U-1`…`U-3` 逐条明写 |

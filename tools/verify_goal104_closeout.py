@@ -32,6 +32,8 @@ from typing import Any, cast
 STANDARD = "tools/closeout_recheck_assertions.py"
 SELF = "tools/verify_goal104_closeout.py"
 ASSERTIONS = "tools/goal104_closeout_assertions.py"
+#: 执行纪律 5.9 的凭据面判据（单列：与七条 EC 的产品面是两件事，且断言集已贴 450 行上限）。
+CREDENTIAL_FACES = "tools/goal104_credential_faces.py"
 
 GOAL = ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md"
 RECHECK = ".cursor/plans/rechecks/RECHECK-20261103-104-design-gate-and-integration-coverage.md"
@@ -87,6 +89,17 @@ def _load_assertions() -> Any:
     assert spec is not None and spec.loader is not None, path
     module = importlib.util.module_from_spec(spec)
     sys.modules["goal104_assertions"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_credential_faces() -> Any:
+    """按路径加载凭据面判据模块。"""
+    path = Path(__file__).resolve().parent / "goal104_credential_faces.py"
+    spec = importlib.util.spec_from_file_location("goal104_credential_faces", path)
+    assert spec is not None and spec.loader is not None, path
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["goal104_credential_faces"] = module
     spec.loader.exec_module(module)
     return module
 
@@ -302,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
         cast("Callable[[Path], Iterable[Any]]", standard_verdicts)
         verdicts.extend(standard_verdicts(root))
     verdicts.extend(_load_assertions().assertion_verdicts(root, TOOLBOX))
+    verdicts.extend(_load_credential_faces().credential_verdicts(root, TOOLBOX))
     verdicts.extend(record_verdicts(root))
     failures = [verdict for verdict in verdicts if not verdict.ok]
     for verdict in verdicts:
