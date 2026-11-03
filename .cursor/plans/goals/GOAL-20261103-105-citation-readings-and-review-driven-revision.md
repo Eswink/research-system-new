@@ -218,12 +218,14 @@ P4 不冒充语义）把 `NOT_JUDGED` 五项逐项判过：1/2/3 只能人评（
 | `747a7a53` | [M0 41696234931](https://github.com/Eswink/research-system-new/actions/runs/41696234931) / [Push 41696233692](https://github.com/Eswink/research-system-new/actions/runs/41696233692) | **M0 `success`（8/8 job success）**；**Push 全 success（3/3 Analyze）** | **收口 tip**（CI 读数回填 + 见证重封）。本地终态行 `PASS: profile=m0; 23 deterministic checks`、`PASS [` 24 行、`tree changed during the run: False` |
 | `ea7d581e` | [M0 41702952753](https://github.com/Eswink/research-system-new/actions/runs/41702952753) / [Push 41702951998](https://github.com/Eswink/research-system-new/actions/runs/41702951998) | **M0 `success`（8/8 job success）**；**Push 全 success（3/3 Analyze）** | **上一轮收口 tip**（台账回填 + 见证）。本轮收口审计判它未达成后，它被 `be35838a` 推离 HEAD ⇒ 由反方向判据点名补记 |
 | `be35838a` | 待推送 | —（推送后回填） | **收口审计修复**：`citation_sufficiency.py` 删掉第三份引用正则、改为与 `_SENTENCE_SPLIT` 同行导入 `_CITATION`；判据补三层（`pattern ==` → `is` → **源码 AST**），前两层按压时实测都不咬；`W-4` / `D-7` 已登记 |
+| `bfa8b84a` | 待推送 | —（推送后回填） | **台账补齐**：`be35838a` 入账 + 为被它推离 HEAD 的 `ea7d581e` 补真实 M0 读数（41702952753，8/8）|
+| `f15f190f` | 待推送 | —（推送后回填） | **重封见证**（只改 `.cursor/`）：台账写入改动受判面内容 ⇒ 见证失配属**流程顺序**。本地终态行 `PASS: profile=m0; 23 deterministic checks`、24 行 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` → `38b92a7b` → `cc010ce3` → `a9c845f2` → `33017ab8` → `1803b066` → `15f9fb5b` → `f9883a2e` → `747a7a53` → `ea7d581e` → `be35838a` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL；两树复检 73 判词 `sha256` 相同 | **M0 `success` 8/8**（`f9883a2e`，含 `console-frontend`）；Push success | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」|
+| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` → `38b92a7b` → `cc010ce3` → `a9c845f2` → `33017ab8` → `1803b066` → `15f9fb5b` → `f9883a2e` → `747a7a53` → `ea7d581e` → `be35838a` → `bfa8b84a` → `f15f190f` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL；两树复检 73 判词 `sha256` 相同 | **M0 `success` 8/8**（`f9883a2e`，含 `console-frontend`）；Push success | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」|
 
 ## 影响报告
 
