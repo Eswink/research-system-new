@@ -1,5 +1,5 @@
 {
-  "exit_code": 1,
+  "exit_code": 0,
   "fingerprint_after": {
     "files": [
       {
@@ -1828,11 +1828,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "a57ea3fd0189275d2fa5a2aa3e6bb6297edc086a"
+        "sha256": "dd5684b7dd1b54a294b184a5d36e278e3426d1f2"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-105-citation-readings-and-review-driven-revision.md",
-        "sha256": "9a9a532f50b9a56ae976d3ac43049edb44980ddb"
+        "sha256": "e922b90beed5a87d26afaecbf9cc478355ed1f1d"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -20111,7 +20111,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "73a456925adb223a52a3458ae5c31ad81add80ec"
+    "head": "38b92a7be62e8f661efbe70558625391ae525fbf"
   },
   "fingerprint_before": {
     "files": [
@@ -21941,11 +21941,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-104-design-gate-and-integration-coverage.md",
-        "sha256": "a57ea3fd0189275d2fa5a2aa3e6bb6297edc086a"
+        "sha256": "dd5684b7dd1b54a294b184a5d36e278e3426d1f2"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-105-citation-readings-and-review-driven-revision.md",
-        "sha256": "9a9a532f50b9a56ae976d3ac43049edb44980ddb"
+        "sha256": "e922b90beed5a87d26afaecbf9cc478355ed1f1d"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -40224,11 +40224,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "73a456925adb223a52a3458ae5c31ad81add80ec"
+    "head": "38b92a7be62e8f661efbe70558625391ae525fbf"
   },
-  "green": false,
+  "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "73a456925adb223a52a3458ae5c31ad81add80ec",
-  "terminal_line": "FAILED: 1 check(s): python/tests=1",
+  "ran_at_head": "38b92a7be62e8f661efbe70558625391ae525fbf",
+  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
