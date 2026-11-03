@@ -312,7 +312,6 @@ GOAL-082 的 EC-04 已实测证明——
 | --- | --- | --- | --- | --- |
 | 2026-11-03 | GOAL-20261103-104 | **设计门禁扩到四组合 + 联调补齐 + 三条悬空样式**。① 三处静默失效的样式引用补上（`styles.muted` 改局部 / 两个 `var(--bg)`→`--bg-app` / `var(--text-dim)`→`--fg-faint`）+ 机械判据 `css-token-references.test.ts`（token 面 + 类名面 + 反证臂：注入 `var(--not-a-token)` 判红并点名）；② `design-fidelity` 参数化为四组合（双主题 × 双密度 × 中英文，对角取样）+ `run-timeline-phases` 让**十一相填充态**进基线（11 个 `phase-node`）+ **元素级**像素判据把门钉在 `phase-track` 上（整页截图看不见折叠线以下的进度条 —— 实测反证：只改颜色时结构签名与整页像素都仍绿，元素级判据判红 563 px）；win32 与 linux 各 144 张基线；③ 7 条后端路由接线（评审判词 / 研究方向 / 研究程序四条）或如实登记（库单件 / 记忆时效 / 任务重试），+ 判据 `backend-route-coverage.test.ts` / `unconsumed-registry.test.ts` 与 `docs/frontend/UNCONSUMED.md`；④ 收口验证器 + 断言集；⑤ `W-5`/`W-7` 核对不回退。 | 复检 | [RECHECK-20261103-104](../rechecks/RECHECK-20261103-104-design-gate-and-integration-coverage.md) |
 | 2026-11-01 | GOAL-20261101-103 | **相级进度成为一等事实 + 前端全链可见**。① `phase.started` / `phase.completed` 两个 Domain Event（`EventType` 39→41）+ `RunDetailDto.phases`（相结构取自 run **自己冻结的**协议正文；四态闭集；**失败/停车/重排不发 completed**）+ 前端十一相进度条（`data-phase-state` 四态计算色两两不同）；② 两个域层早有、读面不披露的字段补齐（`Artifact.supersedes` / `ReviewFinding.reviewer_model`）+ OpenAPI 快照与 `types.ts` 同轮重生成；③ 手稿链可读：19 类制品标签闭集（未命中不伪造）+ ReportsPage 手稿 Markdown 视图 + 编辑决定按四值闭集解析 + 投稿包 5 链接；④ `retmax` 进 `ProjectSettings` 并四级回落（**不声明时调用表逐字段不变**，`apply_retmax(calls, None)` 返回同一对象）；⑤ 早期一代三个验证器（026/028/029）首次进负判射程（**19 条判词**此前 0 条可见）+ 一条反证臂；叙述质量强口径**逐项论证**（§7：1/2/3 只能人评、4/5 可机械判但本轮不实现）。 | 复检 | [RECHECK-20261101-103](../rechecks/RECHECK-20261101-103-phase-events-and-frontend-visible-chain.md) |
-| 2026-11-01 | GOAL-20261031-102 | **改稿闭环 + 投稿包五件制品 + 期刊闭集**。① **改稿闭环（artifact 父指针）**：`Artifact.supersedes`（域 + SQLite/Postgres 两侧序列化 + 链校验三反证）⇒ 应答会话的第二块 `revised_manuscript` 在报告相装成 `manuscript_v2.md`（supersedes → v1、不降硬规则门槛）；每条 `action_taken` 必须引用 v2 且引用的名字必须在本 run 制品名集合里（编造/空谈各点名）——「手稿真的改了」从应答信的一句话变成可判的结构事实；② **投稿包**：`submission` 会话相（十一相，申报过的扩展）+ 报告相装配五件制品（信逐字 / CRediT 27 角色闭集映射与本 run 分派对齐 / COI 结构化布尔字段 / 数据可得性 digest 读面字节可重算 / 补充材料索引）；③ **期刊闭集**：`journals.yaml`（无评分字段）+ 两字段 + 三判据（越闭集/空依据/半选各点名）+ 合约镜像判漂移。产品入口 6 条 + 9 条单元 e2e 全绿（真容器实验）。实测修掉 `FakeArtifactStore.mark` 重建白名单丢字段一处；另修 charter 读取器拒读 GOAL-101 的 W 编号乱序（纯重排零内容改动） |  深度+质量 | [RECHECK-20261031-102-submission-package-and-revision-closure.md](../rechecks/RECHECK-20261031-102-submission-package-and-revision-closure.md) |
 
 > 序 67 的进展记录已移入 [MAINLINE-2026-10-28-progress-099-only.md](archive/MAINLINE-2026-10-28-progress-099-only.md)（原文搬运，仅链接基准修正）。
 
@@ -374,8 +373,11 @@ GOAL-082 的 EC-04 已实测证明——
 | 日期 | 序 | 被替换的行（原文） | 替换为 | 理由 |
 | --- | --- | --- | --- | --- |
 | 2026-11-03 | 72（新增）+ 阶梯「复检」行（**再升级**） | （无替换：序 1…71 原文**全部保留**） | （无替换） | 序 72 = `GOAL-20261103-104`（**建档**）：程序表追加序 72（能力域 `复检`，**不填轴值**）；阶梯「复检」行 `当前级` 追加「设计门禁四组合」「十一相进基线」并在 `依据 GOAL` 收录本 GOAL。**`下一级` 逐字未动**：四组合是**对角取样**（8 选 4）、元素级像素只覆盖一个组件、整页阈值仍是 2% —— 把「视觉回归已完全覆盖」写进去属于伪造验证证据。 |
-| 2026-11-01 | 70（新增）+ 阶梯「复检」「报告」两行（**各自再升级**） | （无替换：序 1…69 原文**全部保留**） | （无替换） | 序 70 = `GOAL-20261031-102`（**建档**）：程序表追加序 70（能力域 `深度+质量`）；阶梯「复检」行 `当前级` 追加「改稿闭环（artifact 父指针）」、「报告」行 `当前级` 追加「投稿包五件制品 + 期刊闭集」，两行的 `依据 GOAL` 各收录本 GOAL；进展记录插最上面一行；两表各 3 行。**「复检」行的 `下一级` 逐字未动**（「判词改写了下一轮的计划/立题」）——本轮做的是「作者按编辑要求改了稿」（artifact 父指针让它可判），不是「判词内容驱动了改什么」：两者是不同的格，不冒认 |
 | 2026-11-01 | 71（新增）+ 阶梯「复检」行（**再升级**） | （无替换：序 1…70 原文**全部保留**） | （无替换） | 序 71 = `GOAL-20261101-103`（**建档**）：程序表追加序 71（能力域 `复检`，**不填轴值**）；阶梯「复检」行 `当前级` 追加「相级进度可见」并在 `依据 GOAL` 收录本 GOAL。**`下一级` 逐字未动**：本轮只做**论证**（§7 三项只能人评 / 两项可机械判但未实现），把「叙述质量已可判」写进去属于伪造验证证据。 |
+
+> 序 70 的修订条目已移入 [MAINLINE-2026-11-01-revisions-70-only.md](archive/MAINLINE-2026-11-01-revisions-70-only.md)（原文搬运，未改一字）。
+
+> 序 70 的进展记录已移入 [MAINLINE-2026-11-01-progress-102-only.md](archive/MAINLINE-2026-11-01-progress-102-only.md)（原文搬运，仅链接基准修正）。
 
 > 序 69 的修订条目已移入 [MAINLINE-2026-10-30-revisions-69-only.md](archive/MAINLINE-2026-10-30-revisions-69-only.md)（原文搬运，未改一字）。
 
