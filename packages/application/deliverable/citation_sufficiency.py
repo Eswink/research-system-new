@@ -46,8 +46,10 @@ from packages.application.deliverable.manuscript_quality import _CITATION, _SENT
 CITED_SECTIONS: tuple[str, ...] = ("introduction", "results", "discussion")
 
 #: 引用标记的语法**不在这里定义**：`_CITATION` 与 `_SENTENCE_SPLIT` 一起从
-#: `manuscript_quality` 导入（那一份与 `manuscript.CITATION_PATTERN` 逐字同形，
-#: 由 `test_the_citation_grammar_is_the_same_one` 钉住）。本模块**不写第三份正则**。
+#: `manuscript_quality` 导入（那一份与 `manuscript.CITATION_PATTERN` 逐字同形）。
+#: 本模块**不写第三份正则** —— 由
+#: `test_the_citation_grammar_is_the_same_object_not_a_copy` 钉住（它判源码 AST：
+#: 本模块里不得出现对引用语法的再一次 `re.compile`）。
 
 #: 每句最少几个引用标记。**`None` = 不判**。
 #:
