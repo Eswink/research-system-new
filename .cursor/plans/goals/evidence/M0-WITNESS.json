@@ -1832,7 +1832,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-105-citation-readings-and-review-driven-revision.md",
-        "sha256": "684479e34d75d98663896098f304e3e4ea21ce90"
+        "sha256": "ebe92b474ed5e02f704ebb120a131218543c0f73"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -20111,7 +20111,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "4e5428e7689be0eb8dcf6971fc14fb106fad12ae"
+    "head": "2ef2b1ef1397c50e1a0ceb688f7a32120e29a3f3"
   },
   "fingerprint_before": {
     "files": [
@@ -21945,7 +21945,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-105-citation-readings-and-review-driven-revision.md",
-        "sha256": "684479e34d75d98663896098f304e3e4ea21ce90"
+        "sha256": "ebe92b474ed5e02f704ebb120a131218543c0f73"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -40224,11 +40224,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "4e5428e7689be0eb8dcf6971fc14fb106fad12ae"
+    "head": "2ef2b1ef1397c50e1a0ceb688f7a32120e29a3f3"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "4e5428e7689be0eb8dcf6971fc14fb106fad12ae",
+  "ran_at_head": "2ef2b1ef1397c50e1a0ceb688f7a32120e29a3f3",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
