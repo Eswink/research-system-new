@@ -147,6 +147,22 @@ GOAL-20261103-105 的七条 EC 逐条取证。**两路以上**（`verify_paths` 
      本模块里不得出现「对引用语法再做一次编译」。注入同一副本 ⇒ 测试与收口验证器
      **都**判红，并逐字点名 `__import__('re').compile(_SHARED.pattern)`。
 
+- **`D-8`｜`a56f19e5` 首次轮询即红（`console-frontend`），类别①真缺陷（测试侧时序）。**
+  此前台账最新 CI 读数停在 `46578970`（8/8 绿），`a56f19e5` 推上去后**从未被查**——
+  这是「CI 到终态」这一条 ACHIEVED 组成部分的缺口，由收口审计点名。
+  实测：`M0 41765817584` 的 `console-frontend` 失败在
+  `Console e2e (deterministic stubs)`；具体是 `design-outline-guard.spec.ts:139`
+  「对照：只改样式（颜色）→ 判据不误报」。
+  **判据日志的决定性一行**：期望侧 `- div testid=loading-state role=status kids=1`，
+  实际侧 `+ ul testid=projects-list kids=2`（另有 `project-switcher` / `option` 整块新增）。
+  两次快照之间测试只改了 `li` 的 `backgroundColor` ⇒ **结构变更不是测试造成的**，是页面
+  自己在加载。根因：`openProjects` 只等 `projects-page` 可见，而该 section 在数据到达前
+  就可见（骨架 + `loading-state`）。
+  修法：`await expect(page.getByTestId("loading-state")).toHaveCount(0)`。
+  **没有放宽任何判据**（`assertOutlines`、outline 基线、阈值全未动）。
+  **如实边界**：本机连拍 5 次都绿，复现不了 ⇒ 归因依据是 CI 日志的结构差异，不是本机复现；
+  这正是「本机绿 ≠ CI 绿」的一个实例。
+
 ## 反证臂汇总（**判据咬得住**的证据）
 
 | 判据 | 注入 | 极性 |

@@ -27,6 +27,12 @@ async function openProjects(page: Page): Promise<void> {
   await stubApi(page);
   await page.goto(`/${HASH}`);
   await expect(page.getByTestId("projects-page")).toBeVisible();
+  // `projects-page` 在**数据到达之前**就已可见（骨架 + `loading-state`），所以只等它可见
+  // 会让「两次 buildOutline 之间页面仍在变」。CI 实测（`console-frontend` 的
+  // `design-outline-guard.spec.ts:139`）：`before` 抓到的还是 `loading-state`，
+  // `styled` 已经拿到 `projects-list` + `project-switcher` ⇒ 「只改样式不误报」
+  // 判红，而 DOM 一个字都没被测试改动。等加载态**消失**才是「页面稳定」的定义。
+  await expect(page.getByTestId("loading-state")).toHaveCount(0);
 }
 
 /**

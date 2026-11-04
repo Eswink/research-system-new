@@ -229,12 +229,13 @@ P4 不冒充语义）把 `NOT_JUDGED` 五项逐项判过：1/2/3 只能人评（
 | `4e5428e7` | 与 `46578970` **同一次 push**（无独立 run） | 读数见本表 `46578970` 行；**本行不冒领** | **终点读数回填 + 见证**：87f4eb92 的 M0 41746254331（8/8）与 Push 41746253361（3/3）；本地 `PASS: profile=m0; 23 deterministic checks`、24 行 |
 | `82321968` | 与 `46578970` **同一次 push**（无独立 run） | 读数见本表 `46578970` 行；**本行不冒领** | **收口提交**：为 `2ef2b1ef` 与它推离 HEAD 的 `4e5428e7` 补行 + 迭代日志 `commits` 格收录（两个判据从相反方向读同一条链）；本地 m0 `PASS: profile=m0; 23 deterministic checks`、24 行、树未变 |
 | `46578970` | [M0 41760501352](https://github.com/Eswink/research-system-new/actions/runs/41760501352) / [Push 41760500645](https://github.com/Eswink/research-system-new/actions/runs/41760500645) | **M0 `success`（8/8 job success）**；**Push 全 success（3/3）** | **台账终点**（只改 `.cursor/`）：`82321968` 入账。本地 `PASS: profile=m0; 23 deterministic checks`、24 行、树未变；两树复检 **75 判词**、两树 `sha256` 相同 （`60e9984b178f0b1865a042d497f25f04217782a2139651dc533e0890c2c78abf`）|
+| `a56f19e5` | [M0 41765817584](https://github.com/Eswink/research-system-new/actions/runs/41765817584) / [Push 41765817480](https://github.com/Eswink/research-system-new/actions/runs/41765817480) | **M0 `failure`（7/8 success；`console-frontend` 红）**；Push 全 success（3/3） | **首次轮询这个 HEAD**（此前台账最新读数停在 `46578970` —— 那一格是绿的，`a56f19e5` 从未被查）。红因归**类别①真缺陷（测试侧时序）**：`design-outline-guard.spec.ts:139` 的「只改样式不误报」判红，日志显示 `before` 抓到 `loading-state`、`styled` 已拿到 `projects-list` + `project-switcher` —— 两次快照之间页面自行完成加载，而测试只改了 `li` 的 `backgroundColor`。**没有放宽任何判据**：修的是 `openProjects` 的等待条件（补 `loading-state` 计数归零），判据本身与阈值一字未动 |
 
 ## 迭代日志
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` → `38b92a7b` → `cc010ce3` → `a9c845f2` → `33017ab8` → `1803b066` → `15f9fb5b` → `f9883a2e` → `747a7a53` → `ea7d581e` → `be35838a` → `bfa8b84a` → `f15f190f` → `5d48703c` → `87aba9fb` → `f5610f18` → `3a1073cf` → `87f4eb92` → `4e5428e7` → `2ef2b1ef` → `82321968` → `46578970` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL；两树复检 73 判词 `sha256` 相同 | **M0 `success` 8/8**（`f9883a2e`，含 `console-frontend`）；Push success | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记 | 见§「残余与未覆盖范围」|
+| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` → `38b92a7b` → `cc010ce3` → `a9c845f2` → `33017ab8` → `1803b066` → `15f9fb5b` → `f9883a2e` → `747a7a53` → `ea7d581e` → `be35838a` → `bfa8b84a` → `f15f190f` → `5d48703c` → `87aba9fb` → `f5610f18` → `3a1073cf` → `87f4eb92` → `4e5428e7` → `2ef2b1ef` → `82321968` → `46578970` → `a56f19e5` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL；两树复检 73 判词 `sha256` 相同 | **M0 `success` 8/8**（`f9883a2e`，含 `console-frontend`）；Push success | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记；`a56f19e5` 首轮 CI 抓到 `console-frontend` 红（`design-outline-guard` 时序）⇒ 类别①、修等待条件、判据未动（`W-5` / `D-8`）| 见§「残余与未覆盖范围」|
 
 ## 影响报告
 
@@ -290,6 +291,14 @@ P4 不冒充语义）把 `NOT_JUDGED` 五项逐项判过：1/2/3 只能人评（
   测试与收口验证器**都**判红并逐字点名那段源码。
   **这条残余本身也说明**：字符串标记式判据（`"_CITATION = re.compile" not in src`）
   会被改名写法绕过 —— 本轮实测过一次（副本注入后全绿）。
+
+- `W-5`｜**`design-outline-guard` 的「只改样式不误报」在 CI 上红过一次**（已修）：
+  `openProjects` 只等 `projects-page` 可见，而那个 section 在数据到达**之前**就可见
+  （骨架 + `loading-state`）⇒ 「抓 before → 改样式 → 抓 styled」两次快照之间页面可能
+  自行完成加载。CI 实测形态：`before` 含 `loading-state`、`styled` 含 `projects-list`
+  与 `project-switcher`。修法 = 等 `loading-state` 计数归零（页面稳定的定义），
+  **判据与阈值未动**。**如实登记**：本机按压 5 次都没复现（时序窗口比 CI 窄），
+  因此归因依据是**日志里的结构差异**，不是本机复现。
 
 ### 未覆盖范围（本轮**没有**触及的面）
 
