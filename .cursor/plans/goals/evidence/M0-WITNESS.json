@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "067a12259c25e7136d5975f75f1a935120087959"
+        "sha256": "0fd75a342f569e393072f16ade62e52d305f4e04"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1380,7 +1380,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "4428e4abdb134141041cc7aa363eccfd4b3401d7"
+        "sha256": "dda4b6bc2eb7c6da1a744a0f23f06377ca1eb0fe"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -6016,7 +6016,7 @@
       },
       {
         "path": ".cursor/skills/system-spec-check/scripts/validate_bundle.py",
-        "sha256": "8c7436c9863975c0157e92c7c9a33f7bc9dbaef0"
+        "sha256": "48b212666b37e584a8a84b2f4970c552c3d745b2"
       },
       {
         "path": "Makefile",
@@ -19060,7 +19060,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "ffb701036b42aa4f4af8a24de4491e8e72ec0302"
+        "sha256": "b19c91d3fa505ca5374071ef43da4c71ea78645c"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -20111,7 +20111,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "5ef78e38257aebab747964d8a9c138c6d2ebe2ca"
+    "head": "8a31ced67693a9acee36d5ca3bc762fc3e815ae3"
   },
   "fingerprint_before": {
     "files": [
@@ -20533,7 +20533,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "067a12259c25e7136d5975f75f1a935120087959"
+        "sha256": "0fd75a342f569e393072f16ade62e52d305f4e04"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -21493,7 +21493,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "4428e4abdb134141041cc7aa363eccfd4b3401d7"
+        "sha256": "dda4b6bc2eb7c6da1a744a0f23f06377ca1eb0fe"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -26129,7 +26129,7 @@
       },
       {
         "path": ".cursor/skills/system-spec-check/scripts/validate_bundle.py",
-        "sha256": "8c7436c9863975c0157e92c7c9a33f7bc9dbaef0"
+        "sha256": "48b212666b37e584a8a84b2f4970c552c3d745b2"
       },
       {
         "path": "Makefile",
@@ -39173,7 +39173,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "ffb701036b42aa4f4af8a24de4491e8e72ec0302"
+        "sha256": "b19c91d3fa505ca5374071ef43da4c71ea78645c"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -40224,11 +40224,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "5ef78e38257aebab747964d8a9c138c6d2ebe2ca"
+    "head": "8a31ced67693a9acee36d5ca3bc762fc3e815ae3"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "5ef78e38257aebab747964d8a9c138c6d2ebe2ca",
+  "ran_at_head": "8a31ced67693a9acee36d5ca3bc762fc3e815ae3",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

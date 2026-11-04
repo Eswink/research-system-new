@@ -34,9 +34,7 @@ MAX_FILE_LINES = 450
 MAX_FUNCTION_LINES = 50
 
 #: **必备清单**（源码里固化）：射程的下界由它给出，不由文档给出。
-#: `tools/research_mcp_server.py` 由 GOAL-20260927-027 EC-02 显式加入、
-#: `tools/verify_goal027_closeout.py` 由 EC-05 显式加入（均为纯收紧：
-#: 新增受判文件，不删任何条目）；它是交付型产品件（MCP server 本体），必须过四道门。
+#: `research_mcp_server.py`（交付型产品件）与 `verify_goal027_closeout.py` 由 GOAL-027 显式加入。
 IN_SCOPE: tuple[str, ...] = (
     "tools/run_m0_with_witness.py",
     "tools/two_tree_recheck.py",
@@ -194,8 +192,7 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal096_closeout.py",
     "tools/goal097_closeout_assertions.py",  # GOAL-20261026-097 EC-05（纯收紧）
     "tools/verify_goal097_closeout.py",
-    # GOAL-098 靶子 3：回填 076/090/095 三个从未存在的验证器（GOAL-096 的 `W-3`）；
-    # `_CUTOFF_SEQ = 64` 让它们不判红。纳入射程 ⇒ 此后过四道门。
+    # GOAL-098 靶子 3：回填 076/090/095 三个从未存在的验证器（`_CUTOFF_SEQ = 64` 让它们不判红）。
     "tools/goal076_closeout_assertions.py",
     "tools/verify_goal076_closeout.py",
     "tools/goal090_closeout_assertions.py",
@@ -221,6 +218,9 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal105_closeout.py",
     "tools/charter_progress.py",
     "tools/check_ledger_run_attribution.py",
+    # ZCode 侧门禁：技能正文只经 Skill 工具加载（纯收紧 ⇒ 只增不删）。
+    "tools/zcode-hooks/skill_invocation_guard.py",
+    "tools/zcode-hooks/skill_index_context.py",
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"

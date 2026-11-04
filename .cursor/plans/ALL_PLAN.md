@@ -5,6 +5,7 @@
 ## Active
 
 |  | Plan | Status |
+| [x] | [PLAN-20261104-106](tasks/PLAN-20261104-106-zcode-skill-distillation-and-explicit-invocation.md) | DONE |
 | [x] | [PLAN-20261103-105](tasks/PLAN-20261103-105-citation-readings-and-review-driven-revision.md) | DONE |
 | [x] | [PLAN-20261031-102](tasks/PLAN-20261031-102-submission-package-and-revision-closure.md) | DONE |
 | [x] | [PLAN-20261101-103](tasks/PLAN-20261101-103-phase-events-and-frontend-visible-chain.md) | DONE |

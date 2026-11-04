@@ -317,10 +317,26 @@ def check_versions() -> None:
 
     old_version = re.compile(r"(?<![0-9])v?(?:0\.2\.[0-9]+|0\.3\.0)(?![0-9])", re.IGNORECASE)
     scan_suffixes = {".md", ".mdc", ".yaml", ".yml", ".json", ".py", ".txt"}
+    # 输入面与链接检查**同一口径**（D-10）：已跟踪 ∪ 未跟踪未忽略。
+    # 为什么必须在这里也筛一次：客户端/工具会在被忽略的目录里写自己的状态快照
+    # （例如 `.zcode/plans/` 的会话计划），那些字节**不是本仓的产物**，却会命中
+    # 旧版本正则 ⇒ 本机门变红而干净的 checkout 是绿的。判据见
+    # `tests/tooling/test_validate_bundle_git_decided_input_face.py` 的版本扫描段。
+    # 已跟踪优先于忽略：force-add 进被忽略目录的文件仍然照扫。
+    version_inputs = git_decided_inputs()
+    if version_inputs is None:
+        print("验证失败:")
+        print(
+            f"- 门禁输入面不可用: {GIT_FACE_UNAVAILABLE}"
+            "（无法用 git 判定被扫路径；扫描根必须在一个 git 工作树内）"
+        )
+        raise SystemExit(1)
     for path in repository_files():
         if path.suffix.lower() not in scan_suffixes:
             continue
         relative = path.relative_to(ROOT).as_posix()
+        if relative not in version_inputs:
+            continue
         if relative in DEPENDENCY_LOCKFILES:
             continue
         if "runtime" in path.relative_to(ROOT).parts:
@@ -336,6 +352,9 @@ def check_versions() -> None:
             ERRORS.append(f"发现旧项目版本引用: {path.relative_to(ROOT)}")
 
     for path in repository_files():
+        relative = path.relative_to(ROOT).as_posix()
+        if relative not in version_inputs:
+            continue
         if re.search(r"(?:V0_2|V0_3|v0_2|v0_3)", path.name):
             ERRORS.append(f"发现旧版本命名文件: {path.relative_to(ROOT)}")
 
