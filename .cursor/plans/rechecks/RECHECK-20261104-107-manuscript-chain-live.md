@@ -1,12 +1,12 @@
 ---
-id: RECHECK-20261104-106
+id: RECHECK-20261104-107
 slug: manuscript-chain-live
 title: GOAL-106 复检 —— 十一相链首次真实成立 / GOAL-105 两件机制在真实手稿上取证
-status: IN_PROGRESS
-result: PENDING
+status: VERIFYING
+result: REVISE
 created_at: 2026-11-04
 updated_at: 2026-11-05
-plan_id: PLAN-20261104-106
+plan_id: PLAN-20261104-107
 parent_goal: GOAL-20261104-106
 owners:
   - root-agent
@@ -24,7 +24,7 @@ verify_paths:
   - tools/goal106_closeout_assertions.py
 ---
 
-# RECHECK-20261104-106
+# RECHECK-20261104-107
 
 ## 复检范围
 

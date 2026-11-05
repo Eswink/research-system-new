@@ -56,7 +56,7 @@ exit_criteria:
       RECHECK 里有一节 `## 真实 run 的失败形态台账`，把 EC-02 过程中出现的**每一个**失败
       形态写成一条：现象 / 读面证据 / 归类 / 修法 / 是否修好。**零归因的失败不许留在台账外**。
     verify: >-
-      `RECHECK-20261104-106` 含该二级标题且每条含五列；`verify_goal106_closeout.py` 断言它存在
+      `RECHECK-20261104-107` 含该二级标题且每条含五列；`verify_goal106_closeout.py` 断言它存在
       且条目数 ≥ 实际记录的失败形态数。
     status: PASS
   - id: EC-05
@@ -119,8 +119,8 @@ escalation_triggers:
   - 新增第三方依赖
   - 实现外部评审面板（引入模型调用判叙述质量 ⇒ 须用户拍板）
 child_plans:
-  - .cursor/plans/tasks/PLAN-20261104-106-manuscript-chain-live.md
-latest_recheck: .cursor/plans/rechecks/RECHECK-20261104-106-manuscript-chain-live.md
+  - .cursor/plans/tasks/PLAN-20261104-107-manuscript-chain-live.md
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261104-107-manuscript-chain-live.md
 memory_entries: []
 ---
 
@@ -202,7 +202,7 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261104-106 | （见 CI 台账） | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
+| 1 | PLAN-20261104-107 | （见 CI 台账） | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
 
 ## 影响报告
 
