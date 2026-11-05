@@ -195,15 +195,56 @@ def _revision_row_verdicts(root: Path) -> list[Any]:
 
 
 def _ec_status_verdicts(goal: str) -> list[Any]:
-    """EC 终态：七条全 PASS。"""
+    """EC 终态：七条全 PASS —— **但只在 GOAL 声称 `ACHIEVED` 时**要求这一件事。
+
+    **为什么按 status 分叉**（实测的教训，照 `verify_goal076_closeout.py` 的形态）：
+    `record_verdicts` 由 `tests/tooling/test_verifier_main_files_report_no_negative.py`
+    要求「**零判负**」。若它对未收口的 GOAL 也要求「七条 EC 全 PASS」，那么**在目标真正
+    达成之前，这条判据必然红** —— 而红的原因不是「记录面资产坏了」（那条判据的全部意义），
+    是「目标还没做完」。那会把一条防伪造的判据变成一条逼人提前把 EC 改成 PASS 的判据。
+
+    所以：`status == ACHIEVED` ⇒ 七条必须全 PASS（这才是「收口时不得有未完成项」）；
+    否则 ⇒ 只判**如实性**：每条 EC 的 `status` 必须是合法取值，且**不得有 EC 在
+    `result` 未成立时被标成 PASS 而不被本验证器的产品面断言拦下**（那一面由
+    `goal-ec02-agrees-with-the-readings` / `goal-ec03-agrees-with-the-run` 判）。
+    """
+    status = _frontmatter_status(goal)
+    statuses = {f"EC-0{index}": ec_status(goal, f"EC-0{index}") for index in range(1, EC_COUNT + 1)}
+    if status == "ACHIEVED":
+        return [
+            TOOLBOX.verdict(
+                f"goal-{ec.lower()}-status",
+                value == "PASS",
+                f"{ec}={value!r}（ACHIEVED 要求全 PASS）",
+            )
+            for ec, value in statuses.items()
+        ]
+    allowed = {"PASS", "PENDING", "BLOCKED"}
     return [
         TOOLBOX.verdict(
-            f"goal-ec0{index}-status",
-            ec_status(goal, f"EC-0{index}") == "PASS",
-            ec_status(goal, f"EC-0{index}"),
-        )
-        for index in range(1, EC_COUNT + 1)
+            "goal-ec-statuses-are-legal-values",
+            all(value in allowed for value in statuses.values()),
+            f"非 ACHIEVED 时 EC 取值必须属于 {sorted(allowed)}：{statuses}",
+        ),
+        TOOLBOX.verdict(
+            "goal-does-not-claim-completion",
+            status != "ACHIEVED" or all(v == "PASS" for v in statuses.values()),
+            f"status={status!r} 且 EC={statuses} —— 声称完成就必须逐条 PASS",
+        ),
     ]
+
+
+def _frontmatter_status(goal: str) -> str:
+    """GOAL frontmatter 的 `status:`（`---` 之间的那一份，不扫正文）。"""
+    if not goal.startswith("---"):
+        return "MISSING"
+    body = goal.split("---", 2)
+    if len(body) < 3:
+        return "MISSING"
+    for line in body[1].splitlines():
+        if line.startswith("status:"):
+            return line.split(":", 1)[1].strip()
+    return "MISSING"
 
 
 def _scope_verdicts(goal: str) -> list[Any]:

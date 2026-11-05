@@ -4,12 +4,15 @@
   "direction_status": 200,
   "interface": "assemble() product root, no seams patched",
   "http_status": 200,
-  "http_body": "{\"id\":\"77c48ef7-414a-45e9-8f1f-4a3fe8693728\",\"project_id\":\"example-project\",\"protocol_id\":\"direction_to_manuscript_v1_0_0\",\"state\":\"FAILED\",\"manifest_digest\":\"sha256:d90fdf5581b0a1db5012b6955a3e6fa0077f3078b954bf1788bee825c359adc4\",\"manifest_semantic_digest\":\"sha256:8c72ff78745ac6a4ddaafcc1756ebc5831f1835d65a26503beba442e1f6723bc\",\"protocol_body_digest\":\"sha256:8029a00d39ce4b03066bc07b45f41f5b29cd48851dbfc2d1aa2bedeeb3411511\",\"paused_dispatch\":null,\"dispatch\":{\"kind\":\"NONE\",\"retry\":{\"scheduled\":0,\"due\":0,\"next_retry_at\":null},\"holders\":[]},\"rebuild\":{\"status\":\"SELF_CONTAINED\",\"missing\":[]},\"execution\":{\"execution_backend\":null,\"runtime_fingerprint\":{\"status\":\"REPEATABLE_CONFIGURATION\",\"substrate\":null,\"reason\":null,\"source\":\"RUN_OBSERVATION\",\"endpoint_config_digest\":\"sha256:fe4b5b0ae045398cc20d91d55c71a598320b3d89514ce783d046022dce08aacc\",\"returned_model_identifier\":\"openai/deepseek-v4-flash-vision\",\"probe_suite_digest\":\"sha256:d384cbb5911eb67f0b2a51e12a067e29b9180b11d7a56e77ae44f38d52b85405\",\"system_fingerprint\":null,\"observed_model_identifiers\":[\"openai/deepseek-v4-flash-vision\"],\"missing_fields\":[\"safe_response_metadata\",\"system_fingerprint\"]}},\"program_id\":null,\"program_index\":",
-  "run_id": "77c48ef7-414a-45e9-8f1f-4a3fe8693728",
+  "http_body": "{\"id\":\"3804e594-f3c0-4141-a7bd-39ec286ab7df\",\"project_id\":\"example-project\",\"protocol_id\":\"direction_to_manuscript_v1_0_0\",\"state\":\"FAILED\",\"manifest_digest\":\"sha256:e933db9c661f696ee5e4ff624dbb2d180e34283c228003bfdf3a6df6079cd88b\",\"manifest_semantic_digest\":\"sha256:95cdee6082cc6549732aae017790557d2a58fc229e6a6b94ad1522d94f432361\",\"protocol_body_digest\":\"sha256:8029a00d39ce4b03066bc07b45f41f5b29cd48851dbfc2d1aa2bedeeb3411511\",\"paused_dispatch\":null,\"dispatch\":{\"kind\":\"NONE\",\"retry\":{\"scheduled\":0,\"due\":0,\"next_retry_at\":null},\"holders\":[]},\"rebuild\":{\"status\":\"SELF_CONTAINED\",\"missing\":[]},\"execution\":{\"execution_backend\":null,\"runtime_fingerprint\":{\"status\":\"REPEATABLE_CONFIGURATION\",\"substrate\":null,\"reason\":null,\"source\":\"RUN_OBSERVATION\",\"endpoint_config_digest\":\"sha256:fe4b5b0ae045398cc20d91d55c71a598320b3d89514ce783d046022dce08aacc\",\"returned_model_identifier\":\"openai/deepseek-v4-flash-vision\",\"probe_suite_digest\":\"sha256:d384cbb5911eb67f0b2a51e12a067e29b9180b11d7a56e77ae44f38d52b85405\",\"system_fingerprint\":null,\"observed_model_identifiers\":[\"openai/deepseek-v4-flash-vision\"],\"missing_fields\":[\"safe_response_metadata\",\"system_fingerprint\"]}},\"program_id\":null,\"program_index\":",
+  "run_id": "3804e594-f3c0-4141-a7bd-39ec286ab7df",
   "state": "FAILED",
   "artifact_ids": [
-    "4cd277e5-8df7-49c8-a54e-af621630a13a:research_question",
-    "4cd277e5-8df7-49c8-a54e-af621630a13a:retrieval_context"
+    "4576c7b6-7913-4246-8b94-5088ed5923fc:research_question",
+    "4576c7b6-7913-4246-8b94-5088ed5923fc:retrieval_context",
+    "aa513cd0-8706-4dcb-9ca5-f9b2d92703eb:retrieval_context",
+    "tool-args:aa513cd0-8706-4dcb-9ca5-f9b2d92703eb:literature_read:42787049+42958757+42955413",
+    "tool-args:aa513cd0-8706-4dcb-9ca5-f9b2d92703eb:literature_search"
   ],
   "missing_artifacts": [
     "retrieval_report",
@@ -30,9 +33,9 @@
     "manuscript_v2.md",
     "response_letter.md"
   ],
-  "artifact_count": 2,
+  "artifact_count": 5,
   "present:research_question": true,
-  "length:research_question": 1346,
+  "length:research_question": 1371,
   "present:retrieval_report": false,
   "length:retrieval_report": 0,
   "present:novelty_claim": false,
@@ -86,10 +89,12 @@
   },
   "phase_artifact_ids": {
     "question": [
-      "4cd277e5-8df7-49c8-a54e-af621630a13a:research_question",
-      "4cd277e5-8df7-49c8-a54e-af621630a13a:retrieval_context"
+      "4576c7b6-7913-4246-8b94-5088ed5923fc:research_question",
+      "4576c7b6-7913-4246-8b94-5088ed5923fc:retrieval_context"
     ],
-    "retrieval": [],
+    "retrieval": [
+      "aa513cd0-8706-4dcb-9ca5-f9b2d92703eb:retrieval_context"
+    ],
     "novelty": [],
     "plan": [],
     "experiment": [],
@@ -102,6 +107,6 @@
   },
   "experiment_rows": 0,
   "failure_events": [
-    "run.failed: run-chain capability step failed: europe pmc temporarily unavailable"
+    "run.failed: task aa513cd0-8706-4dcb-9ca5-f9b2d92703eb failed: retry budget exhausted"
   ]
 }

@@ -1,0 +1,27 @@
+# GOAL-20261104-106 中转站延迟读数（EC-02 的归因证据）
+
+探针：POST https://discovery-api.intern-ai.org.cn/v1/chat/completions
+模型：deepseek-v4-flash-vision（`research_strong` -> `research_alpha` 的模型，即 manuscript 相用的那个）
+请求：约 400 词英文正文，max_tokens=900
+客户端超时：120 秒（与 examples/config/llm_endpoints.yaml 的 request_timeout_seconds 一致）
+
+## 第 1 轮（短请求，约 200 词，max_tokens=600）
+19.1 s / 107.2 s / 52.7 s   —— 全部 HTTP 200
+
+## 第 2 轮（长请求，约 400 词，max_tokens=900）
+99.8 s / 76.1 s / 78.4 s / **ERR ReadTimeout 120.1 s**（第 4 次直接撞上客户端超时）
+
+## 读数
+- 同一个模型、同一条请求形状，**延迟在 19s 到 >120s 之间波动**；
+- 第 2 轮四次里有 **1 次超过 120 秒上限**（25%）——「请求本身没错，只是没在时限内回来」；
+- 端点配置 `request_timeout_seconds: 120` 被 `tests/loaders/test_contract_loaders.py:134` 逐字钉住
+  （改它 = 改既有判据，属于本轮明令禁止的「为绿调参」）；
+- `research_manuscript` 的 `retry_policy.max_attempts: 1` 让第一次超时就直接 FAIL。
+
+## 归因结论（这是上游/中转站的属性，不是产品缺陷）
+真实 run 里出现的 `MODEL_RELAY_UNAVAILABLE`（记在 `budget_usage_entries.unavailable_reason`）
+是 OpenHands 侧 `LLMTimeoutError`/`LLMServiceUnavailableError` 的正确分类；
+它在**四个不同的相**（plan / manuscript 各两次）上出现过，因此**不是某一相实现的缺陷**。
+
+在什么条件下可达：中转站恢复稳定（长请求的 p95 明显低于 120s）后重跑即可 —— 判据、装配、
+前置与记录都已就绪，无需再改任何代码。

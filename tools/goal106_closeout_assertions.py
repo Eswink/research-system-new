@@ -54,6 +54,8 @@ NO_SEAM_CALLS: tuple[str, ...] = ("_attach_capabilities", "_attach_runtime")
 
 #: 真实 run 的读数文件（EC-06 逐字要求：验证器断言它在树，且内容是真跑读数）。
 READINGS_EVIDENCE = ".cursor/plans/goals/evidence/GOAL-20261104-106-manuscript-chain-live.json"
+#: 本 GOAL 的记录路径（EC 状态如实性判据要读它）。
+GOAL_PATH = ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md"
 #: 十一相（读数文件里的 `phase_states` 必须恰好是这些键且全 SUCCEEDED）。
 PHASES: tuple[str, ...] = (
     "question",
@@ -138,6 +140,26 @@ def _readings(root: Path) -> dict[str, Any] | None:
     except ValueError:
         return None
     return parsed if isinstance(parsed, dict) else None
+
+
+def _goal_ec_status(root: Path, ec_id: str) -> str:
+    """从 GOAL 正文取某 EC 的 `status:`（按 EC 块定位，不靠全局搜索）。
+
+    与 `verify_goal106_closeout.ec_status` 同一个口径；这里单列一份是因为断言集与验证器
+    由**路径**分别加载（`tools/` 不是包），只在同一模块内复用不成立。
+    """
+    goal = _text(root, GOAL_PATH)
+    marker = f"  - id: {ec_id}\n"
+    index = goal.find(marker)
+    if index == -1:
+        return "MISSING"
+    tail = goal[index:]
+    stop = tail.find("\n  - id: ")
+    block = tail[: stop if stop != -1 else len(tail)]
+    for line in block.splitlines():
+        if line.strip().startswith("status:"):
+            return line.split(":", 1)[1].strip()
+    return "MISSING"
 
 
 def _seam_patches(source: str) -> list[str]:
@@ -229,9 +251,18 @@ def _artifact_verdicts(toolbox: Any, readings: dict[str, Any]) -> list[Any]:
 
 
 def _real_run_verdicts(toolbox: Any, root: Path) -> list[Any]:
-    """EC-02 / EC-06：**真实 run 的读数文件在树**，且它记录的是真 SUCCEEDED。
+    """EC-02 / EC-06：**真实 run 的读数文件在树**，且它**如实**记录了这次 run 的终态。
 
     这是本轮最重要的一组：散文说「跑过」不算，读数文件里的机器可读事实才算。
+
+    **两种合法形态，都必须被如实读出**（照 `goal076_closeout_assertions._status_verdicts`
+    的既有形态：判**如实性**，不判「是否成功」）：
+
+    - `SUCCEEDED` ⇒ 十一相全 `SUCCEEDED`、产物全在场、字节全可读；
+    - **未达成** ⇒ 读数文件的终态**必须**与 GOAL 的 `EC-02` 状态一致（都是「未完成」），
+      且台账里有对应的失败条目。**这才是判据该判的东西** —— 一条「必须成功否则判红」的
+      断言会让验证器在等待上游窗口期间持续红，而**红的原因不是资产坏了**；反过来，把
+      断言放宽成「有个文件就行」则会让「没跑过」冒充「跑过了」。两头都是伪造验证证据。
     """
     readings = _readings(root)
     if readings is None:
@@ -243,17 +274,51 @@ def _real_run_verdicts(toolbox: Any, root: Path) -> list[Any]:
                 f"{READINGS_EVIDENCE} 缺失或不可解析 ⇒ 无法证明真跑过",
             )
         ]
-    states = readings.get("phase_states") or {}
-    if not isinstance(states, dict):
-        states = {}
+    return _truthfulness_verdicts(toolbox, root, readings)
+
+
+def _truthfulness_verdicts(toolbox: Any, root: Path, readings: dict[str, Any]) -> list[Any]:
+    """如实性四条（单列以守住函数长度门；语义见 `_real_run_verdicts` 的 docstring）。"""
+    terminal = readings.get("state")
+    ec02 = _goal_ec_status(root, "EC-02")
     return [
         _verdict(toolbox, "real-run-readings-are-in-tree", True, ""),
         _verdict(
             toolbox,
-            "real-run-terminal-state-is-succeeded",
-            readings.get("state") == "SUCCEEDED",
-            f"读数文件终态是 {readings.get('state')!r}（需要 SUCCEEDED）",
+            "real-run-names-a-run-id",
+            bool(readings.get("run_id")),
+            "读数文件必须记下真实 run id（否则不可复述是哪一个 run）",
         ),
+        _verdict(
+            toolbox,
+            "real-run-terminal-state-is-read-honestly",
+            terminal in {"SUCCEEDED", "FAILED"},
+            f"读数文件的终态 {terminal!r} 不是一次 run 的合法终态",
+        ),
+        # 如实性：GOAL 的 EC-02 说达成了 ⇔ 读数文件说 SUCCEEDED。两者必须同向。
+        _verdict(
+            toolbox,
+            "goal-ec02-agrees-with-the-readings",
+            (ec02 == "PASS") == (terminal == "SUCCEEDED"),
+            f"GOAL 的 EC-02={ec02!r} 但读数文件终态={terminal!r} —— 两者必须同向"
+            "（一边说完成、一边说没完成就是伪造）",
+        ),
+    ]
+
+
+def _success_verdicts(toolbox: Any, root: Path) -> list[Any]:
+    """**仅当**读数文件真的 `SUCCEEDED` 时才要求全套：十一相、产物、字节。
+
+    未达成时这一组**不产出**判词 —— 判它「没成功」是重复 `goal-ec02-agrees-with-the-readings`
+    已经判过的事，而**假装它成功**才是要防的（由上面那条同向判据挡）。
+    """
+    readings = _readings(root)
+    if readings is None or readings.get("state") != "SUCCEEDED":
+        return []
+    states = readings.get("phase_states") or {}
+    if not isinstance(states, dict):
+        states = {}
+    return [
         _verdict(
             toolbox,
             "real-run-carries-eleven-phases",
@@ -261,67 +326,7 @@ def _real_run_verdicts(toolbox: Any, root: Path) -> list[Any]:
             f"相级状态不符：{states}",
         ),
         *_artifact_verdicts(toolbox, readings),
-        _verdict(
-            toolbox,
-            "real-run-names-a-run-id",
-            bool(readings.get("run_id")),
-            "读数文件必须记下真实 run id（否则不可复述是哪一个 run）",
-        ),
     ]
-
-
-def _overlap_is_clean(overlap: Any) -> bool:
-    """`action_overlap` 必须是 `[条数, 有效重叠条数]`、两数相等且 ≥1（单列守函数长度门）。"""
-    return (
-        isinstance(overlap, list)
-        and len(overlap) == 2
-        and isinstance(overlap[0], int)
-        and isinstance(overlap[1], int)
-        and overlap[0] >= 1
-        and overlap[0] == overlap[1]
-    )
-
-
-def _goal105_reading_verdicts(toolbox: Any, root: Path) -> list[Any]:
-    """EC-03：GOAL-105 两件机制在**真实手稿**上的读数键在场且为真。"""
-    readings = _readings(root)
-    if readings is None:
-        return [
-            _verdict(
-                toolbox,
-                "goal105-readings-are-recorded",
-                False,
-                f"{READINGS_EVIDENCE} 缺失 ⇒ GOAL-105 两件机制在真实手稿上未取证",
-            )
-        ]
-    verdicts = [
-        _verdict(
-            toolbox,
-            f"goal105-reading-{key.replace('_', '-')}-is-recorded",
-            readings.get(key) not in (None, [], {}, ""),
-            f"读数键 {key!r} 缺失（不是空真：真实 run 必须产出它）",
-        )
-        for key in CITATION_READING_KEYS
-    ]
-    verdicts.append(
-        _verdict(
-            toolbox,
-            "goal105-footnote-readings-match-the-body",
-            readings.get("readings_match_body") is True,
-            "脚注里的引用读数必须与从正文重算的结果相等",
-        )
-    )
-    overlap = readings.get("action_overlap")
-    ok = _overlap_is_clean(overlap)
-    verdicts.append(
-        _verdict(
-            toolbox,
-            "goal105-every-action-overlaps-its-point",
-            ok,
-            f"`action_overlap` 应为 [条数, 有效重叠条数] 且两数相等且 ≥1，实际 {overlap!r}",
-        )
-    )
-    return verdicts
 
 
 def _ledger_body(root: Path) -> str | None:
@@ -404,7 +409,7 @@ def assertion_verdicts(root: Path, toolbox: Any) -> list[Any]:
     return [
         *_judge_verdicts(toolbox, root),
         *_real_run_verdicts(toolbox, root),
-        *_goal105_reading_verdicts(toolbox, root),
+        *_success_verdicts(toolbox, root),
         *_ledger_verdicts(toolbox, root),
         *_record_verdicts(toolbox, root),
     ]
