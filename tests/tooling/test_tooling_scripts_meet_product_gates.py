@@ -209,9 +209,9 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/verify_goal101_closeout.py",
     "tools/verify_goal102_closeout.py",
     "tools/goal102_closeout_assertions.py",
-    "tools/goal103_closeout_assertions.py",  # GOAL-103 EC-07（纯收紧）
+    "tools/goal103_closeout_assertions.py",  # GOAL-103
     "tools/verify_goal103_closeout.py",
-    "tools/goal104_closeout_assertions.py", "tools/goal104_credential_faces.py",  # GOAL-104
+    "tools/goal104_closeout_assertions.py", "tools/goal104_credential_faces.py",
     "tools/verify_goal104_closeout.py",
     "tools/goal105_closeout_assertions.py", "tools/verify_goal105_closeout.py",  # GOAL-105
     "tools/goal106_closeout_assertions.py", "tools/goal106_record_assertions.py",
@@ -224,7 +224,8 @@ IN_SCOPE: tuple[str, ...] = (
 )
 
 _REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
-_REASON_PROBE, _REASON_SPIKE = "历史取证探针（一次性使用，非交付面）", "上游调研脚本（历史调研资产）"
+_REASON_PROBE = "历史取证探针（一次性使用，非交付面）"
+_REASON_SPIKE = "上游调研脚本（历史调研资产）"
 _REASON_GOAL015 = "GOAL-015 专属脚本（其收口验证器是 GOAL-023 的一般化先例）；纳入射程需另行授权"
 _REASON_CLI = "历史 CLI / 工具（有 tests/tooling 行为判据，但无格式 / 规模 / 类型门）"
 _REASON_LAB = "M12 / M13 历史资产（参考 / 冒烟 / 实验门禁脚本）"
