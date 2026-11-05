@@ -234,20 +234,28 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
 
 ### 残余（本轮已交付里仍然存在的缺口）
 
-- `W-1`｜**EC-02 / EC-03 未达成**：十一相链**尚未**在真实条件下跑到 `SUCCEEDED`。**七次真跑**的
-  读数（逐条在 RECHECK 台账 `F-1` / `F-7` / `F-9`…`F-14`）把阻塞点逐步钉死：
-  **前六相（question / retrieval / novelty / plan / experiment / review）已经连续三次
-  `SUCCEEDED`** —— 含**真实检索**（三个真实 PMID 进 `literature_read` 的 `tool-args`）与
-  **两臂沙箱实验**（各落 `metrics`），五件模型产物字节在场（`research_question` 1.3KB /
-  `retrieval_report` 4.2KB / `novelty_claim` 4.7KB / `research_plan` 5.7KB / `review_decision`）。
-  失败**从来不在同一相**（`manuscript` 两次、`plan` 一次，另两次死在 `retrieval` 的 EPMC `503`），
-  而每次的 `budget_usage_entries.unavailable_reason` 都是 `MODEL_RELAY_UNAVAILABLE` 或 EPMC 不可用。
-  **定量归因**（`GOAL-20261104-106-relay-latency.txt`）：同一个模型、同一条长请求，
-  延迟 19s→>120s 波动，**约 25% 的请求撞上 120s 的客户端超时**；而该超时值被
+- `W-1`｜**EC-02 / EC-03 未达成**：十一相链**尚未**在真实条件下跑到 `SUCCEEDED`。**九次真跑**
+  的读数（逐条在 RECHECK 台账 `F-1` / `F-7` / `F-9`…`F-16`）逐次把阻塞点推后：
+
+  | 结果 | 次数 | 失败点 |
+  | --- | --- | --- |
+  | **前六相（question…review）全 `SUCCEEDED`** | **3** | 倒在后五相（`manuscript` 2 次 / `experiment` 1 次） |
+  | 四相内 `SUCCEEDED` | 1 | `experiment` 被验收门拒收（`metrics` 缺席） |
+  | `retrieval` 之前失败 | 3 | EPMC `503`（2 次）+ 中转站（1 次） |
+  | `question` 之前失败 | 2 | 中转站 `MODEL_RELAY_UNAVAILABLE` |
+
+  **已达成的部分**（机械事实，不是断言）：**前六相在真实模型 + 真实中转站 + 真容器下连续三次
+  `SUCCEEDED`** —— 含**真实检索**（三个真实 PMID 进 `literature_read` 的 `tool-args`）、
+  **两臂沙箱实验**（各落 `metrics`）与**两位独立评审者的判词**；五件模型产物字节在场
+  （`research_question` 1.3KB / `retrieval_report` 4.2KB / `novelty_claim` 4.7KB /
+  `research_plan` 5.7KB / `review_decision` 1.8KB）。
+  **后五相**（manuscript / editorial / revision / submission / report）**从未在真实条件下跑过**。
+
+  **定量归因**（`GOAL-20261104-106-relay-latency.txt`）：同一个模型、同一条长请求，延迟
+  19s→>120s 波动，**约 25% 的请求撞上 120s 的客户端超时**；该超时值被
   `tests/loaders/test_contract_loaders.py:134` **逐字钉住**（改它 = 改既有判据）。
-  ⇒ **剩余阻塞是上游中转站的延迟稳定性，不是产品缺陷**；本机可控的部分（判据 / 装配 /
-  前置 / 记录 / 收口资产）**全部就绪**，没有任何本机可修的东西剩下。
-  这不是「重跑就绿」—— 第 7 次反而死在**更早**的相，说明「多跑几次总会过」不成立。
+  ⇒ **剩余阻塞是上游中转站的延迟稳定性**，不是产品缺陷；本机可控的部分（判据 / 装配 /
+  前置 / 记录 / 收口资产）**全部就绪**。这不是「重跑就绿」——第 7 / 9 次反而死在**更早**的相。
 - `W-2`｜**相级进度读面不把 run 级汇编制品挂到 `report` 相**：`manuscript.md` / 投稿五件 /
   改稿两件的 id 是 `{run_id}:<name>`（没有任务段），因此 `RunDetailDto.phases` 只把
   `research_report.md` 挂在 `report` 相。本轮的判据据此分两面取证（会话产物按相归属判、

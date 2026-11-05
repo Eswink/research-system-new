@@ -116,6 +116,18 @@ phase submission  SUCCEEDED 2   phase report      SUCCEEDED 1
 | F-5 | 记录缺陷：`tests/e2e/direction_to_manuscript_support.py` 的注释写「本协议声明的**十个**相」，而 `PHASES` 元组是 **11 项** | 同文件 `PHASES` 逐项数 = 11（question…report）；注释在元组正上方 | **记录缺陷**（GOAL-102 加 `submission` 时改了元组没改计数） | 改正注释并写明这次修正；**元组本身不动**（相集钉在 `tests/contracts/test_direction_to_manuscript_protocol.py:44-62`） | **已修好** |
 | F-6 | 宪章：程序表序 74 第一版把 `轴` 列写成 `报告+实验+复检` | 判据逐字：`轴列取值不在三分轴内：'报告+实验+复检'` | **真缺陷（记录面）** —— `轴` 是**三分轴闭集**（连续性/深度/质量/广度/深度+质量/—），能力域不是轴 | `轴` 改 `深度+质量`（本轮同时推进报告、实验、复检三域）；`能力域` 列留**单个**域 `报告`（判据要求域 ∈ 七域闭集） | **已修好** |
 
+| F-16 | **第 9 次真跑**：`question` 成功、`retrieval` 相失败（`retry budget exhausted`，`unavailable_reason: MODEL_RELAY_UNAVAILABLE`） | 该 run 的 `budget_usage_entries` 逐字：`MODEL_RELAY_UNAVAILABLE`；相级：`question=SUCCEEDED` / `retrieval=RUNNING` / 其余 `PENDING` | **上游（中转站）** —— 与 F-9 / F-13 同一签名 | **不改产品** | **不适用** |
+
+**九次真跑的汇总（这是本轮最有价值的读数）**：
+
+| 结果 | 次数 | 失败点 |
+| --- | --- | --- |
+| 前六相（question…review）全 `SUCCEEDED` | **3** | 倒在后五相（`manuscript` 2 次 / `experiment` 1 次） |
+| 四相内 `SUCCEEDED` | 1 | `experiment` 被验收门拒收（`metrics` 缺席，F-15） |
+| `retrieval` 之前失败 | 3 | EPMC `503`（2 次）+ 中转站（1 次） |
+| `question` 之前失败 | 2 | 中转站 `MODEL_RELAY_UNAVAILABLE` |
+
+**十一相里被真实跑通过的是前六相**（含真实检索：3 个真实 PMID 进 `literature_read` 的 `tool-args`；含两臂沙箱实验：各落 `metrics`；含两位独立评审者的判词）。后五相（manuscript / editorial / revision / submission / report）**从未在真实条件下跑过**。
 ## 反证臂汇总（**判据咬得住**的证据）
 
 | 判据 | 反证动作 | 实测结果 |

@@ -4,15 +4,15 @@
   "direction_status": 200,
   "interface": "assemble() product root, no seams patched",
   "http_status": 200,
-  "http_body": "{\"id\":\"3804e594-f3c0-4141-a7bd-39ec286ab7df\",\"project_id\":\"example-project\",\"protocol_id\":\"direction_to_manuscript_v1_0_0\",\"state\":\"FAILED\",\"manifest_digest\":\"sha256:e933db9c661f696ee5e4ff624dbb2d180e34283c228003bfdf3a6df6079cd88b\",\"manifest_semantic_digest\":\"sha256:95cdee6082cc6549732aae017790557d2a58fc229e6a6b94ad1522d94f432361\",\"protocol_body_digest\":\"sha256:8029a00d39ce4b03066bc07b45f41f5b29cd48851dbfc2d1aa2bedeeb3411511\",\"paused_dispatch\":null,\"dispatch\":{\"kind\":\"NONE\",\"retry\":{\"scheduled\":0,\"due\":0,\"next_retry_at\":null},\"holders\":[]},\"rebuild\":{\"status\":\"SELF_CONTAINED\",\"missing\":[]},\"execution\":{\"execution_backend\":null,\"runtime_fingerprint\":{\"status\":\"REPEATABLE_CONFIGURATION\",\"substrate\":null,\"reason\":null,\"source\":\"RUN_OBSERVATION\",\"endpoint_config_digest\":\"sha256:fe4b5b0ae045398cc20d91d55c71a598320b3d89514ce783d046022dce08aacc\",\"returned_model_identifier\":\"openai/deepseek-v4-flash-vision\",\"probe_suite_digest\":\"sha256:d384cbb5911eb67f0b2a51e12a067e29b9180b11d7a56e77ae44f38d52b85405\",\"system_fingerprint\":null,\"observed_model_identifiers\":[\"openai/deepseek-v4-flash-vision\"],\"missing_fields\":[\"safe_response_metadata\",\"system_fingerprint\"]}},\"program_id\":null,\"program_index\":",
-  "run_id": "3804e594-f3c0-4141-a7bd-39ec286ab7df",
+  "http_body": "{\"id\":\"d33a82eb-df81-409e-8604-c490b6d0368b\",\"project_id\":\"example-project\",\"protocol_id\":\"direction_to_manuscript_v1_0_0\",\"state\":\"FAILED\",\"manifest_digest\":\"sha256:d99813f7f3cdb487dbcf3bfdbec973ff88d7d9b63b94a15f7bb81843f04ec25a\",\"manifest_semantic_digest\":\"sha256:67e34e394cabe3553ac0d183c245fd4d4426814261ba6c7a4649436aed0bcd72\",\"protocol_body_digest\":\"sha256:8029a00d39ce4b03066bc07b45f41f5b29cd48851dbfc2d1aa2bedeeb3411511\",\"paused_dispatch\":null,\"dispatch\":{\"kind\":\"NONE\",\"retry\":{\"scheduled\":0,\"due\":0,\"next_retry_at\":null},\"holders\":[]},\"rebuild\":{\"status\":\"SELF_CONTAINED\",\"missing\":[]},\"execution\":{\"execution_backend\":null,\"runtime_fingerprint\":{\"status\":\"REPEATABLE_CONFIGURATION\",\"substrate\":null,\"reason\":null,\"source\":\"RUN_OBSERVATION\",\"endpoint_config_digest\":\"sha256:fe4b5b0ae045398cc20d91d55c71a598320b3d89514ce783d046022dce08aacc\",\"returned_model_identifier\":\"openai/deepseek-v4-flash-vision\",\"probe_suite_digest\":\"sha256:d384cbb5911eb67f0b2a51e12a067e29b9180b11d7a56e77ae44f38d52b85405\",\"system_fingerprint\":null,\"observed_model_identifiers\":[\"openai/deepseek-v4-flash-vision\"],\"missing_fields\":[\"safe_response_metadata\",\"system_fingerprint\"]}},\"program_id\":null,\"program_index\":",
+  "run_id": "d33a82eb-df81-409e-8604-c490b6d0368b",
   "state": "FAILED",
   "artifact_ids": [
-    "4576c7b6-7913-4246-8b94-5088ed5923fc:research_question",
-    "4576c7b6-7913-4246-8b94-5088ed5923fc:retrieval_context",
-    "aa513cd0-8706-4dcb-9ca5-f9b2d92703eb:retrieval_context",
-    "tool-args:aa513cd0-8706-4dcb-9ca5-f9b2d92703eb:literature_read:42787049+42958757+42955413",
-    "tool-args:aa513cd0-8706-4dcb-9ca5-f9b2d92703eb:literature_search"
+    "669d1200-6ec2-4866-8dd8-6b1e885dcf09:research_question",
+    "669d1200-6ec2-4866-8dd8-6b1e885dcf09:retrieval_context",
+    "e71a03d2-c256-4aa5-a347-4d6e73ac8474:retrieval_context",
+    "tool-args:e71a03d2-c256-4aa5-a347-4d6e73ac8474:literature_read:42973743+42964527",
+    "tool-args:e71a03d2-c256-4aa5-a347-4d6e73ac8474:literature_search"
   ],
   "missing_artifacts": [
     "retrieval_report",
@@ -35,7 +35,7 @@
   ],
   "artifact_count": 5,
   "present:research_question": true,
-  "length:research_question": 1371,
+  "length:research_question": 1211,
   "present:retrieval_report": false,
   "length:retrieval_report": 0,
   "present:novelty_claim": false,
@@ -89,11 +89,11 @@
   },
   "phase_artifact_ids": {
     "question": [
-      "4576c7b6-7913-4246-8b94-5088ed5923fc:research_question",
-      "4576c7b6-7913-4246-8b94-5088ed5923fc:retrieval_context"
+      "669d1200-6ec2-4866-8dd8-6b1e885dcf09:research_question",
+      "669d1200-6ec2-4866-8dd8-6b1e885dcf09:retrieval_context"
     ],
     "retrieval": [
-      "aa513cd0-8706-4dcb-9ca5-f9b2d92703eb:retrieval_context"
+      "e71a03d2-c256-4aa5-a347-4d6e73ac8474:retrieval_context"
     ],
     "novelty": [],
     "plan": [],
@@ -107,6 +107,6 @@
   },
   "experiment_rows": 0,
   "failure_events": [
-    "run.failed: task aa513cd0-8706-4dcb-9ca5-f9b2d92703eb failed: retry budget exhausted"
+    "run.failed: task e71a03d2-c256-4aa5-a347-4d6e73ac8474 failed: retry budget exhausted"
   ]
 }
