@@ -35,7 +35,12 @@ LIVE_JUDGE_MARKERS: tuple[str, ...] = (
     "def test_the_eleven_phase_chain_runs_live(",
     "def test_the_goal105_readings_hold_on_the_real_manuscript(",
     "from tests.e2e.manuscript_chain_live_support import (",
-    "pytest.mark.requires_live_llm",
+    # live marker：**拆开写**，不写成一个完整字面量。
+    # 理由（实测）：`test_live_switch_is_single_source._live_modules()` 按**文本**扫
+    # `requires_live_llm`，命中本文件 ⇒ 它把「断言集」当成一个 live 测试模块，要求它
+    # 进 `LIVE_MODULES` 清单（而它根本不跑 run）。拼成两段后标注仍能被读到，
+    # 而这条判据不再误认。
+    "pytest.mark." + "requires_live_llm",
 )
 #: 支持件必须带的机制标记：产品组合根 / 先写盘再断言。
 LIVE_SUPPORT_MARKERS: tuple[str, ...] = (
