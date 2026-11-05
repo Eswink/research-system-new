@@ -1,0 +1,28 @@
+{
+  "label": "n1",
+  "variant": "ncbi search instead of europe_pmc",
+  "http_status": 200,
+  "http_body": "{\"id\":\"1142a81f-a1a0-41d6-9b74-6ca8932fc6d1\",\"project_id\":\"example-project\",\"protocol_id\":\"direction_to_manuscript_v1_0_0\",\"state\":\"FAILED\",\"manifest_digest\":\"sha256:5551033a51f57f6e36bd44371355a6c36bf6f378100762dac22c288bc87347fb\",\"manifest_semantic_digest\":\"sha256:b2a78148884c62b6f7226f8809e08e6da6f925813abe8f0c4d115f1ff36f849b\",\"protocol_body_digest\":\"sha256:8029a00d39ce4b03066bc07b45f41f5b29cd48851dbfc2d1aa2bedeeb3411511\",\"paused_dispatch\":null,\"dispatch\":{\"kind\":\"NONE\",\"retry\":{\"scheduled\":0,\"due\":0,\"next_retry_at\":null},\"holders\":[]},\"rebuild\":{\"status\":\"SELF_CONTAINED\",\"missing\":[]},\"execution\":{\"execution_backend\":null,\"runtime_fingerprint\":{\"status\":\"REPEATABLE_CONFIGURATION\",\"substrate\":null,\"reason\":null,\"source\":\"RUN_OBSERVATION\",\"endpoint_config_digest\":\"sha256:fe4b5b0ae045398",
+  "run_id": "1142a81f-a1a0-41d6-9b74-6ca8932fc6d1",
+  "state": "FAILED",
+  "artifact_ids": [
+    "9fccae12-2d2d-4c99-a306-58ca00553083:research_question",
+    "9fccae12-2d2d-4c99-a306-58ca00553083:retrieval_context"
+  ],
+  "phase_states": {
+    "question": "SUCCEEDED",
+    "retrieval": "RUNNING",
+    "novelty": "PENDING",
+    "plan": "PENDING",
+    "experiment": "PENDING",
+    "review": "PENDING",
+    "manuscript": "PENDING",
+    "editorial": "PENDING",
+    "revision": "PENDING",
+    "submission": "PENDING",
+    "report": "PENDING"
+  },
+  "failure_events": [
+    "run.failed: run-chain capability step failed: ncbi eutils connection failure: Server error '500 Internal Server Error' for url 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=retrieval-augmented+generation+scientific+hypothesis+generation&retmode=json&retmax=3'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500"
+  ]
+}

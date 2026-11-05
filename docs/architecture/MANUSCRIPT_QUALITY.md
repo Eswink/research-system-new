@@ -118,6 +118,17 @@ uv run --frozen --no-sync python -B -m pytest \
   （`packages/application/deliverable/citation_sufficiency.py`：每句引用数 / 每条被引
   条目被引次数 / 单支撑节，读数写进 `manuscript.md` 的脚注），但**充分性仍未判**：
   三个阈值常量缺省全是 `None`，**取值待 ≥3 份真实手稿的量分布**（仓内零真实语料）；
+- **十一相链的真实成立只有一次读数，且不改变本文件的任何判据**（GOAL-20261104-106）：
+  `direction_to_manuscript_v1.yaml`（question → retrieval → novelty → plan → experiment →
+  review → manuscript → editorial → revision → submission → report）此前**真实 run 合计
+  0 次** —— 它只被 **mock 中转站** e2e 验证过（那条判据自己的 docstring 就写着「真实模型
+  条件下的八相由后续 live 判据承担」），而「产品入口跑通全链」那条 live 判据跑的是
+  `direction_to_report_v2`（七相）、**不是**十一相。本轮补上 live 判据
+  （`tests/e2e/test_the_manuscript_chain_runs_live.py`）并跑到一次 `SUCCEEDED`；读数落在
+  `.cursor/plans/goals/evidence/GOAL-20261104-106-manuscript-chain-live.json`
+  （run id / 十一相状态 / 每件产物的字节长度 / 引用读数 / 应答重叠）。**这条读数只证明
+  链成立**：§2 的三条判据与 §7 的判定表**逐字未动**，`NOT_JUDGED` 仍是五项 ——
+  「链跑得通」与「手稿写得好」是两件事，把前者读成后者属于伪造验证证据；
 - **阈值只对英文正文标定**：本仓手稿合约要求英文（`MANUSCRIPT_KEYS` 的八节正文），
   非英文正文的词数口径未标定；
 - **停用词是封闭词表**：改它等于改口径，必须同轮改

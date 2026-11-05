@@ -1,4 +1,4 @@
-"""GOAL-20261028-099 EC-04 的**离线装配支持件**（八相手稿链走产品入口）。
+"""GOAL-20261028-099 EC-04 的**离线装配支持件**（十一相手稿链走产品入口）。
 
 **为什么单列**：判据文件贴着 450 行硬上限（规模门），而「mock 中转站 + 离线 Europe PMC +
 四段执行体缝 + spec 记录器」是可独立读的一段装配 —— 与
@@ -49,7 +49,10 @@ PROTOCOL = "direction_to_manuscript_v1.yaml"
 DIRECTION = "retrieval augmentation for scientific hypothesis generation"
 EXPERIMENT_SCRIPT = "examples/experiments/exact_match_index_benchmark.py"
 EXPERIMENT_IMAGE = "research-os-sandbox:m9-test"
-#: 本协议声明的**十个**相（判据按它核相集与产物）。
+#: 本协议声明的**十一**个相（判据按它核相集与产物）。
+#:
+#: GOAL-20261104-106 修：这行注释此前写「十个」，而元组早已是 **11 项** —— GOAL-102
+#: 加 `submission` 时改了元组没改计数（记录缺陷，不影响行为）。
 PHASES: tuple[str, ...] = (
     "question",
     "retrieval",

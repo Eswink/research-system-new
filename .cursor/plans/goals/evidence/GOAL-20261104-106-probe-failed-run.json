@@ -1,0 +1,137 @@
+{
+  "label": "p1",
+  "protocol": "direction_to_manuscript_v1.yaml",
+  "direction": "retrieval augmentation for scientific hypothesis generation",
+  "direction_status": 200,
+  "elapsed_seconds": 90.5,
+  "http_status": 200,
+  "http_body": "{\"id\":\"2eead794-aea5-4575-8fa1-f1cb0278bead\",\"project_id\":\"example-project\",\"protocol_id\":\"direction_to_manuscript_v1_0_0\",\"state\":\"FAILED\",\"manifest_digest\":\"sha256:bd0ddb0e14e61e9bd45853276d1e0c8c8bdd6392db3a66e31850d7092623adcc\",\"manifest_semantic_digest\":\"sha256:1d3e03767a513c3933ff10e902892d1d230196d17a3d4433f25698d75579b917\",\"protocol_body_digest\":\"sha256:8029a00d39ce4b03066bc07b45f41f5b29cd48851dbfc2d1aa2bedeeb3411511\",\"paused_dispatch\":null,\"dispatch\":{\"kind\":\"NONE\",\"retry\":{\"scheduled\":0,\"due\":0,\"next_retry_at\":null},\"holders\":[]},\"rebuild\":{\"status\":\"SELF_CONTAINED\",\"missing\":[]},\"execution\":{\"execution_backend\":null,\"runtime_fingerprint\":{\"status\":\"REPEATABLE_CONFIGURATION\",\"substrate\":null,\"reason\":null,\"source\":\"RUN_OBSERVATION\",\"endpoint_config_digest\":\"sha256:fe4b5b0ae045398cc20d91d55c71a598320b3d89514ce783d046022dce08aacc\",\"returned_model_identifier\":\"openai/deepseek-v4-flash-vision\",\"probe_suite_digest\":\"sha256:d384cbb5911eb67f0b2a51e12a067e29b9180b11d7a56e77ae44f38d52b85405\",\"system_fingerprint\":null,\"observed_model_identifiers\":[\"openai/deepseek-v4-flash-vision\"],\"missing_fields\":[\"safe_response_metadata\",\"system_fingerprint\"]}},\"program_id\":null,\"program_index\":null,\"phases\":[{\"phase_id\":\"question\",\"strategy\":\"single_agent\",\"state\":\"SUCCEEDED\",\"artifact_ids\":[\"560d0365-be69-4b20-8d89-3736d671b133:research_question\",\"560d0365-be69-4b20-8d89-3736d671b133:retrieval_context\"],\"started_at\":\"2026-11-05T04:49:02.981601+00:00\",\"completed_at\":\"2026-11-05T04:50:30.563984+00:00\"},{\"phase_id\":\"retrieval\",\"strategy\":\"single_agent\",\"state\":\"RUNNING\",\"artifact_ids\":[],\"started_at\":\"2026-11-05T04:50:30.568629+00:00\",\"completed_at\":null},{\"phase_id\":\"novelty\",\"strategy\":\"single_agent\",\"state\":\"PENDING\",\"artifact_ids\":[],\"started_at\":null,\"completed_at\":null},{\"phase_id\":\"plan\",\"strategy\":\"single_agent\",\"state\":\"PENDING\",\"artifact_ids\":[],\"started_at\":null,\"completed_at\":null},{\"phase_id\":\"experiment\",\"strategy\":\"deterministic\",\"state\":\"PENDING\",\"artifact_ids\":[],",
+  "run_id": "2eead794-aea5-4575-8fa1-f1cb0278bead",
+  "state": "FAILED",
+  "message": null,
+  "artifact_ids": [
+    "560d0365-be69-4b20-8d89-3736d671b133:research_question",
+    "560d0365-be69-4b20-8d89-3736d671b133:retrieval_context"
+  ],
+  "missing": [
+    "retrieval_report",
+    "novelty_claim",
+    "research_plan",
+    "review_decision",
+    "manuscript_narrative",
+    "editorial_decision",
+    "author_responses",
+    "submission_package",
+    "manuscript.md",
+    "research_report.md",
+    "cover_letter.md",
+    "author_contributions.md",
+    "conflicts_of_interest.md",
+    "data_availability.md",
+    "supplementary.md",
+    "response_letter.md",
+    "manuscript_v2.md"
+  ],
+  "failure_events": [
+    "run.failed: run-chain capability step failed: europe pmc temporarily unavailable"
+  ],
+  "tasks": [
+    {
+      "status": "SUCCEEDED"
+    }
+  ],
+  "run_phases": [
+    {
+      "phase_id": "question",
+      "strategy": "single_agent",
+      "state": "SUCCEEDED",
+      "artifact_ids": [
+        "560d0365-be69-4b20-8d89-3736d671b133:research_question",
+        "560d0365-be69-4b20-8d89-3736d671b133:retrieval_context"
+      ],
+      "started_at": "2026-11-05T04:49:02.981601+00:00",
+      "completed_at": "2026-11-05T04:50:30.563984+00:00"
+    },
+    {
+      "phase_id": "retrieval",
+      "strategy": "single_agent",
+      "state": "RUNNING",
+      "artifact_ids": [],
+      "started_at": "2026-11-05T04:50:30.568629+00:00",
+      "completed_at": null
+    },
+    {
+      "phase_id": "novelty",
+      "strategy": "single_agent",
+      "state": "PENDING",
+      "artifact_ids": [],
+      "started_at": null,
+      "completed_at": null
+    },
+    {
+      "phase_id": "plan",
+      "strategy": "single_agent",
+      "state": "PENDING",
+      "artifact_ids": [],
+      "started_at": null,
+      "completed_at": null
+    },
+    {
+      "phase_id": "experiment",
+      "strategy": "deterministic",
+      "state": "PENDING",
+      "artifact_ids": [],
+      "started_at": null,
+      "completed_at": null
+    },
+    {
+      "phase_id": "review",
+      "strategy": "single_agent",
+      "state": "PENDING",
+      "artifact_ids": [],
+      "started_at": null,
+      "completed_at": null
+    },
+    {
+      "phase_id": "manuscript",
+      "strategy": "single_agent",
+      "state": "PENDING",
+      "artifact_ids": [],
+      "started_at": null,
+      "completed_at": null
+    },
+    {
+      "phase_id": "editorial",
+      "strategy": "single_agent",
+      "state": "PENDING",
+      "artifact_ids": [],
+      "started_at": null,
+      "completed_at": null
+    },
+    {
+      "phase_id": "revision",
+      "strategy": "single_agent",
+      "state": "PENDING",
+      "artifact_ids": [],
+      "started_at": null,
+      "completed_at": null
+    },
+    {
+      "phase_id": "submission",
+      "strategy": "single_agent",
+      "state": "PENDING",
+      "artifact_ids": [],
+      "started_at": null,
+      "completed_at": null
+    },
+    {
+      "phase_id": "report",
+      "strategy": "deterministic",
+      "state": "PENDING",
+      "artifact_ids": [],
+      "started_at": null,
+      "completed_at": null
+    }
+  ],
+  "run_message": null
+}
