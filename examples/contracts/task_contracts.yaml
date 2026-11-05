@@ -1140,6 +1140,16 @@ task_contracts:
       addresses it, or why it should not change). You may only cite artifacts this run
       actually carries: a cited artifact the run does not carry is refused by name.
 
+      HARD RULE 6 — always reply with both blocks, even when the numbered points are absent.
+      Sometimes this phase is given no numbered review points at all (the review material
+      could not be read as a point table). That is a **known state**, not a missing input to
+      report: do **not** reply with prose explaining that something is absent, and do not say
+      you are stopping — a reply with no `author_responses` block cannot be assembled and the
+      run fails by name. In that state reply with `{"author_responses": []}` (an empty list is
+      the correct answer when there were no points to answer) **and** the `revised_manuscript`
+      block (HARD RULE 4) carrying the revised body. When points **are** given, HARD RULES 1–5
+      apply unchanged.
+
       Answer the review you were given. Do not invent reviewer points, and do not restate the
       whole manuscript in prose: the revised_manuscript block carries the revised body, and
       this letter exists so a reader can check the review against the work, point by point.
