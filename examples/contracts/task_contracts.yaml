@@ -988,6 +988,13 @@ task_contracts:
       retrieved nothing citable: write the body without citation marks and state in Related
       Work that no prior record was available — do not invent one.
 
+      HARD RULE 3 — the Results section itself must carry at least one citation mark.
+      A measured claim that cites nothing cannot be checked by a reader, so the assembled
+      report refuses a Results section with no mark at all (the body is not assembled and
+      the run fails by name). Cite at least one of the numbered records there as well, not
+      only in Related Work. This rule does not apply when no records were listed (HARD
+      RULE 2's last sentence): then Results carries no marks and that is correct.
+
       Write Related Work against the specific retrieved record(s) you were given and say
       what they leave open. Write Methods against the arms and parameters the study
       actually ran. Do not invent results: state only what the named facts support, and
