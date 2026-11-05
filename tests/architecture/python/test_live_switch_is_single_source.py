@@ -93,6 +93,8 @@ LITERAL_MENTIONS: dict[str, str] = {
     "tests/e2e/test_two_models_judge_the_same_artifact_live.py": ("模块 docstring 的操作者口令"),
     # GOAL-20261024-096 EC-04：同上（六相链真跑；跑法两行：开关 + runtime 各一条）。
     "tests/e2e/test_direction_to_report_live.py": ("模块 docstring 的操作者口令"),
+    # GOAL-20261104-106 EC-01：十一相链真跑（跑法两行：开关 + runtime 各一条）。
+    "tests/e2e/test_the_manuscript_chain_runs_live.py": ("模块 docstring 的操作者口令"),
 }
 
 #: 带 `requires_live_llm` 的模块清单（**逐条列出**：新加一个就在这儿露头）。
@@ -129,6 +131,8 @@ LIVE_MODULES: tuple[str, ...] = (
     # **现状**：本模块 2026-10-27 两次真跑都被上游 Europe PMC 503 挡住（见 GOAL `W-5`）⇒
     # 它**在**清单里但尚未取证通过；登记在这里只表示「它走同一个 live 开关」，不表示已达成。
     "tests/e2e/test_novelty_author_is_not_its_reviewer_live.py",
+    # GOAL-20261104-106 EC-01：十一相（方向→…→报告）在一个真 run 里走完（本 GOAL 的 live 面）。
+    "tests/e2e/test_the_manuscript_chain_runs_live.py",
 )
 
 #: 模块级或函数级 mark 都算（`pytestmark = ...` 或标注装饰器形态）。

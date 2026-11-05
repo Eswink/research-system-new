@@ -46,6 +46,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import pytest
@@ -59,7 +60,6 @@ from tests.e2e.manuscript_chain_live_support import (
     assembled_product,
     drive_one_run,
     footnote_matches_body,
-    live_gate,
     preflight_override,
     reported_readings,
     write_readings,
@@ -83,10 +83,29 @@ _PHASE_OUTPUTS: tuple[tuple[str, str], ...] = (
 
 
 def _run_guarded(gate_name: str) -> dict[str, Any]:
-    """过门 → 产品组合根起一次 run → 关 deps。门不开 ⇒ **如实 skip**（不是 PASS）。"""
+    """过门 → 产品组合根起一次 run → 关 deps。门不开 ⇒ **如实 skip**（不是 PASS）。
+
+    门**在本文件里**求值（`evaluate_live_run_gate(..., live_switch=...)`），不外包给支持件：
+    `tests/architecture/python/test_live_switch_is_single_source.py` 要求每个带
+    `requires_live_llm` 的模块**自己**经门或调同一个谓词 —— 否则「凭据在场就能起跑」
+    这条单读点性质在这个模块上就断了。
+    """
     from fastapi.testclient import TestClient
 
-    gate = live_gate()
+    from adapters.contracts.models_loaders import load_llm_endpoints
+    from adapters.relay.credential_resolver import EnvCredentialResolver
+    from packages.application.model_relay.live_run_gate import evaluate_live_run_gate
+    from services.api.runtime_support import OPENHANDS_RUNTIME
+    from tests.e2e.live_switch_support import live_e2e_switch_enabled
+
+    endpoints = load_llm_endpoints("examples/config/llm_endpoints.yaml")
+    gate = evaluate_live_run_gate(
+        credentials=EnvCredentialResolver(),
+        endpoint=endpoints["main"],
+        agent_runtime=os.environ.get("RESEARCHOS_AGENT_RUNTIME", ""),
+        live_agent_runtime=OPENHANDS_RUNTIME,
+        live_switch=live_e2e_switch_enabled(),
+    )
     if not gate.open:
         pytest.skip(str(skip_record_for_gate(gate_name, gate)))
     deps = assembled_product()
