@@ -95,6 +95,41 @@ def test_bash_reading_a_skill_file_is_denied() -> None:
         assert "recheck" in reason, f"理由必须点名技能名，实际：{reason}"
 
 
+def test_writes_that_merely_mention_a_skill_path_are_allowed() -> None:
+    """反证臂：**写**命令里提到受门禁路径不是读正文（本轮两次自伤）。
+
+    第一次：`cat > /tmp/msg.txt <<'EOF' ... .agents/skills ... EOF` —— 写提交消息
+    的 heredoc 正文里恰好有那个路径，整条命令被旧实现判成读取。
+    第二次：末尾 `grep -c "<body>\\|<root>"` —— **grep 的模式串**本身写着两个字面量。
+
+    判据要求：写目标、heredoc 正文、grep/awk/sed 的**模式串**都不构成读取。
+    """
+    writes = (
+        # heredoc 正文里提到路径（写文件）。
+        "cat > /tmp/msg.txt <<'EOF'\n.agents/skills/x/SKILL.md 要通过 Skill 工具\nEOF",
+        # grep 的**模式串**里同时出现两个触发字面量（不是文件参数）。
+        'grep -c "SKILL.md\\|.agents/skills" /tmp/msg.txt',
+        # 重定向写入技能文件本身（写不是读）。
+        "echo patch >> .agents/skills/x/SKILL.md",
+        # 移动/复制：不是「取得正文用于阅读」。
+        "cp .agents/skills/x/SKILL.md /tmp/copy.md",
+    )
+    for command in writes:
+        assert _decide(_bash_payload(command)) is None, f"写命令不该被拦：{command!r}"
+
+
+def test_reading_a_skill_body_through_pipelines_is_denied() -> None:
+    """正向臂：分段 / 管道 / 引号 里的读仍要命中（不得因切分而漏判）。"""
+    for command in (
+        "cd /tmp && cat .agents/skills/research-os/SKILL.md",
+        "cat .agents/skills/research-os/SKILL.md | head -20",
+        'head -5 ".agents/skills/research-os/SKILL.md"',
+        "awk '{print}' .agents/skills/research-os/SKILL.md",
+    ):
+        reason = _reason(_decide(_bash_payload(command)))
+        assert "research-os" in reason, f"理由必须点名技能名，实际：{reason}"
+
+
 def test_reading_ordinary_sources_is_allowed() -> None:
     """反证臂：普通源码 / 文档读取不得被拦（门禁不能变成读文件的税）。"""
     for target in ("AGENTS.md", "packages/application/deliverable/references.py", "zcode.json"):

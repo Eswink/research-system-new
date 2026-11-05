@@ -1379,6 +1379,10 @@
         "sha256": "33a96492b7ab3db3a31ca5ac9afcc42d9b98e178"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261104-240-different-clients-have-disjoint-config-planes.md",
+        "sha256": "4f227a2a504fafb77f67879d5fd437854fc2a832"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "dda4b6bc2eb7c6da1a744a0f23f06377ca1eb0fe"
       },
@@ -1832,7 +1836,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-105-citation-readings-and-review-driven-revision.md",
-        "sha256": "969a8d52fa3972ec54e8f23982ddac12cf7b42e5"
+        "sha256": "cefd9a3386c88e456fe45590914732327c9e515a"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4343,6 +4347,10 @@
         "sha256": "603feb31616f3fb5837a7e9a4fab0c3ab88f936d"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261104-106-zcode-skill-distillation-and-explicit-invocation.md",
+        "sha256": "9076013e9df34df2800ece878d60cec11ed5560a"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5757,6 +5765,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261103-105-citation-readings-and-review-driven-revision.md",
         "sha256": "1b8f7aa124f241b1c6168d93cd398d686b3bf8fe"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261104-106-zcode-skill-distillation-and-explicit-invocation.md",
+        "sha256": "db9cc4be3d59d83705988923289269378015be74"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -18904,11 +18916,15 @@
       },
       {
         "path": "tests/tooling/goal_commit_chain.py",
-        "sha256": "610136d034bac9dceda6f5876a0e6031c60526b7"
+        "sha256": "6f34386ba3a2e382e718560b4fd254ee7d715b18"
       },
       {
         "path": "tests/tooling/resume_coverage_declaration.py",
         "sha256": "4132e5af9c0e154b4e0da047f1501d0d138245ef"
+      },
+      {
+        "path": "tests/tooling/test_agent_skill_frontmatter.py",
+        "sha256": "9b289cbde1d2527c4522d36c7c268e3d57b5a8a8"
       },
       {
         "path": "tests/tooling/test_backup_cli.py",
@@ -18956,7 +18972,7 @@
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
-        "sha256": "1ccff3154fe16edef36a40d2016db4a557f90d95"
+        "sha256": "dbe1fbeca0248f7517cd92036639e10cddfc499b"
       },
       {
         "path": "tests/tooling/test_goal_ledger_covers_every_commit.py",
@@ -19095,8 +19111,20 @@
         "sha256": "7e4655b2a09c6cab37bd44ba630c373837c8f074"
       },
       {
+        "path": "tests/tooling/test_validate_bundle_version_input_face.py",
+        "sha256": "5428c351b02b9bc5acc49bac5d600321b6f5c2a7"
+      },
+      {
         "path": "tests/tooling/test_verifier_main_files_report_no_negative.py",
         "sha256": "5d41455d769e58bb61955c6715af906473476c71"
+      },
+      {
+        "path": "tests/tooling/test_zcode_hook_registration.py",
+        "sha256": "e6b5fc9ef4031508dfc708c11fdda18d1957b453"
+      },
+      {
+        "path": "tests/tooling/test_zcode_skill_invocation_guard.py",
+        "sha256": "3757f5657ce0f26ce7e17fe10e0ddac2aa03dc81"
       },
       {
         "path": "tests/tooling/test_个人生产续审v2.py",
@@ -20107,11 +20135,19 @@
         "sha256": "bb1a96dad276f02385582543343365368e75214d"
       },
       {
+        "path": "tools/zcode-hooks/skill_index_context.py",
+        "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
+      },
+      {
+        "path": "tools/zcode-hooks/skill_invocation_guard.py",
+        "sha256": "8fb025290cd520a9bd14af7c9010e57863d06cc1"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "8a31ced67693a9acee36d5ca3bc762fc3e815ae3"
+    "head": "48b67fa249c5491c5b97a65697102937f2467b06"
   },
   "fingerprint_before": {
     "files": [
@@ -21492,6 +21528,10 @@
         "sha256": "33a96492b7ab3db3a31ca5ac9afcc42d9b98e178"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261104-240-different-clients-have-disjoint-config-planes.md",
+        "sha256": "4f227a2a504fafb77f67879d5fd437854fc2a832"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "dda4b6bc2eb7c6da1a744a0f23f06377ca1eb0fe"
       },
@@ -21945,7 +21985,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261103-105-citation-readings-and-review-driven-revision.md",
-        "sha256": "969a8d52fa3972ec54e8f23982ddac12cf7b42e5"
+        "sha256": "cefd9a3386c88e456fe45590914732327c9e515a"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -24456,6 +24496,10 @@
         "sha256": "603feb31616f3fb5837a7e9a4fab0c3ab88f936d"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261104-106-zcode-skill-distillation-and-explicit-invocation.md",
+        "sha256": "9076013e9df34df2800ece878d60cec11ed5560a"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -25870,6 +25914,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261103-105-citation-readings-and-review-driven-revision.md",
         "sha256": "1b8f7aa124f241b1c6168d93cd398d686b3bf8fe"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261104-106-zcode-skill-distillation-and-explicit-invocation.md",
+        "sha256": "db9cc4be3d59d83705988923289269378015be74"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -39017,11 +39065,15 @@
       },
       {
         "path": "tests/tooling/goal_commit_chain.py",
-        "sha256": "610136d034bac9dceda6f5876a0e6031c60526b7"
+        "sha256": "6f34386ba3a2e382e718560b4fd254ee7d715b18"
       },
       {
         "path": "tests/tooling/resume_coverage_declaration.py",
         "sha256": "4132e5af9c0e154b4e0da047f1501d0d138245ef"
+      },
+      {
+        "path": "tests/tooling/test_agent_skill_frontmatter.py",
+        "sha256": "9b289cbde1d2527c4522d36c7c268e3d57b5a8a8"
       },
       {
         "path": "tests/tooling/test_backup_cli.py",
@@ -39069,7 +39121,7 @@
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
-        "sha256": "1ccff3154fe16edef36a40d2016db4a557f90d95"
+        "sha256": "dbe1fbeca0248f7517cd92036639e10cddfc499b"
       },
       {
         "path": "tests/tooling/test_goal_ledger_covers_every_commit.py",
@@ -39208,8 +39260,20 @@
         "sha256": "7e4655b2a09c6cab37bd44ba630c373837c8f074"
       },
       {
+        "path": "tests/tooling/test_validate_bundle_version_input_face.py",
+        "sha256": "5428c351b02b9bc5acc49bac5d600321b6f5c2a7"
+      },
+      {
         "path": "tests/tooling/test_verifier_main_files_report_no_negative.py",
         "sha256": "5d41455d769e58bb61955c6715af906473476c71"
+      },
+      {
+        "path": "tests/tooling/test_zcode_hook_registration.py",
+        "sha256": "e6b5fc9ef4031508dfc708c11fdda18d1957b453"
+      },
+      {
+        "path": "tests/tooling/test_zcode_skill_invocation_guard.py",
+        "sha256": "3757f5657ce0f26ce7e17fe10e0ddac2aa03dc81"
       },
       {
         "path": "tests/tooling/test_个人生产续审v2.py",
@@ -40220,15 +40284,23 @@
         "sha256": "bb1a96dad276f02385582543343365368e75214d"
       },
       {
+        "path": "tools/zcode-hooks/skill_index_context.py",
+        "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
+      },
+      {
+        "path": "tools/zcode-hooks/skill_invocation_guard.py",
+        "sha256": "8fb025290cd520a9bd14af7c9010e57863d06cc1"
+      },
+      {
         "path": "uv.lock",
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "8a31ced67693a9acee36d5ca3bc762fc3e815ae3"
+    "head": "48b67fa249c5491c5b97a65697102937f2467b06"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "8a31ced67693a9acee36d5ca3bc762fc3e815ae3",
+  "ran_at_head": "48b67fa249c5491c5b97a65697102937f2467b06",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

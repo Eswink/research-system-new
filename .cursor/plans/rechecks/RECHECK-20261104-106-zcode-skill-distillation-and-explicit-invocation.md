@@ -65,6 +65,8 @@ verify_paths:
 | AC-06 按压证明 | 见下 §5 | PASS |
 | AC-07 版本扫描输入面 | `test_validate_bundle_version_input_face.py` 4 passed；`validate_bundle` 由失败转「验证通过」 | PASS |
 | AC-08 技能可被自动选择 | `test_agent_skill_frontmatter.py` 9 passed（发现面 + 路由面）；两向按压各恰 1 红 | PASS |
+| AC-09 门禁只判读取动作 | `test_zcode_skill_invocation_guard.py` 11 passed；回退旧行为恰 3 红 | PASS |
+| AC-10 未归属提交的定向豁免 | 台账两条判据 16 passed；两条滥用按压各判红 | PASS |
 
 ## 4. 质量门
 
@@ -193,3 +195,69 @@ allow 臂保持绿是**预期**——它们断言的是「不该拦」，换根�
 `config.project_hooks.pending_trust` 且零执行记录。信任按**配置内容摘要**持久化
 （存在 `stale_digest` 状态）⇒ 每次改 `zcode.json` 或 hook 脚本都要重新审批。该状态不在
 任何可安全编辑的配置文件里，本轮未伪造。
+
+## 12. AC-09：门禁把「写入」当「读取」拦（提交时发现并修复）
+
+**现象**：提交 PLAN-106 时连续被自己的门禁拦了两次：
+
+1. `cat > /tmp/msg.txt <<'EOF' … .agents/skills … EOF` —— **写**提交消息，heredoc
+   正文里恰好提到受门禁路径；
+2. 末尾 `grep -c "SKILL.md\|.agents/skills" /tmp/msg.txt` —— **grep 的模式串**本身
+   写着那两个触发字面量。
+
+**根因**：`Bash` 面对**整条命令串**做两个子串匹配（含正文文件名 ∧ 含技能根）⇒
+不区分读与写、不区分命令与数据、不区分文件参数与模式串。
+
+**修法**：先剥 heredoc 正文与重定向目标，再按 `&&`/`||`/`;`/`|`/换行切简单命令
+（引号内不切），只在**读类程序**的文件参数上判定；`grep`/`sed`/`awk`/`rg` 跳过首个
+模式串参数。射程不变（仍只有 `.agents/skills/*/SKILL.md`）。
+
+**判据**（新增两臂，共 11 条）：写命令放行 4 形态（heredoc 写文件 / grep 模式串 /
+`echo >>` 写正文 / `cp` 正文）；管道与分段读取仍拦 4 形态（`cd … && cat` /
+`cat … | head` / `head "…"` / `awk '…' …`）。
+
+**按压**：退回整串子串匹配 ⇒ **恰 3 红**（写命令臂 + 两条 Bash 读臂，因为旧实现的
+占位技能名让理由不含真名）；复原后 `sha256` `394fb045…025aca` 两侧一致，11 passed。
+
+**真实失败命令复跑**：heredoc / grep 模式串 / `echo >>` / `cp` 四条全部 allow；
+`cat` / `cd && cat` / `head "…"` 三条全部 deny。
+
+**未修的边界**（并入 `W-5`）：`python -c` 之类在进程内自行打开文件的写法不在射程内；
+门禁是**深度防御**而非沙箱，这一点与 `.cursor/hooks` 的既有口径一致 —— 不能用 hook
+承担安全边界。
+
+## 13. AC-10：`48b67fa2` 的台账归属（用户授权豁免）
+
+**现象**：m0 的 `test_a_code_commit_that_names_no_goal_is_named_not_ignored` 判红 ——
+`48b67fa2` 改了产品面，主题却是 `feat(zcode):`，没有点名任何 GOAL。它当选 HEAD 时被
+「HEAD 除外」**结构性**跳过（哈希写不进自己携带的内容），一旦不再是 HEAD 就暴露。
+
+**为什么修不了**：唯一修法是改写那一条提交的主题行，而 `fix_policy.forbidden` 明列
+「重写历史」。**用户 2026-11-05 显式授权豁免。**
+
+**先试过但被否的做法（记录，避免重复）**：新建一个 GOAL 把它收进台账 —— 行不通，
+因为新 GOAL 没有任何点名它的提交 ⇒ 触发「取不到链 = 判据失去对象」变红。建了又撤回，
+`MAINLINE.md` 已还原为零 diff。
+
+**落地**：
+
+- `goal_commit_chain.untagged_code_commits_exempt(root, floor, exempt)`：在检测层扣除
+  豁免集，**空理由抛 `ValueError`**（与 `LEGACY_OUT_OF_SCOPE` 同一纪律）。
+- `_UNTAGGED_EXEMPT` 只列 `48b67fa2` 一条，理由写明授权来源与该提交为何必须走豁免。
+- 新增两条判据：
+  - `test_the_exemption_is_effective_and_stays_bounded`：① 不带豁免时它**确实**被点名
+    （否则豁免陈旧）② 带豁免时消失 ③ 未归属清单长度**恰好**等于豁免集；
+  - `test_an_exemption_without_a_reason_is_refused`：空理由必须抛错。
+
+**按压（两条滥用路径）**：
+
+| 动作 | 预期 | 实测 |
+| --- | --- | --- |
+| 把豁免换成不存在的 `deadbeef` | 陈旧的豁免要被抓 | 2 red（主判据 + 边界判据） |
+| 额外加一条假豁免 `1234567` | 「顺手放过」要被抓 | 1 red（长度不对等） |
+
+复原后 `sha256` 两侧一致，两条台账判据合计 **16 passed**。
+
+**边界声明**：这是**一次性历史债**，不是新口径。豁免不改变链、台账、祖父条款与另外三条
+断言的任何口径；将来任何新的无归属提交仍然判红，且豁免集长度必须与之相等 ⇒ 想靠往表里
+加一行来变绿会立刻被 `len(raw) == len(exempt)` 抓住。

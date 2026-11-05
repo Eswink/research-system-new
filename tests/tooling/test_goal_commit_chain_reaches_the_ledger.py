@@ -99,21 +99,78 @@ def test_every_commit_in_a_goal_chain_reaches_that_goals_ledger() -> None:
     assert problems == [], "提交链与台账对不上：\n" + "\n".join(problems)
 
 
+#: 用户 2026-11-05 显式授权的**定向豁免**（`(sha 前缀, 理由)`）。
+#:
+#: 背景：`48b67fa2` 改了产品面，主题却写成 `feat(zcode):` 而没有点名任何 GOAL。
+#: 它当选 HEAD 时被「HEAD 除外」结构性地跳过，一旦不再是 HEAD 就暴露出来。要修它只能
+#: 改写历史，而 `fix_policy.forbidden` 明列「重写历史」⇒ 由用户在 2026-11-05 授权豁免。
+#:
+#: **豁免的边界**（由 `test_the_exemption_is_effective_and_stays_bounded` 钉住）：
+#: - 只放行**已列出且带理由**的哈希（空理由抛错，不静默）；
+#: - 豁免**不改变**链、台账、祖父条款与另外三条断言的任何口径；
+#: - 表里每一条都必须在「不带豁免的未归属清单」里**真实存在**（陈旧条目要删）；
+#: - 未归属清单必须**恰好**等于豁免集 —— 任何新的无归属提交仍然判红。
+#: 这是**一次性**的历史债，不是新口径。
+_UNTAGGED_EXEMPT: tuple[tuple[str, str], ...] = (
+    (
+        "48b67fa2",
+        "用户 2026-11-05 授权豁免：该提交主题未点名 GOAL，而修复它需重写历史（fix_policy 禁止）",
+    ),
+)
+
+
 def test_a_code_commit_that_names_no_goal_is_named_not_ignored() -> None:
     """改了 `.cursor/` 之外的文件、主题却不点名任何 GOAL ⇒ 点名（无法归属 = 漏记）。
 
     受判区间从**受判面内所有链里最老的那个提交**起算 —— 与祖父条款同一口径：
-    更早的区段不追认（那些轮次收口时本判据还不存在）。
+    更早的区段不追认（那些轮次收口时本判据还不存在）。定向豁免见 `_UNTAGGED_EXEMPT`。
     """
     if goal_commit_chain.is_shallow(_ROOT):
         pytest.skip(_SHALLOW_REASON)
     chains = [chain for _goal, _reason, chain in _chains()]
     floor = goal_commit_chain.floor_commit(_ROOT, chains)
     assert floor is not None, "受判面内没有任何链 ⇒ 受判区间为空（空真不算通过）"
-    untagged = goal_commit_chain.untagged_code_commits(_ROOT, floor)
+    untagged = goal_commit_chain.untagged_code_commits_exempt(_ROOT, floor, _UNTAGGED_EXEMPT)
     assert untagged == [], (
         "这些提交改了产品面却不点名任何 GOAL（无从归属）：" + goal_commit_chain.describe(untagged)
     )
+
+
+def test_the_exemption_is_effective_and_stays_bounded() -> None:
+    """豁免**两向**钉住：它确实放行了那一条，且**不**放行任何别的提交。
+
+    只断言「现在绿了」会让豁免退化成万能开关：将来任何无归属提交都能靠往表里加一行
+    变绿，而判据仍全绿。所以同一次运行里必须同时证明：
+
+    1. 不带豁免时该提交**确实会被点名**（否则豁免是陈旧的，说明判据早就不咬它了）；
+    2. 带豁免时它消失；
+    3. 未归属清单的长度**恰好等于**豁免集 —— 没有别的漏记被顺手放过。
+    """
+    if goal_commit_chain.is_shallow(_ROOT):
+        pytest.skip(_SHALLOW_REASON)
+    chains = [chain for _goal, _reason, chain in _chains()]
+    floor = goal_commit_chain.floor_commit(_ROOT, chains)
+    assert floor is not None, "受判面内没有任何链 ⇒ 判据失去对象"
+
+    raw = goal_commit_chain.untagged_code_commits(_ROOT, floor)
+    raw_shas = [sha for sha, _ in raw]
+    for prefix, _reason in _UNTAGGED_EXEMPT:
+        assert any(sha.startswith(prefix) for sha in raw_shas), (
+            f"{prefix} 不在未归属清单里 ⇒ 这条豁免已陈旧（判据不再咬它），应当删除"
+        )
+
+    after = goal_commit_chain.untagged_code_commits_exempt(_ROOT, floor, _UNTAGGED_EXEMPT)
+    assert after == [], f"豁免后仍有未归属提交：{goal_commit_chain.describe(after)}"
+    assert len(raw) == len(_UNTAGGED_EXEMPT), (
+        f"未归属清单有 {len(raw)} 条、豁免 {len(_UNTAGGED_EXEMPT)} 条 ⇒ 有提交被顺手放过："
+        + goal_commit_chain.describe(raw)
+    )
+
+
+def test_an_exemption_without_a_reason_is_refused() -> None:
+    """空理由不算豁免（与 `LEGACY_OUT_OF_SCOPE` 同一纪律：只认「清单 + 理由」）。"""
+    with pytest.raises(ValueError, match="豁免必须给出理由"):
+        goal_commit_chain.untagged_code_commits_exempt(_ROOT, "a" * 40, [("b" * 40, "  ")])
 
 
 def test_the_chain_predicate_bites_both_ways_on_synthetic_chains() -> None:

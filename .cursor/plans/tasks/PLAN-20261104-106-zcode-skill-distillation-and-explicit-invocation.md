@@ -63,6 +63,8 @@ Skill(citation-binding) ──> .agents/skills/citation-binding/SKILL.md（唯�
 - [x] AC-08：三个技能**可被 ZCode 自动选择**——技能的发现根是 ZCode 实际扫描的
   `.agents/skills`；`description` 写成触发条件（模型路由的唯一依据）而非名词短语；
   不设 `disable-model-invocation`（那是 Cursor 语义，ZCode 解析器里零命中）。
+- [x] AC-09：`Bash` 面只判**读取动作**——写目标、heredoc 正文、`grep`/`sed`/`awk` 的
+  模式串都不构成读取；分段（`&&`/`||`/`;`/`|`）与引号路径仍能命中。消除本轮两次自伤。
 
 ## 实施清单
 
@@ -102,6 +104,9 @@ Skill(citation-binding) ──> .agents/skills/citation-binding/SKILL.md（唯�
 | EV-13 | AC-08 | check | 按压：描述改成名词短语 ⇒ 恰 1 红；加回 `disable-model-invocation: true` ⇒ 恰 1 红；复原后 8 passed + `sha256` `4d57cc1b…b127672` 一致 | 两向成立 |
 | EV-14 | AC-08 | check | 三个技能实测：`desc len` 459/420/462、`trigger? True`、`disable-model-invocation present? False` | 全部可路由且未禁用 |
 | EV-15 | AC-08 | check | 信任批准后真实会话实测：`Read .agents/skills/citation-binding/SKILL.md` ⇒ 被拦并提示 `Skill(skill='citation-binding')`；`Skill(citation-binding)` ⇒ 正文载入成功（含 Base directory 行）；SessionStart 注入含 3 个技能 | 完整链路成立（闭合 `W-9` 的可测部分） |
+| EV-16 | AC-09 | test | `test_zcode_skill_invocation_guard.py` 11 条（新增写命令放行 4 形态 / 管道读取仍拦 4 形态） | 11 passed |
+| EV-17 | AC-09 | check | 按压：退回整串子串匹配 ⇒ 恰 3 红；复原后 `sha256` `394fb045…025aca` 两侧一致 | 按压成立 |
+| EV-18 | AC-09 | check | 用本轮两次真实失败命令复跑：heredoc 写文件 ⇒ allow；`grep -c "…"` ⇒ allow；`echo >> …` ⇒ allow；`cp …` ⇒ allow；`cat`/`cd && cat`/`head "…"` ⇒ deny | 误报消除且读取不漏 |
 
 ## 决策与偏差
 
@@ -170,3 +175,17 @@ Skill(citation-binding) ──> .agents/skills/citation-binding/SKILL.md（唯�
   UI 持久化审批（`trust_selected` + `reviewItemIds`），状态含 `stale_digest`
   —— **配置内容摘要一变就失效**，所以每轮改 `zcode.json` 或 hook 脚本都要重新审批。
   这条不在任何可安全编辑的配置文件里；本轮未伪造该状态。
+- `W-11`：**门禁把「写入」当「读取」拦**。初版 `Bash` 面对整条命令串做子串匹配
+  （含正文文件名 + 含技能根即判负），于是提交时连续自伤两次：写提交消息的 heredoc
+  正文里提到该路径、结尾 `grep -c "<body>\|<root>"` 的模式串本身写着两个字面量。
+  **已修（2026-11-05）**：先剥 heredoc 正文与重定向目标，再按 `&&`/`||`/`;`/`|`/换行
+  切成简单命令，只在**读类程序**（`cat`/`head`/`tail`/`sed`/`awk`/`grep`/`rg`/`type`…）
+  的文件参数上判定，并对 `grep`/`sed`/`awk` 跳过首个模式串参数。判据新增两臂：
+  写命令放行（4 形态）、管道/分段读取仍拦（4 形态）。**新残余**：`python -c` 内部
+  自行打开文件不在射程内（`W-5` 同类），仍属已登记边界。
+- `W-12`：**提交 `48b67fa2` 未点名 GOAL**（我的失误）。它当选 HEAD 时被「HEAD 除外」
+  结构性跳过，不再为 HEAD 后立即暴露。修它需改写历史，而 `fix_policy.forbidden` 明列
+  「重写历史」⇒ **用户 2026-11-05 显式授权定向豁免**。落地形态：`_UNTAGGED_EXEMPT`
+  只放行该哈希且必须带理由；另加两条判据钉住边界（陈旧条目要删、未归属清单长度必须
+  **恰好**等于豁免集、空理由抛错）。两条按压均判红。**这是历史债不是新口径**；
+  后续提交一律在主题里点名 GOAL。

@@ -205,6 +205,7 @@ P4 不冒充语义）把 `NOT_JUDGED` 五项逐项判过：1/2/3 只能人评（
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `8a31ced6` | 无独立 run（本地记录提交，未推送） | 未跑 CI | **台账补齐**：该提交是链上最后一环，但它在起草自己这行之前就落地了（链收敛必然滞后一格）。改动只涉 `.cursor/`：GOAL 正文补最后一处读数 + 重封见证。补记发生在 PLAN-106 收尾时被 `test_goal_commit_chain_reaches_the_ledger` 点名之后 |
 | `b712a989` | 与 `9c3a0186`…`f9883a2e` **同一次 push**（`head_sha` = `f9883a2e`，无独立 run） | 该推送的读数见本表 `f9883a2e` 行；**本行不冒领** | **交付 tip**（三件靶子 + 收口资产 + 宪章记账）。本地全量 m0 见证：`PASS: profile=m0; 23 deterministic checks`、`PASS [` **24** 行、0 failed、`tree changed during the run: False`（`ran_at_head=80a3e614`）。定向套件 139 passed；`verify_goal105_closeout.py --verdict-only` 0 FAIL；`credential_audit.py` 四面 `offenders=0` |
 | `9c3a0186` | 与 `f9883a2e` **同一次 push**（无独立 run） | 读数见本表 `f9883a2e` 行；**本行不冒领** | **记录提交**：GOAL-105 收口为 ACHIEVED（七条 EC PASS + 状态历史），并按 7.2 一次付清 GOAL-104 的 tip 债（为 `80a3e614` 补台账行）。**同一轮补全所有已知欠账**，不逐个补 |
 | `73a45692` | 与 `f9883a2e` **同一次 push**（无独立 run） | 读数见本表 `f9883a2e` 行；**本行不冒领** | **记录提交**：勾选 PLAN 的九项交付（DONE 不得留未勾选）+ 落本轮可复用事实 `MEM-20261103-239`（「字段缺省值不是声明」）并进 INDEX。治理门 `validate.py` 此前点名这两条 |
@@ -241,7 +242,7 @@ P4 不冒充语义）把 `NOT_JUDGED` 五项逐项判过：1/2/3 只能人评（
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` → `38b92a7b` → `cc010ce3` → `a9c845f2` → `33017ab8` → `1803b066` → `15f9fb5b` → `f9883a2e` → `747a7a53` → `ea7d581e` → `be35838a` → `bfa8b84a` → `f15f190f` → `5d48703c` → `87aba9fb` → `f5610f18` → `3a1073cf` → `87f4eb92` → `4e5428e7` → `2ef2b1ef` → `82321968` → `46578970` → `a56f19e5` → `6b4c9644` → `32c054f9` → `f8a88c85` → `c157780a` → `409c8e09` → `5ef78e38` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL；两树复检 73 判词 `sha256` 相同 | **M0 `success` 8/8**（`f9883a2e`，含 `console-frontend`）；Push success | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记；`a56f19e5` 首轮 CI 抓到 `console-frontend` 红（`design-outline-guard` 时序）⇒ 类别①、修等待条件、判据未动（`W-5` / `D-8`）| 见§「残余与未覆盖范围」|
+| 1 | PLAN-20261103-105 | `b712a989` → `9c3a0186` → `73a45692` → `38b92a7b` → `cc010ce3` → `a9c845f2` → `33017ab8` → `1803b066` → `15f9fb5b` → `f9883a2e` → `747a7a53` → `ea7d581e` → `be35838a` → `bfa8b84a` → `f15f190f` → `5d48703c` → `87aba9fb` → `f5610f18` → `3a1073cf` → `87f4eb92` → `4e5428e7` → `2ef2b1ef` → `82321968` → `46578970` → `a56f19e5` → `6b4c9644` → `32c054f9` → `f8a88c85` → `c157780a` → `409c8e09` → `5ef78e38` → `8a31ced6` | 定向套件 139 passed；全量 m0 `PASS: profile=m0; 23 deterministic checks`（24 行 `PASS [`，0 failed，树未变）；`verify_goal105_closeout.py` 0 FAIL；两树复检 73 判词 `sha256` 相同 | **M0 `success` 8/8**（`f9883a2e`，含 `console-frontend`）；Push success | 首轮 m0 三条红：① typecheck = **真缺陷**（新判据自造哑对象与 Port 协议不符）② `validate_bundle` = **真缺陷**（`additionalProperties: true` 被禁）③ `python/tests` = **环境**（6 周前残留容器）④ `framework/validate` = **真缺陷**（PLAN 缺三章节）| 七条 EC 全 PASS；残余 `W-1`…`W-3` 与未覆盖 `U-1`…`U-3` 已登记；`a56f19e5` 首轮 CI 抓到 `console-frontend` 红（`design-outline-guard` 时序）⇒ 类别①、修等待条件、判据未动（`W-5` / `D-8`）| 见§「残余与未覆盖范围」|
 
 ## 影响报告
 

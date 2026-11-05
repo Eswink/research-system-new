@@ -155,6 +155,26 @@ def untagged_code_commits(root: Path, floor: str) -> list[tuple[str, str]]:
     return found
 
 
+def untagged_code_commits_exempt(
+    root: Path, floor: str, exempt: Sequence[tuple[str, str]]
+) -> list[tuple[str, str]]:
+    """同 `untagged_code_commits`，但**扣除显式豁免集**。
+
+    豁免集是 `(sha 前缀, 理由)` 的序列，理由必须非空 —— 空理由不算豁免
+    （与 `LEGACY_OUT_OF_SCOPE` 同一纪律：只认「清单 + 理由」）。
+    豁免只作用于**这一条判据**，不改变链、台账或祖父条款的任何口径。
+    """
+    unstripped = [(prefix, reason) for prefix, reason in exempt if not reason.strip()]
+    if unstripped:
+        raise ValueError(f"豁免必须给出理由：{[prefix for prefix, _ in unstripped]}")
+    exempt_prefixes = tuple(prefix.lower() for prefix, _ in exempt if len(prefix) >= 7)
+    return [
+        (sha, subject)
+        for sha, subject in untagged_code_commits(root, floor)
+        if not any(sha.lower().startswith(prefix) for prefix in exempt_prefixes)
+    ]
+
+
 def describe(items: Sequence[tuple[str, str]]) -> str:
     """判词里的点名形态（**前缀 + 主题**；不含绝对路径，两树复检可逐字比对）。"""
     return "; ".join(f"{sha[:8]} {subject}" for sha, subject in items)
