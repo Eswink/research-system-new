@@ -143,6 +143,12 @@ _VERIFIERS: tuple[str, ...] = (
     "tools/verify_goal104_closeout.py",
     # GOAL-20261103-105 EC-06：收口验证器 + 外部断言集（纯收紧 ⇒ 只增不删）。
     "tools/verify_goal105_closeout.py",
+    # GOAL-20261104-106 EC-06：收口验证器（断言集 `goal106_closeout_assertions.py` +
+    # `goal106_record_assertions.py`）。它判的是**真实 run 的读数文件在树**。
+    # **本轮它在树上有判负**（EC-02 / EC-03：真实 run 尚未 `SUCCEEDED`，上游 Europe PMC
+    # 与 NCBI 的搜索后端同时不可用）⇒ 本条判据与 `test_verifier_main_files_…` 会红。
+    # 这是**如实状态**：登记与判负同时存在，直到真跑读数落地。把判负藏起来才是违规。
+    "tools/verify_goal106_closeout.py",
 )
 #: 断言**内联**的旧一代验证器（逐条登记 + 理由非空；与 `_VERIFIERS` 的分区判据同形）。
 LEGACY_INLINE: tuple[tuple[str, str], ...] = (

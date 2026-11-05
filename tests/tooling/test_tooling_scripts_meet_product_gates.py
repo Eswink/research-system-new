@@ -211,11 +211,11 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/goal102_closeout_assertions.py",
     "tools/goal103_closeout_assertions.py",  # GOAL-103 EC-07（纯收紧）
     "tools/verify_goal103_closeout.py",
-    "tools/goal104_closeout_assertions.py",  # GOAL-104 EC-05（纯收紧）
-    "tools/goal104_credential_faces.py",  # 5.9 凭据面
+    "tools/goal104_closeout_assertions.py", "tools/goal104_credential_faces.py",  # GOAL-104
     "tools/verify_goal104_closeout.py",
-    "tools/goal105_closeout_assertions.py",  # GOAL-105 EC-06（纯收紧）
-    "tools/verify_goal105_closeout.py",
+    "tools/goal105_closeout_assertions.py", "tools/verify_goal105_closeout.py",  # GOAL-105
+    "tools/goal106_closeout_assertions.py", "tools/goal106_record_assertions.py",
+    "tools/verify_goal106_closeout.py",  # GOAL-106 EC-06
     "tools/charter_progress.py",
     "tools/check_ledger_run_attribution.py",
     # ZCode 侧门禁：技能正文只经 Skill 工具加载（纯收紧 ⇒ 只增不删）。

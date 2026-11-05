@@ -235,7 +235,8 @@ def _revision_row_verdicts(root: Path) -> list[Any]:
         TOOLBOX.verdict(
             "revision-row-records-this-goal",
             ok,
-            f"宪章「修订记录」必须有本 GOAL 的一行（{PROGRAM_SEQ}（新增）、5 格；活跃面或归档均可）",
+            f"宪章「修订记录」必须有本 GOAL 的一行（{PROGRAM_SEQ}（新增）、5 格；"
+            "活跃面或归档均可）",
         ),
     ]
 

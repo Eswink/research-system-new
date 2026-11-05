@@ -75,7 +75,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal106_closeout.py --root . --verdict-only`
       全 PASS、判词不含绝对路径；脚本过 ruff / mypy / 规模门。
-    status: PENDING
+    status: PASS
   - id: EC-07
     criterion: >-
       宪章记账：程序表追加序 74（紧接序 73、**不留空行**）；阶梯「报告」/「实验」/「复检」行
