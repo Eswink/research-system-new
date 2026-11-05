@@ -35,6 +35,10 @@ MAX_FUNCTION_LINES = 50
 
 #: **必备清单**（源码里固化）：射程的下界由它给出，不由文档给出。
 #: `research_mcp_server.py`（交付型产品件）与 `verify_goal027_closeout.py` 由 GOAL-027 显式加入。
+#: 射程**之外**的历史遗留（清单 + 理由）单列在 `tests/tooling/tooling_legacy.py`：
+#: 本文件贴着 450 行硬上限，那张表有 45 条会让「加新脚本」必然撞线。语义不变。
+from tests.tooling.tooling_legacy import LEGACY_OUT_OF_SCOPE  # noqa: E402
+
 IN_SCOPE: tuple[str, ...] = (
     "tools/run_m0_with_witness.py",
     "tools/two_tree_recheck.py",
@@ -211,65 +215,19 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/goal102_closeout_assertions.py",
     "tools/goal103_closeout_assertions.py",  # GOAL-103
     "tools/verify_goal103_closeout.py",
-    "tools/goal104_closeout_assertions.py", "tools/goal104_credential_faces.py",
+    "tools/goal104_closeout_assertions.py",
+    "tools/goal104_credential_faces.py",
     "tools/verify_goal104_closeout.py",
-    "tools/goal105_closeout_assertions.py", "tools/verify_goal105_closeout.py",  # GOAL-105
-    "tools/goal106_closeout_assertions.py", "tools/goal106_record_assertions.py",
+    "tools/goal105_closeout_assertions.py",
+    "tools/verify_goal105_closeout.py",  # GOAL-105
+    "tools/goal106_closeout_assertions.py",
+    "tools/goal106_record_assertions.py",
     "tools/verify_goal106_closeout.py",  # GOAL-106 EC-06
     "tools/charter_progress.py",
     "tools/check_ledger_run_attribution.py",
     # ZCode 侧门禁：技能正文只经 Skill 工具加载（纯收紧 ⇒ 只增不删）。
     "tools/zcode-hooks/skill_invocation_guard.py",
     "tools/zcode-hooks/skill_index_context.py",
-)
-
-_REASON_PA1R = "PA-1R 历史资产（非 ASCII 命名落在 R-N1 豁免面）；纳入射程需另行授权"
-_REASON_PROBE = "历史取证探针（一次性使用，非交付面）"
-_REASON_SPIKE = "上游调研脚本（历史调研资产）"
-_REASON_GOAL015 = "GOAL-015 专属脚本（其收口验证器是 GOAL-023 的一般化先例）；纳入射程需另行授权"
-_REASON_CLI = "历史 CLI / 工具（有 tests/tooling 行为判据，但无格式 / 规模 / 类型门）"
-_REASON_LAB = "M12 / M13 历史资产（参考 / 冒烟 / 实验门禁脚本）"
-
-#: 射程**之外**的历史遗留（**清单 + 理由**；不纳入射程，且不为其变绿而改历史资产）。
-LEGACY_OUT_OF_SCOPE: tuple[tuple[str, str], ...] = (
-    ("tools/PA1R发布真相v1.py", _REASON_PA1R),
-    ("tools/PA1R密钥审计v1.py", _REASON_PA1R),
-    ("tools/PA1R恢复闭包v1.py", _REASON_PA1R),
-    ("tools/PA1R故障演练v1.py", _REASON_PA1R),
-    ("tools/PA1R质量门禁v1.py", _REASON_PA1R),
-    ("tools/PA1R运行演练v1.py", _REASON_PA1R),
-    ("tools/backup.py", _REASON_CLI),
-    ("tools/classify_local_gate_reds.py", _REASON_GOAL015),
-    ("tools/credential_audit.py", _REASON_CLI),
-    ("tools/docs_consistency_check.py", _REASON_CLI),
-    ("tools/freeze_eval_dataset.py", _REASON_LAB),
-    ("tools/gen_openapi.py", _REASON_CLI),
-    ("tools/m12_ncbi_smoke.py", _REASON_LAB),
-    ("tools/m12_reference_workflow.py", _REASON_LAB),
-    ("tools/m12_relay_smoke.py", _REASON_LAB),
-    ("tools/personal_reference_workflow.py", _REASON_CLI),
-    ("tools/probes/enumerate_clock_injected_pg_tests.py", _REASON_PROBE),
-    ("tools/probes/probe_cancel_race.py", _REASON_PROBE),
-    ("tools/probes/probe_canonical_state.py", _REASON_PROBE),
-    ("tools/probes/probe_db_failure.py", _REASON_PROBE),
-    ("tools/probes/probe_dependency_advisories.py", _REASON_PROBE),
-    ("tools/probes/probe_dynamic_sql_forms.py", _REASON_PROBE),
-    ("tools/probes/probe_migration.py", _REASON_PROBE),
-    ("tools/probes/probe_outbox.py", _REASON_PROBE),
-    ("tools/probes/probe_perf.py", _REASON_PROBE),
-    ("tools/probes/probe_scheduled_recovery.py", _REASON_PROBE),
-    ("tools/probes/probe_stale_worker.py", _REASON_PROBE),
-    ("tools/probes/probe_telemetry_soak.py", _REASON_PROBE),
-    ("tools/quarantine_and_run_m0.py", _REASON_GOAL015),
-    ("tools/restore.py", _REASON_CLI),
-    ("tools/snapshot_migrate.py", _REASON_CLI),
-    ("tools/upstream-spikes/S1_import_fingerprint.py", _REASON_SPIKE),
-    ("tools/upstream-spikes/S2_llm_construction.py", _REASON_SPIKE),
-    ("tools/upstream-spikes/S3_agent_conversation_run.py", _REASON_SPIKE),
-    ("tools/upstream-spikes/S4_cancel_pause_error.py", _REASON_SPIKE),
-    ("tools/upstream-spikes/S5_local_workspace.py", _REASON_SPIKE),
-    ("tools/upstream-spikes/S6_persistence_resume.py", _REASON_SPIKE),
-    ("tools/verify_goal015_closeout.py", _REASON_GOAL015),
 )
 
 
