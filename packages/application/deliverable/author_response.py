@@ -295,7 +295,22 @@ def review_remarks(
 
     **确定性**：制品按 id 排序后逐条读 ⇒ 同一份持久状态给出同一份意见序列（顺序无关，
     因为 `points_of` 还要按 `(reviewer, text)` 再排一次）。
+
+    **一条解不开的交付物不拖垮整条链**（GOAL-20261104-106 的真实 run 实测）：模型的评审
+    回复可能**整篇用散文**写（没有 `{"review_decision": {...}}` 块 —— 那两条真实回复就是
+    这样：一份 1303 字、一份 4223 字，都是 markdown 正文）。`declared_object` 对这种载荷
+    会**点名**抛 `InvalidInputError`（那是它的正确语义：下游不该拿 `content` 冒充声明对象）。
+
+    但本函数的调用点（`with_review_points` → 每个任务开始前组装 spec）**没有**异常保护
+    ⇒ 一个解不开的评审交付物会让**整条 run 在 `revision` 相静默停住**：`phase.started`
+    之后**一个任务都没有创建**、也没有 `run.failed` 事件（2026-11-05 的真实 run 实测：
+    52 条事件、最后一条是 `phase.started(revision)`，而此前八个任务全部 `SUCCEEDED`）。
+    「评审意见读不出来」的诚实后果是**点表为空**（下游据此不挂 `REVIEW POINTS` 段），
+    **不是**让 run 停在半空。因此这里**逐条兜住** `InvalidInputError` 并跳过 —— 与下面
+    「解不出 JSON ⇒ `continue`」同一条既有降级纪律（那段 `except (UnicodeDecodeError,
+    ValueError): continue` 本来就是这个意思，只是漏掉了 `declared_object` 这一种抛法）。
     """
+    from packages.application.ports.errors import InvalidInputError
     from packages.application.run_orchestration.phase_input_material import declared_object
 
     ids = sorted({
@@ -311,7 +326,15 @@ def review_remarks(
             parsed: Any = json.loads(artifacts.get(artifact_id).decode("utf-8"))
         except (UnicodeDecodeError, ValueError):
             continue
-        block = declared_object(parsed, key=key) if isinstance(parsed, Mapping) else None
+        if not isinstance(parsed, Mapping):
+            continue
+        try:
+            block = declared_object(parsed, key=key)
+        except InvalidInputError:
+            # 整篇散文（没有那座 JSON 块）⇒ 这一条没有可读的评审点，跳过。
+            # 「读不出点」≠「没有评审」：点表为空时下游不挂 `REVIEW POINTS` 段，
+            # 而评审交付物本身仍在 canonical 里（读面与判词面都不受影响）。
+            continue
         if not isinstance(block, Mapping):
             continue
         inner = block.get(key)

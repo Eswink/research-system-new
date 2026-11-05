@@ -21,6 +21,8 @@ reproducibility 相关段落」的回应与一个讲 reproducibility 的评审�
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from packages.application.deliverable.author_response import AuthorResponse, ResponseError
@@ -146,3 +148,68 @@ def test_the_two_earlier_criteria_still_fire_with_points_present() -> None:
     with pytest.raises(ResponseError) as caught:
         _validated("nothing named here", (_Point("P1", _POINT_TEXT),))
     assert MANUSCRIPT_V2_NAME in str(caught.value), caught.value
+
+
+class _Artifacts:
+    """`review_remarks` 需要的两个 Port 面的最小替身（`get` / `meta`）。"""
+
+    def __init__(self, bodies: dict[str, bytes]) -> None:
+        self._bodies = bodies
+
+    def get(self, artifact_id: str) -> bytes:
+        return self._bodies[artifact_id]
+
+    def meta(self, artifact_id: str) -> object | None:
+        from types import SimpleNamespace
+
+        return SimpleNamespace(id=artifact_id) if artifact_id in self._bodies else None
+
+
+class _Evidence:
+    """证据投影的一行（`review_remarks` 只读 `artifact_id`）。"""
+
+    def __init__(self, artifact_id: str) -> None:
+        self.artifact_id = artifact_id
+        self.source_ref = artifact_id
+
+
+class TestAnUnreadableReviewDoesNotStallTheChain:
+    """GOAL-20261104-106 真实 run 的缺陷：整篇散文的评审回复让 run 静默停在 `revision` 相。
+
+    **实测形态**（2026-11-05 的真实 run）：`phase.started(revision)` 之后**一个任务都没创建**、
+    也没有 `run.failed`；此前八个任务全部 `SUCCEEDED`。原因是 `review_remarks` 里
+    `declared_object` 对散文载荷**点名抛** `InvalidInputError`，而调用点
+    （`with_review_points`，每个任务开始前）**没有**异常保护 ⇒ 整个 run 停半空。
+
+    诚实后果应是**点表为空**（下游据此不挂 `REVIEW POINTS` 段），不是停链。
+    """
+
+    _PROSE = json.dumps({
+        "content": "# EC-04 Review Report\n\nThe plan is sound. I would ask for one baseline.",
+        "declared_artifact": "review_decision",
+        "fact_name": "session_message",
+    }).encode()
+
+    def test_a_prose_only_review_yields_no_points_instead_of_raising(self) -> None:
+        """**两向**：散文载荷 ⇒ 不抛、给空点表（而不是把 run 拖停）。"""
+        from packages.application.deliverable.author_response import review_remarks
+
+        remarks = review_remarks(
+            _Artifacts({"t1:review_decision": self._PROSE}), [_Evidence("t1:review_decision")]
+        )
+        assert remarks == ()
+
+    def test_a_readable_review_still_yields_its_points(self) -> None:
+        """反证的另一半：**能**解开的评审仍然给出点（降级不许吃掉正常路径）。"""
+        from packages.application.deliverable.author_response import review_remarks
+
+        # 直形态（非信封）：`declared_object` 原样返回，点表按 `points_of` 的字段抽取。
+        direct = json.dumps({
+            "review_decision": {
+                "weakest_link": _POINT_TEXT,
+            }
+        }).encode()
+        remarks = review_remarks(
+            _Artifacts({"t1:review_decision": direct}), [_Evidence("t1:review_decision")]
+        )
+        assert remarks, "能解开的评审必须仍然产出点（这次修复不允许吃掉正常路径）"
