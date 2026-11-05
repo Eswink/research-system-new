@@ -1,5 +1,5 @@
 {
-  "exit_code": 0,
+  "exit_code": 1,
   "fingerprint_after": {
     "files": [
       {
@@ -1384,7 +1384,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "dda4b6bc2eb7c6da1a744a0f23f06377ca1eb0fe"
+        "sha256": "9381104fa17772da7f332a6d0e56dd2aa9c6dfe7"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1839,8 +1839,12 @@
         "sha256": "cefd9a3386c88e456fe45590914732327c9e515a"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
+        "sha256": "2fe61b999ec42dd41ef6b12094fc88e932fdf254"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "c1433a0a259a1fa9bf81a966ea2d2030c52468b9"
+        "sha256": "2342845cbe0d66eaa72dfd57bf77a49e34ed45d9"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -2065,6 +2069,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-01-revisions-70-only.md",
         "sha256": "c83343e50854f60e55906e659955dd53c909fc43"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-04-progress-103-only.md",
+        "sha256": "4f153c078b36ac247226a4ffb4e93a7a381559da"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-04-revisions-71-only.md",
+        "sha256": "e696d78d42e04f1e86e27154406218ada7913f7c"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -2857,6 +2869,22 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261103-105-next-round-charter.md",
         "sha256": "0ab7871eb85e538bbff39de5ad1ccc89503ff810"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-next-round-charter.md",
+        "sha256": "eb7920dac5b0a1577a0d148735767cd857b2c457"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-probe-failed-run.json",
+        "sha256": "076d24ed4aef9c82e08bfa333e8e712ddbedd051"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-probe-ncbi-substitute.json",
+        "sha256": "c0c98c3f9fa42444ab5011a6b0c5470000c1a5b2"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-upstream-availability.txt",
+        "sha256": "0b776d210ece52e2013c4cc038ae8a303ec71737"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -4351,6 +4379,10 @@
         "sha256": "9076013e9df34df2800ece878d60cec11ed5560a"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261104-107-manuscript-chain-live.md",
+        "sha256": "5bd05c9318bacb3aa19b6b0db52a192c9cc9f965"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5769,6 +5801,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261104-106-zcode-skill-distillation-and-explicit-invocation.md",
         "sha256": "db9cc4be3d59d83705988923289269378015be74"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261104-107-manuscript-chain-live.md",
+        "sha256": "ea33fc26d615dbbf6178cd7e32cdd5042fcffe8a"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -12492,7 +12528,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "e27ed64e4e00d34b57287a1fab6e0a1e85141bae"
+        "sha256": "a748162e7da3db19eafb842f8e808f9467ed0213"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -17552,7 +17588,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "39a7abb130d427f1c87034ea6a44321258b92e1d"
+        "sha256": "b2ae54236d16b5b695460974d572d727f516fcbd"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -18092,7 +18128,7 @@
       },
       {
         "path": "tests/e2e/direction_to_manuscript_support.py",
-        "sha256": "285b15726e288b7e883ed93d18ec462c00f91b64"
+        "sha256": "ba9b5f33490b9ff8cb734e0e8014f74195c5e7ed"
       },
       {
         "path": "tests/e2e/direction_to_report_live_support.py",
@@ -18121,6 +18157,10 @@
       {
         "path": "tests/e2e/live_switch_support.py",
         "sha256": "229f02b0dc5c3b551bfe02505b3a78cdeb7e39ae"
+      },
+      {
+        "path": "tests/e2e/manuscript_chain_live_support.py",
+        "sha256": "7bc783e1f6c4afe9f5453176d3b097e91e13f15a"
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
@@ -18469,6 +18509,10 @@
       {
         "path": "tests/e2e/test_session_tool_call_on_the_default_assembly.py",
         "sha256": "386d53067afe695f6c2990561d719ae2bc7b514e"
+      },
+      {
+        "path": "tests/e2e/test_the_manuscript_chain_runs_live.py",
+        "sha256": "16248e4af77511fa0007cf060f66d14fccad120c"
       },
       {
         "path": "tests/e2e/test_the_model_cites_the_retrieved_identifiers_live.py",
@@ -20147,7 +20191,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "48b67fa249c5491c5b97a65697102937f2467b06"
+    "head": "997ca40e852bfffb11f6c9881059faf6ff9b98af"
   },
   "fingerprint_before": {
     "files": [
@@ -21533,7 +21577,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "dda4b6bc2eb7c6da1a744a0f23f06377ca1eb0fe"
+        "sha256": "9381104fa17772da7f332a6d0e56dd2aa9c6dfe7"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -21988,8 +22032,12 @@
         "sha256": "cefd9a3386c88e456fe45590914732327c9e515a"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
+        "sha256": "2fe61b999ec42dd41ef6b12094fc88e932fdf254"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "c1433a0a259a1fa9bf81a966ea2d2030c52468b9"
+        "sha256": "2342845cbe0d66eaa72dfd57bf77a49e34ed45d9"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -22214,6 +22262,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-01-revisions-70-only.md",
         "sha256": "c83343e50854f60e55906e659955dd53c909fc43"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-04-progress-103-only.md",
+        "sha256": "4f153c078b36ac247226a4ffb4e93a7a381559da"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-04-revisions-71-only.md",
+        "sha256": "e696d78d42e04f1e86e27154406218ada7913f7c"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -23006,6 +23062,22 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261103-105-next-round-charter.md",
         "sha256": "0ab7871eb85e538bbff39de5ad1ccc89503ff810"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-next-round-charter.md",
+        "sha256": "eb7920dac5b0a1577a0d148735767cd857b2c457"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-probe-failed-run.json",
+        "sha256": "076d24ed4aef9c82e08bfa333e8e712ddbedd051"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-probe-ncbi-substitute.json",
+        "sha256": "c0c98c3f9fa42444ab5011a6b0c5470000c1a5b2"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-upstream-availability.txt",
+        "sha256": "0b776d210ece52e2013c4cc038ae8a303ec71737"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -24500,6 +24572,10 @@
         "sha256": "9076013e9df34df2800ece878d60cec11ed5560a"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261104-107-manuscript-chain-live.md",
+        "sha256": "5bd05c9318bacb3aa19b6b0db52a192c9cc9f965"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -25918,6 +25994,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261104-106-zcode-skill-distillation-and-explicit-invocation.md",
         "sha256": "db9cc4be3d59d83705988923289269378015be74"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261104-107-manuscript-chain-live.md",
+        "sha256": "ea33fc26d615dbbf6178cd7e32cdd5042fcffe8a"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -32641,7 +32721,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "e27ed64e4e00d34b57287a1fab6e0a1e85141bae"
+        "sha256": "a748162e7da3db19eafb842f8e808f9467ed0213"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -37701,7 +37781,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "39a7abb130d427f1c87034ea6a44321258b92e1d"
+        "sha256": "b2ae54236d16b5b695460974d572d727f516fcbd"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -38241,7 +38321,7 @@
       },
       {
         "path": "tests/e2e/direction_to_manuscript_support.py",
-        "sha256": "285b15726e288b7e883ed93d18ec462c00f91b64"
+        "sha256": "ba9b5f33490b9ff8cb734e0e8014f74195c5e7ed"
       },
       {
         "path": "tests/e2e/direction_to_report_live_support.py",
@@ -38270,6 +38350,10 @@
       {
         "path": "tests/e2e/live_switch_support.py",
         "sha256": "229f02b0dc5c3b551bfe02505b3a78cdeb7e39ae"
+      },
+      {
+        "path": "tests/e2e/manuscript_chain_live_support.py",
+        "sha256": "7bc783e1f6c4afe9f5453176d3b097e91e13f15a"
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
@@ -38618,6 +38702,10 @@
       {
         "path": "tests/e2e/test_session_tool_call_on_the_default_assembly.py",
         "sha256": "386d53067afe695f6c2990561d719ae2bc7b514e"
+      },
+      {
+        "path": "tests/e2e/test_the_manuscript_chain_runs_live.py",
+        "sha256": "16248e4af77511fa0007cf060f66d14fccad120c"
       },
       {
         "path": "tests/e2e/test_the_model_cites_the_retrieved_identifiers_live.py",
@@ -40296,11 +40384,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "48b67fa249c5491c5b97a65697102937f2467b06"
+    "head": "997ca40e852bfffb11f6c9881059faf6ff9b98af"
   },
-  "green": true,
+  "green": false,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "48b67fa249c5491c5b97a65697102937f2467b06",
-  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
+  "ran_at_head": "997ca40e852bfffb11f6c9881059faf6ff9b98af",
+  "terminal_line": "FAILED: 1 check(s): python/tests=1",
   "tree_changed_during_the_run": false
 }
