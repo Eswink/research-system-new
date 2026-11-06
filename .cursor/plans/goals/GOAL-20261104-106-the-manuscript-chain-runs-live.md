@@ -202,7 +202,7 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261104-107 | `1dd19228` → `2fe8dbaa` → `997ca40e` → `1848db13` → `f3d12e31` → `fc8560f6` → `cc9a7fbb` → `a3f80844` → `1afcd9fe` → `619cbb7d` → `a94d55a4` → `94c49df2` → `92b699bc` → `166d9227` → `4945e8ff` → `fe1a3710` → `adcbc029` → `85a724d4` → `39277dbf` → `ce6eb81e` → `682e9be3` → `2cf4ce47` → `b93304dd` → `fa60916d` → `51bc9f44` → `c4d20e48` → `90d98ea9` → `5a696acf` | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
+| 1 | PLAN-20261104-107 | `1dd19228` → `2fe8dbaa` → `997ca40e` → `1848db13` → `f3d12e31` → `fc8560f6` → `cc9a7fbb` → `a3f80844` → `1afcd9fe` → `619cbb7d` → `a94d55a4` → `94c49df2` → `92b699bc` → `166d9227` → `4945e8ff` → `fe1a3710` → `adcbc029` → `85a724d4` → `39277dbf` → `ce6eb81e` → `682e9be3` → `2cf4ce47` → `b93304dd` → `fa60916d` → `51bc9f44` → `c4d20e48` → `90d98ea9` → `5a696acf` → `1d9dd0af` | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
 
 ## 影响报告
 
@@ -304,6 +304,7 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `1d9dd0af` | [M0 42229890229](https://github.com/Eswink/research-system-new/actions/runs/42229890229) / [Push 42229889319](https://github.com/Eswink/research-system-new/actions/runs/42229889319) | **M0 `failure`**（`quality-ubuntu-latest` + `quality-windows-latest` 红；其余 6 job success）；**Push 全 success (3/3)** | **本轮唯一一次真红，如实登记**（此前两行都记绿，这一行不跟）。判词逐字：`FAILED tests/tooling/test_m0_witness_matches_the_tree.py::test_the_witness_is_for_the_tree_we_are_looking_at` → `见证记录的 HEAD: c4d20e48…；当前 HEAD: 1d9dd0af…；内容变了（1 项）：GOAL-20261104-106-…md（见证 `4bfbc19c…` / 当前 `d5c2e0a0…`）`；`FAILED: 1 check(s): python/tests=1`。**根因**：见证在 `c4d20e48` 上密封，之后本提交又写了 GOAL 文件（两树读数）却**没有重跑 m0** —— 正是见证机制存在的理由。**两树复检与收口验证器都仍绿**（66 / `sha256=bbc1069…`），因为它们不读见证。**修法**：修完 RECHECK 台账结构缺陷后重跑全量 m0 重封，见下一行 |
 | `5a696acf` | 与 `90d98ea9`…`5a696acf` 同一次 push（无独立 run） | 读数见 `90d98ea9` 行；**本行不冒领** | 台账收口（2 个欠账 + 迭代日志整链）。**两树复检 PASS**：`tools/two_tree_recheck.py --script tools/verify_goal106_closeout.py --root . --script-mode shared` ⇒ `TREE current verdicts=66 sha256=bbc1069…` / `TREE clean verdicts=66 sha256=bbc1069…` / `COMPARE identical=True` / `TWO-TREE PASS` |
 | `c4d20e48` | 与 `90d98ea9` 同一次 push（无独立 run） | 读数见 `90d98ea9` 行；**本行不冒领** | 补 5 个欠账提交 + 记录首次全绿 CI |
 | `51bc9f44` | [M0 42217660964](https://github.com/Eswink/research-system-new/actions/runs/42217660964) / [Push 42217659297](https://github.com/Eswink/research-system-new/actions/runs/42217659297) | **M0 `success`（8/8 job success）**；Push 全 success (3/3) | **见证密封生效后 CI 首次全绿**（`fa60916d` 上同样 8/8 success）|

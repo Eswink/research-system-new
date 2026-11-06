@@ -1,5 +1,5 @@
 {
-  "exit_code": 1,
+  "exit_code": 0,
   "fingerprint_after": {
     "files": [
       {
@@ -1840,7 +1840,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
-        "sha256": "4bfbc19c83336bce35583a1d08cdb60b90202738"
+        "sha256": "a0e8b0d4002db7a103bc4b227c7cbfb66f5871e0"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4404,7 +4404,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261104-107-manuscript-chain-live.md",
-        "sha256": "3cb6e06edb83c19d18c9461bbea7ce3f544126ef"
+        "sha256": "808e8ac9f4be67129eb58dd553ebc585e4db3830"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -20231,7 +20231,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "c4d20e481992540bffa277ad36ec8f2cddf878e8"
+    "head": "1d9dd0af7177b627ef5f198a2a8064fc3aaa13c4"
   },
   "fingerprint_before": {
     "files": [
@@ -22073,7 +22073,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
-        "sha256": "4bfbc19c83336bce35583a1d08cdb60b90202738"
+        "sha256": "a0e8b0d4002db7a103bc4b227c7cbfb66f5871e0"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -24637,7 +24637,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261104-107-manuscript-chain-live.md",
-        "sha256": "3cb6e06edb83c19d18c9461bbea7ce3f544126ef"
+        "sha256": "808e8ac9f4be67129eb58dd553ebc585e4db3830"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -40464,11 +40464,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "c4d20e481992540bffa277ad36ec8f2cddf878e8"
+    "head": "1d9dd0af7177b627ef5f198a2a8064fc3aaa13c4"
   },
-  "green": false,
+  "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "c4d20e481992540bffa277ad36ec8f2cddf878e8",
-  "terminal_line": "FAILED: 1 check(s): python/tests=1",
+  "ran_at_head": "1d9dd0af7177b627ef5f198a2a8064fc3aaa13c4",
+  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
