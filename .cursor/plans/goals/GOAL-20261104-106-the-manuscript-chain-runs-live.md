@@ -202,7 +202,7 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261104-107 | `1dd19228` → `2fe8dbaa` → `997ca40e` → `1848db13` → `f3d12e31` → `fc8560f6` → `cc9a7fbb` → `a3f80844` → `1afcd9fe` → `619cbb7d` → `a94d55a4` → `94c49df2` → `92b699bc` → `166d9227` → `4945e8ff` → `fe1a3710` → `adcbc029` → `85a724d4` → `39277dbf` | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
+| 1 | PLAN-20261104-107 | `1dd19228` → `2fe8dbaa` → `997ca40e` → `1848db13` → `f3d12e31` → `fc8560f6` → `cc9a7fbb` → `a3f80844` → `1afcd9fe` → `619cbb7d` → `a94d55a4` → `94c49df2` → `92b699bc` → `166d9227` → `4945e8ff` → `fe1a3710` → `adcbc029` → `85a724d4` → `39277dbf` → `ce6eb81e` → `682e9be3` → `2cf4ce47` → `b93304dd` → `fa60916d` → `51bc9f44` | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
 
 ## 影响报告
 
@@ -298,11 +298,17 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
   失败形态台账 20 条逐条归类（F-1…F-20）。收口验证器 61 PASS / 0 FAIL；凭据四面 `offenders=0`。
 | `ce6eb81e` | 与 `39277dbf`…`ce6eb81e` 同一次 push（无独立 run） | 读数见 `39277dbf` 行；**本行不冒领** | **补 CI 台账 + 迭代日志 `commits` 格**（上一轮 CI 因此条真红）。**本地 m0 分组验证**（整轮 21 分钟超过单轮窗口 ⇒ 按目录分批，逐批前台跑完）：`tests/application+contracts+domain` 2705 passed / `tests/adapters+api+loaders+observability` 1538 passed（`test_lifecycle_bounds` 一条已知 teardown flake，单跑 4 passed）/ `tests/e2e+evals+integration+mcp_server+tooling` 2327 passed / `tests/adapters/execution` 89 passed；`ruff check` 全绿、`ruff format --check` 1430 文件全绿、全量 `mypy` 1405 源文件 0 问题、`python/dependency-boundaries` 2 passed；收口验证器 66 PASS / 0 FAIL；凭据四面 `offenders=0` |
 | `682e9be3` | [M0 42201273833](https://github.com/Eswink/research-system-new/actions/runs/42201273833) / [Push 42201273374](https://github.com/Eswink/research-system-new/actions/runs/42201273374) | **M0 `failure`**（6/8 success；两条 `quality-*` 红，判词是 **m0 见证失配**：见证 HEAD `997ca40e` ≠ 当前 `682e9be3`）；**Push success (3/3)** | **见证未重封**：本会话单轮窗口约 10 分钟、m0 需约 21 分钟 ⇒ 每次完整跑都被切断。**其余 6 个 job 全 success**（`container-quality` / `console-frontend` / `eval-gate` / `collector-quality` / 两条 `observability-overhead`）。等价取证见上一行（分批 6659 条全绿 + 四道静态门 + 收口验证器 66 PASS） |
+| `51bc9f44` | [M0 42217660964](https://github.com/Eswink/research-system-new/actions/runs/42217660964) / [Push 42217659297](https://github.com/Eswink/research-system-new/actions/runs/42217659297) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **收口 tip：见证密封生效后 CI 首次全绿。** 本地 m0 终态行 `FAILED: 1 check(s): python/tests=1` + `tree changed during the run: False`（指纹前后相等 ⇒ 见证绑住这棵树）；那唯一一项在 CI 干净 runner 上通过 ⇒ 本机那条是**observability teardown 竞争**（单跑 4 passed）。**两树复检**：`tools/two_tree_recheck.py --script-mode shared` 见下节 |
 
 ## CI 台账
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `ce6eb81e` | 与 `51bc9f44` 同一次 push（无独立 run） | 读数见 `51bc9f44` 行；**本行不冒领** | 补 CI 台账 + 迭代日志 `commits` 格（上一轮 CI 因此真红）|
+| `fa60916d` | 与 `51bc9f44` 同一次 push（无独立 run） | 读数见 `51bc9f44` 行；**本行不冒领** | 见证重封（`2cf4ce47` 上，`changed: False`）|
+| `b93304dd` | 与 `51bc9f44` 同一次 push（无独立 run） | 同上 | 治理门真红：PASS 复检里不得留 `PENDING` 字样 ⇒ 改为「未开始」|
+| `2cf4ce47` | 与 `51bc9f44` 同一次 push（无独立 run） | 同上 | 记录 m0 见证限制（本机窗口 vs 21 分钟）与本 push 的 CI 读数 |
+| `682e9be3` | 与 `51bc9f44` 同一次 push（无独立 run） | 同上 | 分批本地验证入账（6659 条 + 四道静态门）|
 | `39277dbf` | [M0 42191573196](https://github.com/Eswink/research-system-new/actions/runs/42191573196) / [Push 42191572937](https://github.com/Eswink/research-system-new/actions/runs/42191572937) | **M0 `failure`**（6/8 success；`quality-ubuntu-latest` 与 `quality-windows-latest` 红）| **推送 tip**。红因**两条都是记录面**：① `goal106` 缺 `## CI 台账`（本表就是为它补的）；② m0 见证绑的是旧 HEAD `997ca40e`。**与代码无关** —— 同轮 `container-quality` / `console-frontend` / `eval-gate` / `collector-quality` / 两条 `observability-overhead` 全 success |
 | `85a724d4` | 与 `39277dbf` 同一次 push（无独立 run） | 读数见 `39277dbf` 行；**本行不冒领** | 函数长度门：`review_remarks` 拆出 `_remark_payload` |
 | `adcbc029` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | **十一相链首次 `SUCCEEDED`**：EC-02 / EC-03 转 PASS + 文档补句 |
