@@ -1840,11 +1840,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
-        "sha256": "a0e8b0d4002db7a103bc4b227c7cbfb66f5871e0"
+        "sha256": "d1e0a5a95a64e12ee1c1fd185f0f6714088db5b2"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "2342845cbe0d66eaa72dfd57bf77a49e34ed45d9"
+        "sha256": "1fa064ec07a5b22ec24d975d8b0b5a9772db5996"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -2077,6 +2077,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-04-revisions-71-only.md",
         "sha256": "e696d78d42e04f1e86e27154406218ada7913f7c"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-07-progress-104-only.md",
+        "sha256": "eebe10459536c82a0c9cc8553432111cbcece5bb"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-07-revisions-72-only.md",
+        "sha256": "900e7574ef8701a25bc8118e2006b4997211b923"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -20208,11 +20216,11 @@
       },
       {
         "path": "tools/verify_goal104_closeout.py",
-        "sha256": "29fa35a7f2f637ce20ec6d0e1cdb8378ecf8d5f3"
+        "sha256": "8a93668c851b55c8f25d70c9d9784bd11549adb7"
       },
       {
         "path": "tools/verify_goal105_closeout.py",
-        "sha256": "bb1a96dad276f02385582543343365368e75214d"
+        "sha256": "d8c89ef6b102d3fd22dba4710ad44e42e24340b0"
       },
       {
         "path": "tools/verify_goal106_closeout.py",
@@ -20231,7 +20239,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "1d9dd0af7177b627ef5f198a2a8064fc3aaa13c4"
+    "head": "320faa78d5823072ec5cd08509f7deff4b33db5e"
   },
   "fingerprint_before": {
     "files": [
@@ -22073,11 +22081,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
-        "sha256": "a0e8b0d4002db7a103bc4b227c7cbfb66f5871e0"
+        "sha256": "d1e0a5a95a64e12ee1c1fd185f0f6714088db5b2"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "2342845cbe0d66eaa72dfd57bf77a49e34ed45d9"
+        "sha256": "1fa064ec07a5b22ec24d975d8b0b5a9772db5996"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -22310,6 +22318,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-04-revisions-71-only.md",
         "sha256": "e696d78d42e04f1e86e27154406218ada7913f7c"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-07-progress-104-only.md",
+        "sha256": "eebe10459536c82a0c9cc8553432111cbcece5bb"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-07-revisions-72-only.md",
+        "sha256": "900e7574ef8701a25bc8118e2006b4997211b923"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -40441,11 +40457,11 @@
       },
       {
         "path": "tools/verify_goal104_closeout.py",
-        "sha256": "29fa35a7f2f637ce20ec6d0e1cdb8378ecf8d5f3"
+        "sha256": "8a93668c851b55c8f25d70c9d9784bd11549adb7"
       },
       {
         "path": "tools/verify_goal105_closeout.py",
-        "sha256": "bb1a96dad276f02385582543343365368e75214d"
+        "sha256": "d8c89ef6b102d3fd22dba4710ad44e42e24340b0"
       },
       {
         "path": "tools/verify_goal106_closeout.py",
@@ -40464,11 +40480,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "1d9dd0af7177b627ef5f198a2a8064fc3aaa13c4"
+    "head": "320faa78d5823072ec5cd08509f7deff4b33db5e"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "1d9dd0af7177b627ef5f198a2a8064fc3aaa13c4",
+  "ran_at_head": "320faa78d5823072ec5cd08509f7deff4b33db5e",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
