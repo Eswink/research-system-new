@@ -20231,7 +20231,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "b93304dd09ab89fa7358cfae2a1cc6988d26d780"
+    "head": "fa60916d76efa5ec88c927f0bd62b4ec26c66f2e"
   },
   "fingerprint_before": {
     "files": [
@@ -24637,7 +24637,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261104-107-manuscript-chain-live.md",
-        "sha256": "e2631a08ff372e89daab30ec2668d4787ef56154"
+        "sha256": "3cb6e06edb83c19d18c9461bbea7ce3f544126ef"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -40464,11 +40464,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "2cf4ce47ec4ca00ae749129c3ece37d798b77813"
+    "head": "fa60916d76efa5ec88c927f0bd62b4ec26c66f2e"
   },
   "green": false,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "2cf4ce47ec4ca00ae749129c3ece37d798b77813",
+  "ran_at_head": "fa60916d76efa5ec88c927f0bd62b4ec26c66f2e",
   "terminal_line": "FAILED: 1 check(s): python/tests=1",
-  "tree_changed_during_the_run": true
+  "tree_changed_during_the_run": false
 }
