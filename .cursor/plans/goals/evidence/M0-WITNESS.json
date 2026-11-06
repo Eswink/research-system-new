@@ -1840,7 +1840,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
-        "sha256": "583ee21b9bd289864881ecb4b101438fe3cde7f1"
+        "sha256": "4bfbc19c83336bce35583a1d08cdb60b90202738"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -20231,7 +20231,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "fa60916d76efa5ec88c927f0bd62b4ec26c66f2e"
+    "head": "c4d20e481992540bffa277ad36ec8f2cddf878e8"
   },
   "fingerprint_before": {
     "files": [
@@ -22073,7 +22073,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
-        "sha256": "583ee21b9bd289864881ecb4b101438fe3cde7f1"
+        "sha256": "4bfbc19c83336bce35583a1d08cdb60b90202738"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -40464,11 +40464,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "fa60916d76efa5ec88c927f0bd62b4ec26c66f2e"
+    "head": "c4d20e481992540bffa277ad36ec8f2cddf878e8"
   },
   "green": false,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "fa60916d76efa5ec88c927f0bd62b4ec26c66f2e",
+  "ran_at_head": "c4d20e481992540bffa277ad36ec8f2cddf878e8",
   "terminal_line": "FAILED: 1 check(s): python/tests=1",
   "tree_changed_during_the_run": false
 }
