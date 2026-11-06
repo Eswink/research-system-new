@@ -2,9 +2,9 @@
 id: GOAL-20261104-106
 slug: the-manuscript-chain-runs-live
 title: 十一相链首次真实成立
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-11-04
-updated_at: 2026-11-05
+updated_at: 2026-11-06
 owners:
   - root-agent
 authorization:
@@ -290,3 +290,9 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
   探针真跑第一次：`question` 相成功、`retrieval` 相在 Europe PMC `503` 上失败
   （`run-chain capability step failed: europe pmc temporarily unavailable`）⇒ 归**上游**
   基础设施，不是产品缺陷。EC-01 判据建成并自检。
+- 2026-11-06：**ACHIEVED**。第 13 次真跑 `3142b142-0fa2-43b6-ac19-92d2e3934858` 走完十一相：
+  `phase.started` 11 / `phase.completed` 11 全 `SUCCEEDED`、`run.completed` 1 条、
+  18/18 产物字节在场、52 件制品 blob 全在盘、三个真实 PMID、两臂实验各落 `metrics`。
+  一路修掉三个真实缺陷：`review_remarks` 未捕获 `InvalidInputError`（让 run 停在 revision 相）、
+  合约缺「Results 节必须带引用」、合约缺「无评审点时的应答形状」。
+  失败形态台账 20 条逐条归类（F-1…F-20）。收口验证器 61 PASS / 0 FAIL；凭据四面 `offenders=0`。

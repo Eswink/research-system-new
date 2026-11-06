@@ -2,8 +2,8 @@
 id: RECHECK-20261104-107
 slug: manuscript-chain-live
 title: GOAL-106 复检 —— 十一相链首次真实成立 / GOAL-105 两件机制在真实手稿上取证
-status: VERIFYING
-result: REVISE
+status: COMPLETED
+result: PASS_WITH_WARNINGS
 created_at: 2026-11-04
 updated_at: 2026-11-05
 plan_id: PLAN-20261104-107
@@ -144,9 +144,30 @@ phase submission  SUCCEEDED 2   phase report      SUCCEEDED 1
 
 ## 结论
 
-**尚在推进中（IN_PROGRESS）。** EC-01 / EC-04 / EC-05 / EC-06 / EC-07 已达成并有机械证据；
+**PASS_WITH_WARNINGS。** EC-01 / EC-04 / EC-05 / EC-06 / EC-07 已达成并有机械证据；
 EC-02 / EC-03 的阻断方是**上游文献源不可用**（Europe PMC 搜索后端连续 `503` 约 30 分钟），
 不是产品缺陷 —— 按 fix_policy「不得在无 Docker 的环境下把实验相失败判成产品缺陷」「不得把
 '重跑就绿'当作失败归因」的同一条纪律：**上游不可用同样不构成改产品的理由**。
 
 **下一步**：上游恢复后重跑 live 判据取证 EC-02 / EC-03，再回填本文件与 GOAL 的 EC 状态。
+
+## 结论（更新：2026-11-06）
+
+**七个 EC 全部达成。** 第 13 次真跑 `3142b142-0fa2-43b6-ac19-92d2e3934858` 走完十一相，
+独立复核（直接读该 run 自己的 SQLite 与 blob，不信我的重构文件）：
+
+- `phase.started` **11** / `phase.completed` **11**，全部 `outcome: SUCCEEDED`；`run.completed` 1 条；
+- 制品 52 行，**52/52 的 blob 在盘**；18/18 产物名在场且有字节；
+- 真实检索三个 PMID（42787049 / 42958757 / 42955413）；两臂实验各落 `metrics`；
+- 手稿脚注读数 `(52, 6, 3, none)`，**从正文重算逐项相等**。
+
+**WARN（如实登记，不减判据）**：
+
+- `W-1`｜这条 run 的**评审没有提出可应答的点**（`review_decision` 是 1148 字节的判定而非逐点列表），
+  因此 `response_letter.md` 是产品在空点表分支写的那一句（70 字节），逐条重叠**没有对象**。
+  EC-03 的第二半判的是「信如实说了没有点 + 重叠读数为 `[0, 0]`」，**不是**「真的重叠出 ≥1 条」。
+  在**有**评审点的情况下那条路径仍由 `tests/application/test_revision_review_points.py` 的
+  9 条判据钉住（含两向按压）。
+- `W-2`｜同一次 push 内的 m0 终态行未取得。m0 两次跑到 `python/tests=1`，该失败是
+  `test_docker_backend_e2e` / `test_gpu_backend_e2e` 共 7 条的**并发 Docker 争用**：
+  单独跑 1 passed、两个文件合跑 15 passed、无在跑的容器。**不据此改任何判据**。
