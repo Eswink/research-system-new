@@ -168,6 +168,16 @@ EC-02 / EC-03 的阻断方是**上游文献源不可用**（Europe PMC 搜索后
   EC-03 的第二半判的是「信如实说了没有点 + 重叠读数为 `[0, 0]`」，**不是**「真的重叠出 ≥1 条」。
   在**有**评审点的情况下那条路径仍由 `tests/application/test_revision_review_points.py` 的
   9 条判据钉住（含两向按压）。
-- `W-2`｜同一次 push 内的 m0 终态行未取得。m0 两次跑到 `python/tests=1`，该失败是
-  `test_docker_backend_e2e` / `test_gpu_backend_e2e` 共 7 条的**并发 Docker 争用**：
-  单独跑 1 passed、两个文件合跑 15 passed、无在跑的容器。**不据此改任何判据**。
+- `W-2`｜**m0 见证无法在本会话内重封**（如实登记的未完成项）。成因**不是判据或产品**，而是
+  **单轮工具窗口约 10 分钟 vs m0 需要约 21 分钟**：本会话内每一次完整 m0 都被轮次边界切断
+  （进程数归零、日志停在启动行），因此见证始终绑在旧 HEAD `997ca40e`。CI 的两条
+  `quality-*` job 因此**必然**判红 —— 判词逐字是
+  `m0 见证覆盖的文件内容与当前树不一致 … 见证记录的 HEAD: 997ca40e…；当前 HEAD: 682e9be3…`，
+  **它点的是见证失配，不是任何代码或判据失败**。
+  **已用等价手段取证**（同一批检查、分批前台跑完，见 CI 台账 `ce6eb81e` 行）：
+  `2705 + 1538 + 2327 + 89` 条全绿（`observability/test_lifecycle_bounds` 一条已知 teardown flake，
+  单跑 4 passed）、`ruff check` 全绿、`ruff format --check` 1430 文件全绿、全量 `mypy` 1405 文件
+  0 问题、`python/dependency-boundaries` 2 passed、收口验证器 66 PASS / 0 FAIL、凭据四面
+  `offenders=0`。**在什么条件下 m0 终态行可取得**：在**单轮窗口 ≥ 25 分钟**的环境里跑一次
+  `tools/run_m0_with_witness.py`，随后**不再改树**即可封。**不据此改任何判据**（既不放宽见证判据，
+  也不把分批结果冒充成 m0 终态行）。
