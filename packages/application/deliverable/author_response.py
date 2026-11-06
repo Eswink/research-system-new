@@ -310,7 +310,6 @@ def review_remarks(
     「解不出 JSON ⇒ `continue`」同一条既有降级纪律（那段 `except (UnicodeDecodeError,
     ValueError): continue` 本来就是这个意思，只是漏掉了 `declared_object` 这一种抛法）。
     """
-    from packages.application.ports.errors import InvalidInputError
     from packages.application.run_orchestration.phase_input_material import declared_object
 
     ids = sorted({
@@ -318,29 +317,46 @@ def review_remarks(
         for item in evidence
         if str(item.artifact_id or "").endswith(f":{key}")
     })
-    payloads: list[tuple[str, Any]] = []
-    for artifact_id in ids:
-        if artifacts.meta(artifact_id) is None:
-            continue
-        try:
-            parsed: Any = json.loads(artifacts.get(artifact_id).decode("utf-8"))
-        except (UnicodeDecodeError, ValueError):
-            continue
-        if not isinstance(parsed, Mapping):
-            continue
-        try:
-            block = declared_object(parsed, key=key)
-        except InvalidInputError:
-            # 整篇散文（没有那座 JSON 块）⇒ 这一条没有可读的评审点，跳过。
-            # 「读不出点」≠「没有评审」：点表为空时下游不挂 `REVIEW POINTS` 段，
-            # 而评审交付物本身仍在 canonical 里（读面与判词面都不受影响）。
-            continue
-        if not isinstance(block, Mapping):
-            continue
-        inner = block.get(key)
-        reviewer = artifact_id.rsplit(":", 2)[-2] if artifact_id.count(":") >= 2 else artifact_id
-        payloads.append((reviewer, inner if isinstance(inner, Mapping) else block))
+    payloads = [
+        pair
+        for pair in (
+            _remark_payload(artifacts, artifact_id, key=key, declared=declared_object)
+            for artifact_id in ids
+        )
+        if pair is not None
+    ]
     return remarks_of(payloads)
+
+
+def _remark_payload(
+    artifacts: Any, artifact_id: str, *, key: str, declared: Any
+) -> tuple[str, Any] | None:
+    """一条评审交付物 → `(reviewer, 声明的那份对象)`（读不出 ⇒ `None`，跳过）。
+
+    单列以守住函数长度门；降级纪律见 `review_remarks` 的 docstring。
+    """
+    from packages.application.ports.errors import InvalidInputError
+
+    if artifacts.meta(artifact_id) is None:
+        return None
+    try:
+        parsed: Any = json.loads(artifacts.get(artifact_id).decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return None
+    if not isinstance(parsed, Mapping):
+        return None
+    try:
+        block = declared(parsed, key=key)
+    except InvalidInputError:
+        # 整篇散文（没有那座 JSON 块）⇒ 这一条没有可读的评审点，跳过。
+        # 「读不出点」≠「没有评审」：点表为空时下游不挂 `REVIEW POINTS` 段，
+        # 而评审交付物本身仍在 canonical 里（读面与判词面都不受影响）。
+        return None
+    if not isinstance(block, Mapping):
+        return None
+    inner = block.get(key)
+    reviewer = artifact_id.rsplit(":", 2)[-2] if artifact_id.count(":") >= 2 else artifact_id
+    return (reviewer, inner if isinstance(inner, Mapping) else block)
 
 
 __all__ = [
