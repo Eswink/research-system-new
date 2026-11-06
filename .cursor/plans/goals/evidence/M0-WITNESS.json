@@ -1384,7 +1384,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "9381104fa17772da7f332a6d0e56dd2aa9c6dfe7"
+        "sha256": "ff864c59188cbfdef688cd25901dc536720f9ff8"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1840,11 +1840,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
-        "sha256": "d1e0a5a95a64e12ee1c1fd185f0f6714088db5b2"
+        "sha256": "659ed7f8f023ad271119c199cc47863fddef2f48"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
+        "sha256": "e19b2c9ffbe0ff1ac87680e53dbba69b4abd248b"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "1fa064ec07a5b22ec24d975d8b0b5a9772db5996"
+        "sha256": "74183e76b6589963044e6f75357c8a8b634640a0"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -4415,6 +4419,10 @@
         "sha256": "808e8ac9f4be67129eb58dd553ebc585e4db3830"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261107-107-four-targets.md",
+        "sha256": "556acaf2131eb890be1d63b5b7a5e4b86efeede1"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5837,6 +5845,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261104-107-manuscript-chain-live.md",
         "sha256": "ea33fc26d615dbbf6178cd7e32cdd5042fcffe8a"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261107-107-four-targets.md",
+        "sha256": "25fd83d87b924fca5691eb069259392fc29e8ea6"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -20239,7 +20251,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "320faa78d5823072ec5cd08509f7deff4b33db5e"
+    "head": "9ddd6360131cfc91884f1b005494930b77e1cda0"
   },
   "fingerprint_before": {
     "files": [
@@ -21625,7 +21637,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "9381104fa17772da7f332a6d0e56dd2aa9c6dfe7"
+        "sha256": "ff864c59188cbfdef688cd25901dc536720f9ff8"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22081,11 +22093,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261104-106-the-manuscript-chain-runs-live.md",
-        "sha256": "d1e0a5a95a64e12ee1c1fd185f0f6714088db5b2"
+        "sha256": "659ed7f8f023ad271119c199cc47863fddef2f48"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
+        "sha256": "e19b2c9ffbe0ff1ac87680e53dbba69b4abd248b"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "1fa064ec07a5b22ec24d975d8b0b5a9772db5996"
+        "sha256": "74183e76b6589963044e6f75357c8a8b634640a0"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -24656,6 +24672,10 @@
         "sha256": "808e8ac9f4be67129eb58dd553ebc585e4db3830"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261107-107-four-targets.md",
+        "sha256": "556acaf2131eb890be1d63b5b7a5e4b86efeede1"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26078,6 +26098,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261104-107-manuscript-chain-live.md",
         "sha256": "ea33fc26d615dbbf6178cd7e32cdd5042fcffe8a"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261107-107-four-targets.md",
+        "sha256": "25fd83d87b924fca5691eb069259392fc29e8ea6"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -40480,11 +40504,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "320faa78d5823072ec5cd08509f7deff4b33db5e"
+    "head": "9ddd6360131cfc91884f1b005494930b77e1cda0"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "320faa78d5823072ec5cd08509f7deff4b33db5e",
+  "ran_at_head": "9ddd6360131cfc91884f1b005494930b77e1cda0",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
