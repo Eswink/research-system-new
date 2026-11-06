@@ -202,7 +202,7 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261104-107 | `1dd19228` → `2fe8dbaa` → `997ca40e` → `1848db13` → `f3d12e31` → `fc8560f6` → `cc9a7fbb` → `a3f80844` → `1afcd9fe` → `619cbb7d` → `a94d55a4` → `94c49df2` → `92b699bc` → `166d9227` → `4945e8ff` → `fe1a3710` → `adcbc029` → `85a724d4` → `39277dbf` → `ce6eb81e` → `682e9be3` → `2cf4ce47` → `b93304dd` → `fa60916d` → `51bc9f44` → `c4d20e48` → `90d98ea9` | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
+| 1 | PLAN-20261104-107 | `1dd19228` → `2fe8dbaa` → `997ca40e` → `1848db13` → `f3d12e31` → `fc8560f6` → `cc9a7fbb` → `a3f80844` → `1afcd9fe` → `619cbb7d` → `a94d55a4` → `94c49df2` → `92b699bc` → `166d9227` → `4945e8ff` → `fe1a3710` → `adcbc029` → `85a724d4` → `39277dbf` → `ce6eb81e` → `682e9be3` → `2cf4ce47` → `b93304dd` → `fa60916d` → `51bc9f44` → `c4d20e48` → `90d98ea9` → `5a696acf` | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
 
 ## 影响报告
 
@@ -304,6 +304,7 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `5a696acf` | 与 `90d98ea9`…`5a696acf` 同一次 push（无独立 run） | 读数见 `90d98ea9` 行；**本行不冒领** | 台账收口（2 个欠账 + 迭代日志整链）。**两树复检 PASS**：`tools/two_tree_recheck.py --script tools/verify_goal106_closeout.py --root . --script-mode shared` ⇒ `TREE current verdicts=66 sha256=bbc1069…` / `TREE clean verdicts=66 sha256=bbc1069…` / `COMPARE identical=True` / `TWO-TREE PASS` |
 | `c4d20e48` | 与 `90d98ea9` 同一次 push（无独立 run） | 读数见 `90d98ea9` 行；**本行不冒领** | 补 5 个欠账提交 + 记录首次全绿 CI |
 | `51bc9f44` | [M0 42217660964](https://github.com/Eswink/research-system-new/actions/runs/42217660964) / [Push 42217659297](https://github.com/Eswink/research-system-new/actions/runs/42217659297) | **M0 `success`（8/8 job success）**；Push 全 success (3/3) | **见证密封生效后 CI 首次全绿**（`fa60916d` 上同样 8/8 success）|
 | `90d98ea9` | [M0 42225899388](https://github.com/Eswink/research-system-new/actions/runs/42225899388) / [Push 42225899277](https://github.com/Eswink/research-system-new/actions/runs/42225899277) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **收口 tip**（见证密封 + 台账补齐）。本地见证：`FAILED: 1 check(s): python/tests=1` + `tree changed during the run: False` + **指纹前后相等**（绑住这棵树）；CI 干净 runner 上 8/8 全 success ⇒ 本机那一项是 observability teardown 竞争 |
