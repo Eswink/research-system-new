@@ -54,6 +54,7 @@ import pytest
 from packages.application.model_relay.live_run_gate import skip_record_for_gate
 from services.api.app import create_app
 from tests.e2e.manuscript_chain_live_support import (
+    NO_POINTS_MARKER,
     OUTPUT_NAMES,
     PHASES,
     action_overlaps,
@@ -179,11 +180,20 @@ def test_the_goal105_readings_hold_on_the_real_manuscript() -> None:
     )
     # ② 应答信每条的 `action_taken` 与**它自己那条**评审点有实词重叠（按 `### P<n>` 配对）。
     readings["action_overlap"] = action_overlaps(letter, review)
+    # **「本 run 的评审没有提出可应答的点」是一个合法状态，不是缺口**（产品自己在
+    # `render_letter` 的空点表分支里就是这么写的，`validate_action_references` 的
+    # docstring 同一条口径：「没有评审点时空应答是正确读数，不是漏答」）。此时逐条重叠
+    # **没有对象** ⇒ 判据必须判「信如实地说了没有点」，而不是要求它凭空重叠出 ≥1 条。
+    readings["review_raised_no_points"] = NO_POINTS_MARKER in letter
     write_readings(readings)
 
     assert reported is not None, "manuscript.md 的脚注里没有引用读数行"
     assert reported[0] > 0 and reported[1] > 0, reported
     assert readings["readings_match_body"], (reported, "脚注数字与正文重算不一致")
     actions, overlapped = readings["action_overlap"]
-    assert actions >= 1, "response_letter.md 里没有任何 `**Action taken.**` 行"
-    assert overlapped == actions, (actions, overlapped)
+    if readings["review_raised_no_points"]:
+        # 空点表：信里没有 `**Action taken.**` 行是**正确**的（没有要回应的东西）。
+        assert actions == 0 and overlapped == 0, (actions, overlapped)
+    else:
+        assert actions >= 1, "response_letter.md 里没有任何 `**Action taken.**` 行"
+        assert overlapped == actions, (actions, overlapped)

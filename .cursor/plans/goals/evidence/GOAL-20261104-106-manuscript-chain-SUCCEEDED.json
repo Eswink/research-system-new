@@ -1,0 +1,166 @@
+{
+  "protocol": "direction_to_manuscript_v1_0_0",
+  "direction": "retrieval augmentation for scientific hypothesis generation",
+  "interface": "assemble() product root, no seams patched",
+  "run_id": "3142b142-0fa2-43b6-ac19-92d2e3934858",
+  "state": "SUCCEEDED",
+  "note": "reconstructed from the run's own canonical rows after the evidence file was overwritten by the judge's second case",
+  "artifact_ids": [
+    "044c53c5-74fd-4568-a629-35e8a32225d3:author_responses",
+    "044c53c5-74fd-4568-a629-35e8a32225d3:retrieval_context",
+    "07a4881f-fdd7-474c-8127-20e4847758a8:retrieval_context",
+    "263dffb6-98d6-4214-8b1b-fa50319a8e75:experiment_result.json",
+    "263dffb6-98d6-4214-8b1b-fa50319a8e75:metrics",
+    "263dffb6-98d6-4214-8b1b-fa50319a8e75:stderr.log",
+    "263dffb6-98d6-4214-8b1b-fa50319a8e75:stdout.log",
+    "3142b142-0fa2-43b6-ac19-92d2e3934858:author_contributions.md",
+    "3142b142-0fa2-43b6-ac19-92d2e3934858:conflicts_of_interest.md",
+    "3142b142-0fa2-43b6-ac19-92d2e3934858:cover_letter.md",
+    "3142b142-0fa2-43b6-ac19-92d2e3934858:data_availability.md",
+    "3142b142-0fa2-43b6-ac19-92d2e3934858:manuscript.md",
+    "3142b142-0fa2-43b6-ac19-92d2e3934858:manuscript_v2.md",
+    "3142b142-0fa2-43b6-ac19-92d2e3934858:research_report.md",
+    "3142b142-0fa2-43b6-ac19-92d2e3934858:response_letter.md",
+    "3142b142-0fa2-43b6-ac19-92d2e3934858:supplementary.md",
+    "49f4c3cb-00ec-44bd-94fe-4ac2b7fca75f:retrieval_context",
+    "49f4c3cb-00ec-44bd-94fe-4ac2b7fca75f:retrieval_report",
+    "4acc4e71-680c-4946-b549-43fdf1b089db:novelty_claim",
+    "4acc4e71-680c-4946-b549-43fdf1b089db:retrieval_context",
+    "4cbdb2da-e5c2-4683-9677-779146aeff27:experiment_result.json",
+    "4cbdb2da-e5c2-4683-9677-779146aeff27:metrics",
+    "4cbdb2da-e5c2-4683-9677-779146aeff27:stderr.log",
+    "4cbdb2da-e5c2-4683-9677-779146aeff27:stdout.log",
+    "4d713649-0d3b-4a8d-a9a4-038e356c903d:research_plan",
+    "4d713649-0d3b-4a8d-a9a4-038e356c903d:retrieval_context",
+    "5112151a-182c-4b9c-95ca-a7322345de9b:retrieval_context",
+    "5112151a-182c-4b9c-95ca-a7322345de9b:review_decision",
+    "519ec221-b11b-4aa6-a5ff-20fbaf310150:research_question",
+    "519ec221-b11b-4aa6-a5ff-20fbaf310150:retrieval_context",
+    "6aebadc3-994e-4225-9970-244db8d47ed3:retrieval_context",
+    "a426900c-aa68-4c25-a54c-a260ede5b7ed:stderr.log",
+    "a426900c-aa68-4c25-a54c-a260ede5b7ed:stdout.log",
+    "b904775f-f430-4c99-8eb4-30342cbfde81:manuscript_narrative",
+    "b904775f-f430-4c99-8eb4-30342cbfde81:retrieval_context",
+    "c74eafc5-e956-41cc-9266-8c659ef196df:retrieval_context",
+    "c74eafc5-e956-41cc-9266-8c659ef196df:review_decision",
+    "e48ab902-ac43-4dbc-9af3-8acac8388a8f:editorial_decision",
+    "e48ab902-ac43-4dbc-9af3-8acac8388a8f:retrieval_context",
+    "fba13dc4-5320-45b7-b3b3-c929922aa48a:retrieval_context",
+    "fba13dc4-5320-45b7-b3b3-c929922aa48a:submission_package",
+    "input-brief:real_research_v1",
+    "input-corpus:console_demo_v1",
+    "input-corpus:sort_analysis_v1",
+    "tool-args:49f4c3cb-00ec-44bd-94fe-4ac2b7fca75f:literature_read:42787049+42958757+42955413",
+    "tool-args:49f4c3cb-00ec-44bd-94fe-4ac2b7fca75f:literature_search",
+    "tool-args:session-4ba7809e-e457-40d6-9a3a-085093323f2e:session:artifact_read",
+    "tool-args:session-4ba7809e-e457-40d6-9a3a-085093323f2e:session:literature_read",
+    "tool-args:session-4ba7809e-e457-40d6-9a3a-085093323f2e:session:literature_search",
+    "tool-args:session-4ba7809e-e457-40d6-9a3a-085093323f2e:session:workspace_read",
+    "tool-result:49f4c3cb-00ec-44bd-94fe-4ac2b7fca75f:literature_read:42787049+42958757+42955413:literature_read",
+    "tool-result:49f4c3cb-00ec-44bd-94fe-4ac2b7fca75f:literature_search:literature_search"
+  ],
+  "missing_artifacts": [],
+  "present:research_question": true,
+  "length:research_question": 1372,
+  "present:retrieval_report": true,
+  "length:retrieval_report": 4533,
+  "present:novelty_claim": true,
+  "length:novelty_claim": 4595,
+  "present:research_plan": true,
+  "length:research_plan": 6476,
+  "present:review_decision": true,
+  "length:review_decision": 1148,
+  "present:manuscript_narrative": true,
+  "length:manuscript_narrative": 19939,
+  "present:editorial_decision": true,
+  "length:editorial_decision": 366,
+  "present:author_responses": true,
+  "length:author_responses": 22146,
+  "present:submission_package": true,
+  "length:submission_package": 2912,
+  "present:research_report.md": true,
+  "length:research_report.md": 3516,
+  "present:manuscript.md": true,
+  "length:manuscript.md": 24252,
+  "present:cover_letter.md": true,
+  "length:cover_letter.md": 1848,
+  "present:author_contributions.md": true,
+  "length:author_contributions.md": 987,
+  "present:conflicts_of_interest.md": true,
+  "length:conflicts_of_interest.md": 597,
+  "present:data_availability.md": true,
+  "length:data_availability.md": 3440,
+  "present:supplementary.md": true,
+  "length:supplementary.md": 889,
+  "present:manuscript_v2.md": true,
+  "length:manuscript_v2.md": 26166,
+  "present:response_letter.md": true,
+  "length:response_letter.md": 70,
+  "phase_states": {
+    "question": "SUCCEEDED",
+    "retrieval": "SUCCEEDED",
+    "novelty": "SUCCEEDED",
+    "plan": "SUCCEEDED",
+    "experiment": "SUCCEEDED",
+    "review": "SUCCEEDED",
+    "manuscript": "SUCCEEDED",
+    "editorial": "SUCCEEDED",
+    "revision": "SUCCEEDED",
+    "submission": "SUCCEEDED",
+    "report": "SUCCEEDED"
+  },
+  "phase_artifact_ids": {
+    "question": [
+      "519ec221-b11b-4aa6-a5ff-20fbaf310150:research_question"
+    ],
+    "retrieval": [
+      "49f4c3cb-00ec-44bd-94fe-4ac2b7fca75f:retrieval_report"
+    ],
+    "novelty": [
+      "4acc4e71-680c-4946-b549-43fdf1b089db:novelty_claim"
+    ],
+    "plan": [
+      "4d713649-0d3b-4a8d-a9a4-038e356c903d:research_plan"
+    ],
+    "experiment": [
+      "263dffb6-98d6-4214-8b1b-fa50319a8e75:experiment_result.json",
+      "263dffb6-98d6-4214-8b1b-fa50319a8e75:metrics",
+      "263dffb6-98d6-4214-8b1b-fa50319a8e75:stderr.log",
+      "263dffb6-98d6-4214-8b1b-fa50319a8e75:stdout.log"
+    ],
+    "review": [
+      "5112151a-182c-4b9c-95ca-a7322345de9b:review_decision",
+      "c74eafc5-e956-41cc-9266-8c659ef196df:review_decision"
+    ],
+    "manuscript": [
+      "b904775f-f430-4c99-8eb4-30342cbfde81:manuscript_narrative"
+    ],
+    "editorial": [
+      "e48ab902-ac43-4dbc-9af3-8acac8388a8f:editorial_decision"
+    ],
+    "revision": [
+      "044c53c5-74fd-4568-a629-35e8a32225d3:author_responses"
+    ],
+    "submission": [
+      "fba13dc4-5320-45b7-b3b3-c929922aa48a:submission_package"
+    ],
+    "report": [
+      "3142b142-0fa2-43b6-ac19-92d2e3934858:research_report.md"
+    ]
+  },
+  "experiment_rows": 2,
+  "failure_events": [],
+  "citation_readings": [
+    52,
+    6,
+    3,
+    "none"
+  ],
+  "readings_match_body": true,
+  "action_overlap": [
+    0,
+    0
+  ],
+  "review_raised_no_points": true,
+  "response_letter_body": "## Response to Review\n\n_This run's review raised no points to answer._"
+}

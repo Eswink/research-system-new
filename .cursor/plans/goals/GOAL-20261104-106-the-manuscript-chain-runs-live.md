@@ -40,7 +40,7 @@ exit_criteria:
     verify: >-
       EC-01 的判据两条用例真跑通过（不是 skip）；取证文件里 `state == "SUCCEEDED"` 且
       `phase_states` 十一相全 `SUCCEEDED`。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       GOAL-105 的两件机制在真实手稿上生效：① `manuscript.md` 脚注里三个引用读数可解析，
@@ -50,7 +50,7 @@ exit_criteria:
     verify: >-
       `tests/e2e/test_the_manuscript_chain_runs_live.py::test_the_goal105_readings_hold_on_the_real_manuscript`
       真跑通过；取证文件含 `citation_readings` / `readings_match_body` / `action_overlap`。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       RECHECK 里有一节 `## 真实 run 的失败形态台账`，把 EC-02 过程中出现的**每一个**失败

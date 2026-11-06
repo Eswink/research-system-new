@@ -350,6 +350,11 @@ def letter_pairs(letter: str) -> list[tuple[str, str]]:
     return pairs
 
 
+#: 产品在「本 run 的评审没有提出可应答的点」时写进应答信的**唯一一句话**
+#: （`deliverable/author_response.render_letter` 的空点表分支）。
+NO_POINTS_MARKER = "review raised no points to answer"
+
+
 def action_overlaps(response_letter: str, review_decision: str) -> tuple[int, int]:
     """应答信里 `**Action taken.**` 行与**它自己那条**评审点的实词重叠读数。
 
@@ -385,6 +390,7 @@ __all__ = [
     "PHASES",
     "PROTOCOL",
     "PROTOCOL_ID",
+    "NO_POINTS_MARKER",
     "SECTION_HEADINGS",
     "action_overlaps",
     "artifact_ids",

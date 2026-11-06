@@ -165,12 +165,20 @@ def _manuscript_reading_verdicts(toolbox: Any, readings: dict[str, Any]) -> list
         )
     )
     overlap = readings.get("action_overlap")
+    # **空点表是合法状态**：产品在 `render_letter` 的空点表分支里写「review raised no points
+    # to answer」，`validate_action_references` 的 docstring 同一条口径。那时逐条重叠
+    # **没有对象** ⇒ 判「信如实说了没有点、且重叠读数为 [0, 0]」，而不是要求凭空重叠。
+    no_points = readings.get("review_raised_no_points") is True
     verdicts.append(
         _verdict(
             toolbox,
             "goal105-every-action-overlaps-its-point",
-            _overlap_is_clean(overlap),
-            f"`action_overlap` 应为 [条数, 有效重叠条数] 且两数相等且 ≥1，实际 {overlap!r}",
+            (overlap == [0, 0] if no_points else _overlap_is_clean(overlap)),
+            (
+                f"空点表时 action_overlap 必须是 [0, 0]（没有要回应的点），实际 {overlap!r}"
+                if no_points
+                else f"`action_overlap` 应为 [条数, 有效重叠条数] 且两数相等且 ≥1，实际 {overlap!r}"
+            ),
         )
     )
     return verdicts

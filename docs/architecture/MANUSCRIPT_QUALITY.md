@@ -118,7 +118,8 @@ uv run --frozen --no-sync python -B -m pytest \
   （`packages/application/deliverable/citation_sufficiency.py`：每句引用数 / 每条被引
   条目被引次数 / 单支撑节，读数写进 `manuscript.md` 的脚注），但**充分性仍未判**：
   三个阈值常量缺省全是 `None`，**取值待 ≥3 份真实手稿的量分布**（仓内零真实语料）；
-- **十一相链的真实成立只有一次读数，且不改变本文件的任何判据**（GOAL-20261104-106）：
+- **十一相链于 2026-11-06 首次真实 `SUCCEEDED`**（run `3142b142-0fa2-43b6-ac19-92d2e3934858`，protocol `direction_to_manuscript_v1_0_0`）—— 此前只有 mock e2e。读数落在 `.cursor/plans/goals/evidence/GOAL-20261104-106-manuscript-chain-SUCCEEDED.json`：十一相全 `SUCCEEDED`、18/18 产物字节在场、真实检索三个 PMID（42787049 / 42958757 / 42955413）、两臂实验各落 `metrics`、脚注引用读数 `[52 句 / 6 标记 / 3 条]` 且与正文重算逐项相等。
+- **对这条读数的射程**（GOAL-20261104-106）：
   `direction_to_manuscript_v1.yaml`（question → retrieval → novelty → plan → experiment →
   review → manuscript → editorial → revision → submission → report）此前**真实 run 合计
   0 次** —— 它只被 **mock 中转站** e2e 验证过（那条判据自己的 docstring 就写着「真实模型
