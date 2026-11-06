@@ -1844,7 +1844,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "e19b2c9ffbe0ff1ac87680e53dbba69b4abd248b"
+        "sha256": "c0f1ad44ffac3ea194c586ff1fd3cbd4617ea6a1"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -7088,7 +7088,7 @@
       },
       {
         "path": "apps/web/src/api/client.ts",
-        "sha256": "a1cde2aa0ff11060640d3e422a0422ceee695969"
+        "sha256": "be8105c1be28dfef29af1590be9d2ae145ccfa30"
       },
       {
         "path": "apps/web/src/api/controlPlaneToken.ts",
@@ -7184,7 +7184,7 @@
       },
       {
         "path": "apps/web/src/api/types.ts",
-        "sha256": "543286cc98743a25bac70ea0679e841102f54047"
+        "sha256": "98991f60961d0d7c7c4acabe06e9562cb7333249"
       },
       {
         "path": "apps/web/src/api/workspaceSnapshotClient.ts",
@@ -10184,7 +10184,7 @@
       },
       {
         "path": "apps/web/src/features/projects/ProgramsSection.tsx",
-        "sha256": "3464721dfbdfe58540e803a0f7eda1e3ff13fdaa"
+        "sha256": "efb7f73caf2314d54f384783fbc3722c482738c8"
       },
       {
         "path": "apps/web/src/features/projects/ProjectDeleteAction.tsx",
@@ -10316,7 +10316,7 @@
       },
       {
         "path": "apps/web/src/features/reports/ManuscriptPanel.tsx",
-        "sha256": "a7418fc68c48ec481cc5a692e20ba9165dbfec15"
+        "sha256": "c8ce8c52bcd9da42e9d0bb276591b5e7281ad2ce"
       },
       {
         "path": "apps/web/src/features/reports/ReportBody.tsx",
@@ -10600,7 +10600,7 @@
       },
       {
         "path": "apps/web/src/features/workspace/ArtifactDiffPanel.tsx",
-        "sha256": "cb6a9b61e40a3857f3950343ee855643ee50466c"
+        "sha256": "8f750ec2fcc5d089d8501971b16eefefbc7926f9"
       },
       {
         "path": "apps/web/src/features/workspace/WorkspaceSnapshotPanel.tsx",
@@ -12012,11 +12012,11 @@
       },
       {
         "path": "apps/web/tests/e2e/design-outline.ts",
-        "sha256": "1648e84c3c87d8d4124f56676f002de8c27f81fb"
+        "sha256": "3b6b02f7645b5ff3b9ffbe189b6d7feed1351ef1"
       },
       {
         "path": "apps/web/tests/e2e/design-outlines.json",
-        "sha256": "46f6068c1b207a7919f99375cad23849cf029b57"
+        "sha256": "81beedfe96b9c5bcdb48f59bc52962abeb38e376"
       },
       {
         "path": "apps/web/tests/e2e/endpoint-credential-boundary.spec.ts",
@@ -12135,8 +12135,16 @@
         "sha256": "b9eff51e49bf6a693a91a54762c96cd9a397eff2"
       },
       {
+        "path": "apps/web/tests/e2e/outline-regen.spec.ts",
+        "sha256": "7aeabe7f8f3282bcda56cc21f3fcdfb6d8655d20"
+      },
+      {
         "path": "apps/web/tests/e2e/policy-capabilities.spec.ts",
         "sha256": "be8953f15caa49fe4d97bd4c5f4b63760831a2ae"
+      },
+      {
+        "path": "apps/web/tests/e2e/programs-completion.spec.ts",
+        "sha256": "8cf38b1f98c5b81c2c512c525b5bd168573c5824"
       },
       {
         "path": "apps/web/tests/e2e/project-cost-forecast.spec.ts",
@@ -12157,6 +12165,10 @@
       {
         "path": "apps/web/tests/e2e/registry-write.spec.ts",
         "sha256": "cb84e0f95f503567d9799e1f3c082777d0c7b34f"
+      },
+      {
+        "path": "apps/web/tests/e2e/revision-diff.spec.ts",
+        "sha256": "21167bf7612e7bcf6036800d9b99bdaa4061df5b"
       },
       {
         "path": "apps/web/tests/e2e/run-artifact-chain-labels.spec.ts",
@@ -12204,7 +12216,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-integration.ts",
-        "sha256": "d495cecd74c739422f97f839dee2e950b02daa2b"
+        "sha256": "8cbc4cbb7fb6b9278416bc9c32d9b86cd12461ab"
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-lineage.ts",
@@ -12228,7 +12240,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-runs.ts",
-        "sha256": "0abf031a5c324b7cf624264f1fedb9c147595831"
+        "sha256": "e6854f263d0ca2c1166bbb9935ddf61be1939ef7"
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-schedules.ts",
@@ -20251,7 +20263,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "9ddd6360131cfc91884f1b005494930b77e1cda0"
+    "head": "d6b7e4dd78ed96e5c05bfce5b1245fd7b8315ab0"
   },
   "fingerprint_before": {
     "files": [
@@ -22097,7 +22109,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "e19b2c9ffbe0ff1ac87680e53dbba69b4abd248b"
+        "sha256": "c0f1ad44ffac3ea194c586ff1fd3cbd4617ea6a1"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -27341,7 +27353,7 @@
       },
       {
         "path": "apps/web/src/api/client.ts",
-        "sha256": "a1cde2aa0ff11060640d3e422a0422ceee695969"
+        "sha256": "be8105c1be28dfef29af1590be9d2ae145ccfa30"
       },
       {
         "path": "apps/web/src/api/controlPlaneToken.ts",
@@ -27437,7 +27449,7 @@
       },
       {
         "path": "apps/web/src/api/types.ts",
-        "sha256": "543286cc98743a25bac70ea0679e841102f54047"
+        "sha256": "98991f60961d0d7c7c4acabe06e9562cb7333249"
       },
       {
         "path": "apps/web/src/api/workspaceSnapshotClient.ts",
@@ -30437,7 +30449,7 @@
       },
       {
         "path": "apps/web/src/features/projects/ProgramsSection.tsx",
-        "sha256": "3464721dfbdfe58540e803a0f7eda1e3ff13fdaa"
+        "sha256": "efb7f73caf2314d54f384783fbc3722c482738c8"
       },
       {
         "path": "apps/web/src/features/projects/ProjectDeleteAction.tsx",
@@ -30569,7 +30581,7 @@
       },
       {
         "path": "apps/web/src/features/reports/ManuscriptPanel.tsx",
-        "sha256": "a7418fc68c48ec481cc5a692e20ba9165dbfec15"
+        "sha256": "c8ce8c52bcd9da42e9d0bb276591b5e7281ad2ce"
       },
       {
         "path": "apps/web/src/features/reports/ReportBody.tsx",
@@ -30853,7 +30865,7 @@
       },
       {
         "path": "apps/web/src/features/workspace/ArtifactDiffPanel.tsx",
-        "sha256": "cb6a9b61e40a3857f3950343ee855643ee50466c"
+        "sha256": "8f750ec2fcc5d089d8501971b16eefefbc7926f9"
       },
       {
         "path": "apps/web/src/features/workspace/WorkspaceSnapshotPanel.tsx",
@@ -32265,11 +32277,11 @@
       },
       {
         "path": "apps/web/tests/e2e/design-outline.ts",
-        "sha256": "1648e84c3c87d8d4124f56676f002de8c27f81fb"
+        "sha256": "3b6b02f7645b5ff3b9ffbe189b6d7feed1351ef1"
       },
       {
         "path": "apps/web/tests/e2e/design-outlines.json",
-        "sha256": "46f6068c1b207a7919f99375cad23849cf029b57"
+        "sha256": "81beedfe96b9c5bcdb48f59bc52962abeb38e376"
       },
       {
         "path": "apps/web/tests/e2e/endpoint-credential-boundary.spec.ts",
@@ -32388,8 +32400,16 @@
         "sha256": "b9eff51e49bf6a693a91a54762c96cd9a397eff2"
       },
       {
+        "path": "apps/web/tests/e2e/outline-regen.spec.ts",
+        "sha256": "7aeabe7f8f3282bcda56cc21f3fcdfb6d8655d20"
+      },
+      {
         "path": "apps/web/tests/e2e/policy-capabilities.spec.ts",
         "sha256": "be8953f15caa49fe4d97bd4c5f4b63760831a2ae"
+      },
+      {
+        "path": "apps/web/tests/e2e/programs-completion.spec.ts",
+        "sha256": "8cf38b1f98c5b81c2c512c525b5bd168573c5824"
       },
       {
         "path": "apps/web/tests/e2e/project-cost-forecast.spec.ts",
@@ -32410,6 +32430,10 @@
       {
         "path": "apps/web/tests/e2e/registry-write.spec.ts",
         "sha256": "cb84e0f95f503567d9799e1f3c082777d0c7b34f"
+      },
+      {
+        "path": "apps/web/tests/e2e/revision-diff.spec.ts",
+        "sha256": "21167bf7612e7bcf6036800d9b99bdaa4061df5b"
       },
       {
         "path": "apps/web/tests/e2e/run-artifact-chain-labels.spec.ts",
@@ -32457,7 +32481,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-integration.ts",
-        "sha256": "d495cecd74c739422f97f839dee2e950b02daa2b"
+        "sha256": "8cbc4cbb7fb6b9278416bc9c32d9b86cd12461ab"
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-lineage.ts",
@@ -32481,7 +32505,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-runs.ts",
-        "sha256": "0abf031a5c324b7cf624264f1fedb9c147595831"
+        "sha256": "e6854f263d0ca2c1166bbb9935ddf61be1939ef7"
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-schedules.ts",
@@ -40504,11 +40528,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "9ddd6360131cfc91884f1b005494930b77e1cda0"
+    "head": "d6b7e4dd78ed96e5c05bfce5b1245fd7b8315ab0"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "9ddd6360131cfc91884f1b005494930b77e1cda0",
+  "ran_at_head": "d6b7e4dd78ed96e5c05bfce5b1245fd7b8315ab0",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

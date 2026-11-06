@@ -288,6 +288,10 @@ export const RUN_ROUTES: readonly StubRoute[] = [
     handler: (url) => {
       const runId = url.pathname.split("/")[3] ?? "";
       if (runId === "manuscript-run") return { status: 200, body: MANUSCRIPT_CHAIN };
+      // 只有 v1 的 run（GOAL-20261107-107 EC-01 的**反证臂**：没有改稿就没有并排面板）。
+      if (runId === "single-manuscript-run") {
+        return { status: 200, body: MANUSCRIPT_CHAIN.slice(0, 1) };
+      }
       // 其余 run 保持**既有 503 语义**（原来在 `stub-routes.ts` 的兜底里；那条被本路由
       // 取代了 ⇒ 语义搬到这里，逐字不变：artifact store not configured）。
       return {
@@ -315,6 +319,28 @@ export const RUN_ROUTES: readonly StubRoute[] = [
       return { status: 200, body };
     },
   },
+  // 两制品内容 diff（GOAL-20261107-107 EC-01：改稿面板用它做 v1 → v2 并排）。
+  //
+  // **必须排在单制品元数据之前**：`/artifacts/{id}/diff/{other}` 与 `/artifacts/{id}`
+  // 是两条路由，前者多两段路径；若后者先匹配（正则带锚点则不会，但顺序依赖仍是不该有的
+  // 隐含契约）就会把 diff 请求吃成「取元数据」。
+  {
+    method: "GET",
+    pattern: /^\/artifacts\/([^/]+)\/diff\/([^/]+)$/,
+    handler: (url) => {
+      // **去掉 `/api` 前缀再切段**：`url.pathname` 带部署前缀，按它切会让索引整体偏移一格
+      // （实测：`parts[2]` 取到 `artifacts`，于是两次查找都 miss ⇒ 404 "no stub"）。
+      const parts = url.pathname.replace(/^\/api/, "").split("/");
+      const left = decodeURIComponent(parts[2] ?? "");
+      const right = decodeURIComponent(parts[4] ?? "");
+      const leftText = MANUSCRIPT_CONTENTS[left];
+      const rightText = MANUSCRIPT_CONTENTS[right];
+      if (leftText === undefined || rightText === undefined) {
+        return { status: 404, body: { detail: "no stub" } };
+      }
+      return { status: 200, body: diffFixture({ left, right, leftText, rightText }) };
+    },
+  },
   // 单制品元数据（ArtifactBrowser 的详情面板）。
   {
     method: "GET",
@@ -327,6 +353,48 @@ export const RUN_ROUTES: readonly StubRoute[] = [
     },
   },
 ];
+
+/**
+ * diff 夹具（与 `ArtifactDiffDto` 同形的最小可用版本）。
+ *
+ * 只做**逐行集合差**：两侧相同的行算 `CONTEXT`，只在右侧出现的算 `ADDED`，只在左侧出现
+ * 的算 `REMOVED`。这够判「面板把三种行分别渲染」，而**不**冒充后端的 LCS 实现 ——
+ * 真算法的判据在 Python 侧（`tests/api/` 与 `packages/application/artifacts/diff.py`）。
+ */
+function diffFixture(sides: { left: string; right: string; leftText: string; rightText: string }) {
+  const { left, right, leftText, rightText } = sides;
+  const leftLines = leftText.split("\n");
+  const rightLines = rightText.split("\n");
+  const rightSet = new Set(rightLines);
+  const leftSet = new Set(leftLines);
+  const lines = [
+    ...leftLines
+      .filter((line) => !rightSet.has(line))
+      .map((text) => ({ kind: "REMOVED" as const, text })),
+    ...rightLines
+      .filter((line) => !leftSet.has(line))
+      .map((text) => ({ kind: "ADDED" as const, text })),
+    ...rightLines
+      .filter((line) => leftSet.has(line))
+      .map((text) => ({ kind: "CONTEXT" as const, text })),
+  ];
+  return {
+    left_digest: `sha256:${left.replaceAll(":", "-")}`,
+    right_digest: `sha256:${right.replaceAll(":", "-")}`,
+    comparison: "LINE",
+    available: true,
+    identical: leftText === rightText,
+    reason: null,
+    lines,
+    stats: {
+      added: lines.filter((line) => line.kind === "ADDED").length,
+      removed: lines.filter((line) => line.kind === "REMOVED").length,
+      context: lines.filter((line) => line.kind === "CONTEXT").length,
+    },
+    truncated: false,
+    note: "stub diff (line-set)",
+  };
+}
 
 /** 一件制品 fixture（与 `ArtifactDto` 同形；本文件只用受控输入）。 */
 function artifact(
@@ -396,6 +464,11 @@ const EDITORIAL_JSON = JSON.stringify({
 
 const MANUSCRIPT_CONTENTS: Readonly<Record<string, string>> = {
   "task-m:manuscript.md": MANUSCRIPT_MD,
-  "task-m:manuscript_v2.md": `${MANUSCRIPT_MD}\n\n## Limitations\n\nWe only test small arrays.\n`,
+  // v2 **既加也改**（GOAL-20261107-107 EC-01）：只替换结尾会让 diff 只出现 `ADDED` 行，
+  // 那样「删除行也分别渲染」这条判据就没有对象 —— 夹具必须两种行都能产生。
+  "task-m:manuscript_v2.md": `${MANUSCRIPT_MD.replace(
+    "We study comparison sorting on small integer arrays",
+    "We study comparison sorting on arrays of up to sixteen integers",
+  )}\n\n## Limitations\n\nWe only test small arrays.\n`,
   editorial_decision: EDITORIAL_JSON,
 };

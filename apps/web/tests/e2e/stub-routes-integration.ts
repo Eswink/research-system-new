@@ -23,11 +23,54 @@ const PROGRAM = {
   protocol_id: "direction_to_manuscript_v1",
   max_runs: 3,
   continue_on_verdicts: ["PASS"],
+  // GOAL-20261107-107 EC-02：TS 类型补齐后这些字段在夹具里也必须在场（否则夹具与
+  // 服务端 DTO 不同形，"类型漂移"与"夹具缺字段"会混成同一种红）。
+  max_attempts_per_index: 1,
+  human_gate_at_index: null,
+  human_gate_on_verdicts: null,
+  human_gate_at_indexes: null,
+  gate_nudge_after_seconds: null,
+  human_gate_hybrid: null,
   created_at: STAMP,
   updated_at: STAMP,
   runs: [],
   decisions: [],
   run_count: 0,
+};
+
+/**
+ * 一条**已有决定**的程序（GOAL-20261107-107 EC-02 的正例臂）。
+ *
+ * `PROGRAM` 的 `decisions` 是空的 —— 那覆盖「没有决定就明确空态」；这一条覆盖
+ * 「有决定就逐条列出来，且 `cited_facts` 可展开」。两条**不能**共用一个夹具：
+ * 空数组与两个决定是互斥的事实。
+ */
+const PROGRAM_WITH_DECISIONS = {
+  ...PROGRAM,
+  id: "program-2",
+  run_count: 2,
+  runs: [
+    { run_id: "run-a", program_index: 0, state: "SUCCEEDED", manifest_digest: null },
+    { run_id: "run-b", program_index: 1, state: "FAILED", manifest_digest: null },
+  ],
+  decisions: [
+    {
+      after_index: 0,
+      kind: "CONTINUE",
+      reason: "previous verdict passed the continue-on list",
+      cited_run_id: "run-a",
+      cited_facts: ["verdict=PASS", "state=SUCCEEDED"],
+      decided_at: STAMP,
+    },
+    {
+      after_index: 1,
+      kind: "STOP",
+      reason: "verdict left the continue-on list",
+      cited_run_id: "run-b",
+      cited_facts: ["verdict=REJECT"],
+      decided_at: STAMP,
+    },
+  ],
 };
 
 /** 一条评审判词（`ReviewFindingDto`）：`reviewer_model` 非空，归因可见。 */
@@ -73,7 +116,7 @@ export const INTEGRATION_ROUTES: readonly StubRoute[] = [
   {
     method: "GET",
     pattern: /^\/projects\/[^/]+\/programs$/,
-    handler: () => ({ status: 200, body: [PROGRAM] }),
+    handler: () => ({ status: 200, body: [PROGRAM, PROGRAM_WITH_DECISIONS] }),
   },
   {
     method: "POST",
@@ -83,7 +126,12 @@ export const INTEGRATION_ROUTES: readonly StubRoute[] = [
   {
     method: "GET",
     pattern: /^\/programs\/[^/]+$/,
-    handler: () => ({ status: 200, body: PROGRAM }),
+    handler: (url) => {
+      // 按 id 分流：`program-2` 带两条决定（正例臂），其余回落最小形状。
+      const id = url.pathname.replace(/^\/api/, "").split("/")[2] ?? "";
+      const body = id === PROGRAM_WITH_DECISIONS.id ? PROGRAM_WITH_DECISIONS : PROGRAM;
+      return { status: 200, body };
+    },
   },
   {
     method: "POST",

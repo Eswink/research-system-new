@@ -48,6 +48,7 @@ import type {
   ModelUpdateDto,
   ProjectDirectionUpdateDto,
   ProjectSettingsDto,
+  ProgramCreateDto,
   ResourceKind,
   ResourceType,
   ScheduleCreateDto,
@@ -105,6 +106,9 @@ export const api = {
 
   // ── programs（GOAL-20261103-104 EC-03：四条路由此前零消费者）──
   listPrograms: (projectId?: string) => programsClient.list(projectId),
+  /** 建程序（GOAL-20261107-107 EC-02：`create` 此前不从 client 导出 ⇒ 零调用点）。 */
+  createProgram: (projectId: string, payload: ProgramCreateDto) =>
+    programsClient.create(payload, projectId),
   programDetail: (programId: string) => programsClient.detail(programId),
   /** 推进一轮：服务端按上一轮判词决定继续/停，并回传决定本身。 */
   advanceProgram: (programId: string) => programsClient.advance(programId),

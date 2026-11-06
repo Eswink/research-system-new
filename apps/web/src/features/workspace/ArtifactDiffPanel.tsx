@@ -90,7 +90,14 @@ function DiffPicker({ artifacts, left, right, zh, onSelect }: DiffPickerProps) {
   );
 }
 
-function DiffBody({ view, zh }: { view: ArtifactDiffDto; zh: boolean }) {
+/**
+ * diff 正文（供 `ArtifactDiffPanel` 与改稿链视图共用）。
+ *
+ * **为什么导出**：手稿面板要把 `manuscript.md` 与 `manuscript_v2.md` 并排，而它需要的
+ * 正是这里三种行渲染（`ADDED` / `REMOVED` / `HUNK`）与「不可比 / 相同 / 超上限」三种
+ * 空态语义。再写一份等于复制 diff 口径 —— 那正是本仓反复修掉的那类重复。
+ */
+export function DiffBody({ view, zh }: { view: ArtifactDiffDto; zh: boolean }) {
   if (!view.available) {
     return (
       <EmptyState

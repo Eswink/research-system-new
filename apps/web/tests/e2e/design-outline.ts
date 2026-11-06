@@ -111,6 +111,21 @@ function saveOutlines(outlines: Record<string, string>): void {
 }
 
 /**
+ * **只**重录**一条**路由的结构签名（GOAL-20261107-107 EC-03）。
+ *
+ * **为什么不直接 `UPDATE_OUTLINES=1` 跑整组 `design-outline-guard.spec.ts`**：那个变量让
+ * `assertOutlines` 把所有**观测到的**签名写回基线 —— 而同一文件里有四条**反证臂**，
+ * 它们的期望是「注入改动后判红」。整组重录会把注入后的形状写进基线 ⇒ 反证臂永远绿
+ * （实测：`UPDATE_OUTLINES=1` 那次跑出 4 failed / 2 passed，失败的正是四条反证臂）。
+ *
+ * 这条导出只改一条路由、其余逐字不动 —— 重录是**最小且可解释**的动作。
+ * 它本身**不**放松任何判据：写入后仍要靠 `assertOutlines` 在普通模式下验证。
+ */
+export function saveOutlineFor(route: string, outline: string): void {
+  saveOutlines({ ...loadOutlines(), [route]: outline });
+}
+
+/**
  * 逐路由比对结构签名；`UPDATE_OUTLINES=1` 时改写基线（**CI 不设该变量**，
  * 与 `--update-snapshots` 同理：更新是显式的本地意图，不是自动降级）。
  */

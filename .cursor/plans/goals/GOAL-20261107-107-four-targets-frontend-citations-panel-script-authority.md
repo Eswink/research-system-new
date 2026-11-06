@@ -301,7 +301,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261107-107 | （待填） | （待填） | （待填） | （待填） | 十四个 EC 全 PENDING | 先做靶子 C（EC-01…03） |
+| 1 | PLAN-20261107-107 | `d6b7e4dd` | 治理门 7 条逐条修完；记录面 `tests/tooling` 1795 passed（见证除外，树已变） | **M0 42284126993 8/8 success**；Push 3/3 | 七条治理缺陷（PLAN frontmatter / 五节缺失 / RECHECK 状态词 / ALL_PLAN 投影 / 裸路径非链接） | EC-01…14 未收口（状态权威在 frontmatter）；靶子 C 的三个 EC 已在本 cycle 实现 | 下一 cycle：靶子 C 提交并取证 |
 
 ## 影响报告
 
@@ -335,3 +335,4 @@ memory_entries: []
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `d6b7e4dd` | [M0 42284126993](https://github.com/Eswink/research-system-new/actions/runs/42284126993) / [Push 42284126448](https://github.com/Eswink/research-system-new/actions/runs/42284126448) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **建档**：GOAL-107 + 子 PLAN + RECHECK + 程序表序 75 + 阶梯两行 + 进展/修订各一行；同时付清 `320faa78` / `9ddd6360` 两笔 tip 债。治理门首轮点名七条（PLAN 缺 frontmatter / 缺五节 / RECHECK 状态词 / ALL_PLAN 投影 / 裸路径非链接），逐条修完才提交 |

@@ -521,6 +521,15 @@ export interface ProgramDetailDto {
   protocol_id: string;
   max_runs: number;
   continue_on_verdicts: string[];
+  /** 每个序号允许的尝试数（缺省 1 = 不重试）。GOAL-20261107-107 EC-02 补齐。 */
+  max_attempts_per_index: number;
+  human_gate_at_index: number | null;
+  human_gate_on_verdicts: string[] | null;
+  human_gate_at_indexes: number[] | null;
+  /** 超期界（秒）。GOAL-20261107-107 EC-02 补齐。 */
+  gate_nudge_after_seconds: number | null;
+  /** 混合式闸门声明。GOAL-20261107-107 EC-02 补齐。 */
+  human_gate_hybrid: HybridGateDto | null;
   created_at: string;
   updated_at: string;
   runs: ProgramRunDto[];
@@ -528,10 +537,23 @@ export interface ProgramDetailDto {
   run_count: number;
 }
 
+/** 混合式人工闸门（序号组 **且** 取值集合；与 `services/api/dto/programs.py` 同形）。 */
+export interface HybridGateDto {
+  at_indexes: number[];
+  on_verdicts: string[];
+}
+
 export interface ProgramCreateDto {
   protocol_path: string;
   max_runs: number;
   continue_on_verdicts: string[];
+  /** GOAL-20261107-107 EC-02：补齐服务端已有的声明字段（均可缺省）。 */
+  max_attempts_per_index?: number;
+  human_gate_at_index?: number | null;
+  human_gate_on_verdicts?: string[] | null;
+  human_gate_at_indexes?: number[] | null;
+  gate_nudge_after_seconds?: number | null;
+  human_gate_hybrid?: HybridGateDto | null;
 }
 
 export interface ProgramAdvanceDto {

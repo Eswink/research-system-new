@@ -7,6 +7,7 @@ import { useI18n } from "../../i18n/useI18n";
 import { KeyValueList } from "../shared/KeyValueList";
 import styles from "../shared/LivePage.module.css";
 import { artifactName } from "../workspace/artifactLabels";
+import { DiffBody } from "../workspace/ArtifactDiffPanel";
 
 /**
  * 手稿链视图（GOAL-20261101-103 EC-04）。
@@ -121,12 +122,52 @@ function RevisionSection({ artifacts, zh }: { artifacts: ArtifactDto[]; zh: bool
   const revision = findByName(artifacts, "manuscript_v2.md");
   if (revision === null) return null;
   return (
-    <ManuscriptSection
-      artifact={revision}
-      zh={zh}
-      title={zh ? "修改稿（改稿链）" : "Revised manuscript (revision chain)"}
-      note={zh ? "替代" : "Supersedes"}
-    />
+    <>
+      <ManuscriptSection
+        artifact={revision}
+        zh={zh}
+        title={zh ? "修改稿（改稿链）" : "Revised manuscript (revision chain)"}
+        note={zh ? "替代" : "Supersedes"}
+      />
+      <RevisionDiff previous={findByName(artifacts, "manuscript.md")} revision={revision} zh={zh} />
+    </>
+  );
+}
+
+/**
+ * 改稿并排差异（GOAL-20261107-107 EC-01）。
+ *
+ * **它补哪一格**：此前 v1 与 v2 各渲染成一个 `<pre>`，上下堆叠 —— 看得见两份，但
+ * 「改了哪几行」要靠人眼逐字比。后端 `GET /artifacts/{left}/diff/{right}` 与
+ * `ArtifactDiffPanel` 的行渲染**早已存在**，缺的只是把 `supersedes` 当左 id 接上去。
+ *
+ * **三条口径**：① 左右由 `supersedes` 决定（左 = 它替代的那份，右 = 本份），不猜；
+ * ② 父指针缺席或不在本 run 的制品列表里 ⇒ **不渲染**（不伪造一个左右）；
+ * ③ 不可比 / 超上限 / 内容相同三种情形由 `DiffBody` 如实标注，不在这里另造判断。
+ */
+function RevisionDiff({
+  previous,
+  revision,
+  zh,
+}: {
+  previous: ArtifactDto | null;
+  revision: ArtifactDto;
+  zh: boolean;
+}) {
+  const leftId = revision.supersedes;
+  const ready = leftId !== null && previous !== null && previous.id === leftId;
+  const diff = useResource(ready ? `revision-diff:${leftId}:${revision.id}` : null, () =>
+    api.artifactDiff(leftId ?? "", revision.id),
+  );
+  if (!ready) return null;
+  return (
+    <PanelSection title={zh ? "改稿差异（v1 → v2）" : "Revision diff (v1 → v2)"}>
+      <div data-testid="revision-diff">
+        {diff.phase === "loading" && <LoadingState message={zh ? "计算差异…" : "Computing diff…"} />}
+        {diff.error !== null && <EmptyState message={diff.error} />}
+        {diff.data !== null && <DiffBody view={diff.data} zh={zh} />}
+      </div>
+    </PanelSection>
   );
 }
 
