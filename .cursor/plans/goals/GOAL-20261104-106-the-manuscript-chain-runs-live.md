@@ -202,7 +202,7 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261104-107 | （见 CI 台账） | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
+| 1 | PLAN-20261104-107 | `1dd19228` → `2fe8dbaa` → `997ca40e` → `1848db13` → `f3d12e31` → `fc8560f6` → `cc9a7fbb` → `a3f80844` → `1afcd9fe` → `619cbb7d` → `a94d55a4` → `94c49df2` → `92b699bc` → `166d9227` → `4945e8ff` → `fe1a3710` → `adcbc029` → `85a724d4` → `39277dbf` | 探针真跑 1 次（`scratch/goal106-probe-p1.json`）；mock e2e 9 passed；判据取数自检绿 | 见台账 | F-5 注释计数修（`PHASES` 11 项 vs 注释「十个」） | EC-02 等上游窗口 | 上游恢复后重跑探针 |
 
 ## 影响报告
 
@@ -296,3 +296,27 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
   一路修掉三个真实缺陷：`review_remarks` 未捕获 `InvalidInputError`（让 run 停在 revision 相）、
   合约缺「Results 节必须带引用」、合约缺「无评审点时的应答形状」。
   失败形态台账 20 条逐条归类（F-1…F-20）。收口验证器 61 PASS / 0 FAIL；凭据四面 `offenders=0`。
+
+## CI 台账
+
+| 提交 | run | 结论 | 说明 |
+| --- | --- | --- | --- |
+| `39277dbf` | [M0 42191573196](https://github.com/Eswink/research-system-new/actions/runs/42191573196) / [Push 42191572937](https://github.com/Eswink/research-system-new/actions/runs/42191572937) | **M0 `failure`**（6/8 success；`quality-ubuntu-latest` 与 `quality-windows-latest` 红）| **推送 tip**。红因**两条都是记录面**：① `goal106` 缺 `## CI 台账`（本表就是为它补的）；② m0 见证绑的是旧 HEAD `997ca40e`。**与代码无关** —— 同轮 `container-quality` / `console-frontend` / `eval-gate` / `collector-quality` / 两条 `observability-overhead` 全 success |
+| `85a724d4` | 与 `39277dbf` 同一次 push（无独立 run） | 读数见 `39277dbf` 行；**本行不冒领** | 函数长度门：`review_remarks` 拆出 `_remark_payload` |
+| `adcbc029` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | **十一相链首次 `SUCCEEDED`**：EC-02 / EC-03 转 PASS + 文档补句 |
+| `fe1a3710` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | 合约 HARD RULE 6（无评审点时的应答形状） |
+| `4945e8ff` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | 合约 HARD RULE 3（Results 节必须带引用） |
+| `166d9227` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | **产品缺陷修复**：`review_remarks` 逐条兜住 `InvalidInputError` |
+| `92b699bc` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | 第 9 次真跑 + 九次汇总 |
+| `94c49df2` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | F-15 追到判定点（`artifact_view`） |
+| `a94d55a4` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | live marker 拆写（不再被误认成 live 模块） |
+| `619cbb7d` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | `LEGACY_OUT_OF_SCOPE` 拆出，守住 450 行 |
+| `1afcd9fe` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | 第 8 次真跑 |
+| `a3f80844` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | 六相读数入树 |
+| `cc9a7fbb` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | 两个新 `tools/` 脚本进射程 |
+| `fc8560f6` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | 判据改判**如实性**（不是「必须成功」） |
+| `f3d12e31` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | 收口验证器 + 断言集进树 |
+| `1848db13` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | `verify_goal103` 读「活跃面 + 归档」 |
+| `997ca40e` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | PLAN / RECHECK 改号 107（106 已被技能蒸馏占用） |
+| `2fe8dbaa` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | live 模块登记 + 门留在本文件 |
+| `1dd19228` | 与 `39277dbf` 同一次 push（无独立 run） | 同上 | live 判据 + 支持件 + GOAL/PLAN/RECHECK 建档 |
