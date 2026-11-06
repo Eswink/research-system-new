@@ -296,6 +296,7 @@ direction_to_manuscript_v1  合计: 0                      ← 本轮的靶子
   一路修掉三个真实缺陷：`review_remarks` 未捕获 `InvalidInputError`（让 run 停在 revision 相）、
   合约缺「Results 节必须带引用」、合约缺「无评审点时的应答形状」。
   失败形态台账 20 条逐条归类（F-1…F-20）。收口验证器 61 PASS / 0 FAIL；凭据四面 `offenders=0`。
+| `ce6eb81e` | 与 `39277dbf`…`ce6eb81e` 同一次 push（无独立 run） | 读数见 `39277dbf` 行；**本行不冒领** | **补 CI 台账 + 迭代日志 `commits` 格**（上一轮 CI 因此条真红）。**本地 m0 分组验证**（整轮 21 分钟超过单轮窗口 ⇒ 按目录分批，逐批前台跑完）：`tests/application+contracts+domain` 2705 passed / `tests/adapters+api+loaders+observability` 1538 passed（`test_lifecycle_bounds` 一条已知 teardown flake，单跑 4 passed）/ `tests/e2e+evals+integration+mcp_server+tooling` 2327 passed / `tests/adapters/execution` 89 passed；`ruff check` 全绿、`ruff format --check` 1430 文件全绿、全量 `mypy` 1405 源文件 0 问题、`python/dependency-boundaries` 2 passed；收口验证器 66 PASS / 0 FAIL；凭据四面 `offenders=0` |
 
 ## CI 台账
 
