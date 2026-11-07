@@ -1844,7 +1844,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "280b56e89789d72f3f420def27a821e756aea48b"
+        "sha256": "6acca94460a5025891e39389c0702d850944e385"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -14412,7 +14412,7 @@
       },
       {
         "path": "packages/application/experiments/governed.py",
-        "sha256": "89753e543c6145583795d05c865eda1f2f39b2f5"
+        "sha256": "b35a6c37c5838a29e839ea35c1320f1f7aecf3f0"
       },
       {
         "path": "packages/application/experiments/metric_extraction.py",
@@ -14425,6 +14425,10 @@
       {
         "path": "packages/application/experiments/repro_audit.py",
         "sha256": "8104fa316e5b77eaefc68228ce7c80e2e2ee7343"
+      },
+      {
+        "path": "packages/application/experiments/script_authority.py",
+        "sha256": "31d4271feb3e94f58165b1d07797420c53068e27"
       },
       {
         "path": "packages/application/experiments/types.py",
@@ -17297,6 +17301,10 @@
       {
         "path": "tests/application/test_experiment_parameters.py",
         "sha256": "4e21ea2b08c511a0669ca1df3b958e767ff386aa"
+      },
+      {
+        "path": "tests/application/test_experiment_script_authority.py",
+        "sha256": "fd9ea350831eb45261a15518badc004d2349cd5e"
       },
       {
         "path": "tests/application/test_experiment_script_comes_from_the_plan.py",
@@ -20283,7 +20291,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "466afd1f16b74e61980232b7008d93473e95886d"
+    "head": "efbc19dc6470224fd985adc7e6e98b9fb33bf129"
   },
   "fingerprint_before": {
     "files": [
@@ -22129,7 +22137,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "280b56e89789d72f3f420def27a821e756aea48b"
+        "sha256": "6acca94460a5025891e39389c0702d850944e385"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -34697,7 +34705,7 @@
       },
       {
         "path": "packages/application/experiments/governed.py",
-        "sha256": "89753e543c6145583795d05c865eda1f2f39b2f5"
+        "sha256": "b35a6c37c5838a29e839ea35c1320f1f7aecf3f0"
       },
       {
         "path": "packages/application/experiments/metric_extraction.py",
@@ -34710,6 +34718,10 @@
       {
         "path": "packages/application/experiments/repro_audit.py",
         "sha256": "8104fa316e5b77eaefc68228ce7c80e2e2ee7343"
+      },
+      {
+        "path": "packages/application/experiments/script_authority.py",
+        "sha256": "31d4271feb3e94f58165b1d07797420c53068e27"
       },
       {
         "path": "packages/application/experiments/types.py",
@@ -37582,6 +37594,10 @@
       {
         "path": "tests/application/test_experiment_parameters.py",
         "sha256": "4e21ea2b08c511a0669ca1df3b958e767ff386aa"
+      },
+      {
+        "path": "tests/application/test_experiment_script_authority.py",
+        "sha256": "fd9ea350831eb45261a15518badc004d2349cd5e"
       },
       {
         "path": "tests/application/test_experiment_script_comes_from_the_plan.py",
@@ -40568,11 +40584,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "466afd1f16b74e61980232b7008d93473e95886d"
+    "head": "efbc19dc6470224fd985adc7e6e98b9fb33bf129"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "466afd1f16b74e61980232b7008d93473e95886d",
+  "ran_at_head": "efbc19dc6470224fd985adc7e6e98b9fb33bf129",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

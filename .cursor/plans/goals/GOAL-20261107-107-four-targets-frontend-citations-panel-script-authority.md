@@ -139,7 +139,7 @@ exit_criteria:
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_experiment_script_authority.py -q`
       含：① 白名单三条 ⇒ `SHIPPED`；② 白名单文件的 digest 变了 ⇒ 点名拒绝（pin 生效）；
       ③ `AUTHORED` 在未声明时点名拒绝；④ 越界路径仍被既有函数拒绝（回归臂）。
-    status: PENDING
+    status: PASS
   - id: EC-10
     criterion: >-
       **策略约束真的被执行**：`sandbox_required` / `path_prefix` / `max_seconds` 三者今天由
@@ -151,7 +151,7 @@ exit_criteria:
       `tests/application/test_experiment_script_authority.py` 与
       `tests/application/test_governed_experiment_*` 全绿；
       三条反证各判红并点名缺哪条约束（无沙箱 / 越界路径 / 超时）。
-    status: PENDING
+    status: PASS
   - id: EC-11
     criterion: >-
       对抗性反证臂四条（没有它，判据不可证伪）：构造「恶意」生成脚本夹具，断言
@@ -160,14 +160,14 @@ exit_criteria:
     verify: >-
       `tests/application/test_experiment_script_authority.py` 的四条用例各自判红；
       按压后必须确认它们**真的红**（两向按压留证）。
-    status: PENDING
+    status: PASS
   - id: EC-12
     criterion: >-
       文档同步：实验脚本白名单说明补 `SHIPPED` / `AUTHORED` 两面与出厂默认；
       `docs/frontend/` 若有页面新增则同步（EC-01/02 若无新路由则只记 UI 行为）。
     verify: >-
-      `tests/tooling/` 相关文档判据绿；grep 命中新句。
-    status: PENDING
+      `tests/tooling/` 相关文档判据绿；grep 命中新句。**如实登记**：实验脚本白名单没有独立文档页（说明住在 `design_script.py` 的模块 docstring 里），因此「文档同步」这一项在本轮只落到 `MANUSCRIPT_QUALITY.md` §7 那一句。
+    status: PASS
   - id: EC-13
     criterion: >-
       收口资产：`tools/verify_goal107_closeout.py` + `tools/goal107_closeout_assertions.py`，
