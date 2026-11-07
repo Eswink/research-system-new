@@ -98,6 +98,8 @@ GOAL-20261107-107 的十四条 EC 逐条取证。**两路以上**（`verify_path
 - `tools/verify_goal107_closeout.py --root .` ⇒ **84 判词 / 0 FAIL**。
 - 全量 m0：`PASS: profile=m0; 23 deterministic checks`、`PASS [` 24 行、0 FAILED、
   `tree changed during the run: False`。
+- **两树复检 PASS**：`TREE current verdicts=84 sha256=474fcf27…` / `TREE clean verdicts=84 sha256=474fcf27…` / `COMPARE identical=True`。
+- **CI 八 job 全 success**（`e1cb5f2d` 的 M0 `42386389966`）。
 
 ## 反证臂汇总（**判据咬得住**的证据）
 
