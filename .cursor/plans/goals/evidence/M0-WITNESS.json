@@ -1844,7 +1844,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "fcfa411e62b7ec7cb40c4c81dc2dbe8b966b1b1c"
+        "sha256": "280b56e89789d72f3f420def27a821e756aea48b"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -12584,7 +12584,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "c5d35e46362f9d12f6fe62ab4472af1d566c494f"
+        "sha256": "b610538cd9649fa20837e194046c4e2d332e6d3d"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -14233,6 +14233,10 @@
       {
         "path": "packages/application/deliverable/manuscript.py",
         "sha256": "74b64761a63f3355c391b522833043947cd2727f"
+      },
+      {
+        "path": "packages/application/deliverable/manuscript_panel.py",
+        "sha256": "40678743c3bd8500dd2b5a91b22cf3961fef795e"
       },
       {
         "path": "packages/application/deliverable/manuscript_quality.py",
@@ -17375,6 +17379,10 @@
         "sha256": "e1c965efbfd715fc4d15e528cef0160de347ec49"
       },
       {
+        "path": "tests/application/test_manuscript_panel.py",
+        "sha256": "eafbdaf685bcbb42ff3df76757bb54d021a9d259"
+      },
+      {
         "path": "tests/application/test_manuscript_quality.py",
         "sha256": "9b301b52d94a541229a0718123d6d53a6fee2f81"
       },
@@ -20275,7 +20283,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "99454d40514c2207d13dd1c3d3acc17d90050c37"
+    "head": "466afd1f16b74e61980232b7008d93473e95886d"
   },
   "fingerprint_before": {
     "files": [
@@ -22121,7 +22129,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "fcfa411e62b7ec7cb40c4c81dc2dbe8b966b1b1c"
+        "sha256": "280b56e89789d72f3f420def27a821e756aea48b"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -32861,7 +32869,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "c5d35e46362f9d12f6fe62ab4472af1d566c494f"
+        "sha256": "b610538cd9649fa20837e194046c4e2d332e6d3d"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -34510,6 +34518,10 @@
       {
         "path": "packages/application/deliverable/manuscript.py",
         "sha256": "74b64761a63f3355c391b522833043947cd2727f"
+      },
+      {
+        "path": "packages/application/deliverable/manuscript_panel.py",
+        "sha256": "40678743c3bd8500dd2b5a91b22cf3961fef795e"
       },
       {
         "path": "packages/application/deliverable/manuscript_quality.py",
@@ -37652,6 +37664,10 @@
         "sha256": "e1c965efbfd715fc4d15e528cef0160de347ec49"
       },
       {
+        "path": "tests/application/test_manuscript_panel.py",
+        "sha256": "eafbdaf685bcbb42ff3df76757bb54d021a9d259"
+      },
+      {
         "path": "tests/application/test_manuscript_quality.py",
         "sha256": "9b301b52d94a541229a0718123d6d53a6fee2f81"
       },
@@ -40552,11 +40568,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "99454d40514c2207d13dd1c3d3acc17d90050c37"
+    "head": "466afd1f16b74e61980232b7008d93473e95886d"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "99454d40514c2207d13dd1c3d3acc17d90050c37",
+  "ran_at_head": "466afd1f16b74e61980232b7008d93473e95886d",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

@@ -105,7 +105,7 @@ exit_criteria:
       含：① 三条 rubric 与 `NOT_JUDGED[:3]` 逐条对应；② 正例三态各解析正确；
       ③ **反证**：网关抛错 ⇒ 判词是 `PANEL_UNAVAILABLE` 而**不是**任何一态；
       ④ **反证**：把三态闭集改空 ⇒ 解析判据全红（证明它真在校验）。
-    status: PENDING
+    status: PASS
   - id: EC-07
     criterion: >-
       面板判词落 canonical 且可归因：写 `ReviewFinding`（`review_type="manuscript_panel"`、
@@ -117,7 +117,7 @@ exit_criteria:
       两条反证：① 无 `reviewer_model` 的 finding ⇒ 聚合时点名「不可归因」且**不进票**
       （复用 `panel_verdict._eligible` 口径）；② 面板判词**不**产生 `Decision`
       （advisory 边界：断言 `Decision` 记录数与面板运行前相同）。
-    status: PENDING
+    status: PASS
   - id: EC-08
     criterion: >-
       文档同步：`docs/architecture/MANUSCRIPT_QUALITY.md` §7 加一句「第 1/2/3 项已委派给
@@ -127,7 +127,7 @@ exit_criteria:
       `tests/tooling/test_manuscript_quality_strong_criterion.py` 5 条全绿；
       `tests/application/test_citation_sufficiency.py::test_the_fifth_item_stays_in_not_judged` 绿；
       文档 grep 命中新句。
-    status: PENDING
+    status: PASS
   - id: EC-09
     criterion: >-
       新建 `packages/application/experiments/script_authority.py`：`ExecutionAuthority` 闭集

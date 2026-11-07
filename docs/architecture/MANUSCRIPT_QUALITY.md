@@ -177,3 +177,6 @@ uv run --frozen --no-sync python -B -m pytest \
    （与 `ReviewFinding.reviewer_model` 同一口径）。
 
 **反向误读仍然是明令禁止的**：本节的存在**不**意味着强口径已判。§3 的两条禁令逐字有效。
+
+**第 1/2/3 项的出口已经落地，但本口径仍然不判**（GOAL-20261107-107）：`deliverable/manuscript_panel.py` 把这三项交给**独立模型**，判词落 `ReviewFinding`（`review_type = manuscript_panel`）并带 `reviewer_model` 归因 —— 这正是上面候选 ② 说的形态。三条边界逐条可判：判词是 **advisory**（不产生 `Decision`、不参与验收门）；网关失败落 `PANEL_UNAVAILABLE` 而**不**折算成任何一态；`NOT_JUDGED` **五项逐字不动** —— 确定性模块仍然不判这三项，面板是**另一个判者**。**读这一句时最容易犯的错**：把「有第三方判词」读成「叙述质量已判」。面板说的是「某个模型认为它可以/不可以」，不是「论证成立」。
+
