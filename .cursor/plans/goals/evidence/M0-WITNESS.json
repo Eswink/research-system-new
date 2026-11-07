@@ -1844,7 +1844,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "c0f1ad44ffac3ea194c586ff1fd3cbd4617ea6a1"
+        "sha256": "fcfa411e62b7ec7cb40c4c81dc2dbe8b966b1b1c"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -14211,6 +14211,10 @@
         "sha256": "4606d321985fa5a406cbbfe39dcf94dbcfaef6fd"
       },
       {
+        "path": "packages/application/deliverable/citation_distribution.py",
+        "sha256": "2b6af5b8c4833c9fa2c93a094cc503e7b4aa20cf"
+      },
+      {
         "path": "packages/application/deliverable/citation_sufficiency.py",
         "sha256": "424fef26be22c736fa5481052d66d2644e3929da"
       },
@@ -17227,6 +17231,10 @@
         "sha256": "5a7c954a0f82d43dcdc6b9275bf5fd499c9ca71c"
       },
       {
+        "path": "tests/application/test_citation_distribution.py",
+        "sha256": "4ba5051dad4bb79508cbb33ed497943c8303b7f1"
+      },
+      {
         "path": "tests/application/test_citation_numbers_reach_the_prompt.py",
         "sha256": "e90facda68031568f5e2913365955e7cb4690c96"
       },
@@ -19176,7 +19184,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "9b86d0046639a21b34229b6a1d70a557b3acf2ee"
+        "sha256": "b02f8337f2803a86f2b7f2c2e16d8ebc89373f3c"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -19325,6 +19333,10 @@
       {
         "path": "tools/check_ledger_run_attribution.py",
         "sha256": "604ce620381e85d71b6bfbffd5e006837e7caed2"
+      },
+      {
+        "path": "tools/citation_corpus_report.py",
+        "sha256": "a3c63c7cb82b10600ad42b3970a0f6007bf15a3d"
       },
       {
         "path": "tools/classify_local_gate_reds.py",
@@ -20263,7 +20275,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "d6b7e4dd78ed96e5c05bfce5b1245fd7b8315ab0"
+    "head": "99454d40514c2207d13dd1c3d3acc17d90050c37"
   },
   "fingerprint_before": {
     "files": [
@@ -22109,7 +22121,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "c0f1ad44ffac3ea194c586ff1fd3cbd4617ea6a1"
+        "sha256": "fcfa411e62b7ec7cb40c4c81dc2dbe8b966b1b1c"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -34476,6 +34488,10 @@
         "sha256": "4606d321985fa5a406cbbfe39dcf94dbcfaef6fd"
       },
       {
+        "path": "packages/application/deliverable/citation_distribution.py",
+        "sha256": "2b6af5b8c4833c9fa2c93a094cc503e7b4aa20cf"
+      },
+      {
         "path": "packages/application/deliverable/citation_sufficiency.py",
         "sha256": "424fef26be22c736fa5481052d66d2644e3929da"
       },
@@ -37492,6 +37508,10 @@
         "sha256": "5a7c954a0f82d43dcdc6b9275bf5fd499c9ca71c"
       },
       {
+        "path": "tests/application/test_citation_distribution.py",
+        "sha256": "4ba5051dad4bb79508cbb33ed497943c8303b7f1"
+      },
+      {
         "path": "tests/application/test_citation_numbers_reach_the_prompt.py",
         "sha256": "e90facda68031568f5e2913365955e7cb4690c96"
       },
@@ -39441,7 +39461,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "9b86d0046639a21b34229b6a1d70a557b3acf2ee"
+        "sha256": "b02f8337f2803a86f2b7f2c2e16d8ebc89373f3c"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -39590,6 +39610,10 @@
       {
         "path": "tools/check_ledger_run_attribution.py",
         "sha256": "604ce620381e85d71b6bfbffd5e006837e7caed2"
+      },
+      {
+        "path": "tools/citation_corpus_report.py",
+        "sha256": "a3c63c7cb82b10600ad42b3970a0f6007bf15a3d"
       },
       {
         "path": "tools/classify_local_gate_reds.py",
@@ -40528,11 +40552,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "d6b7e4dd78ed96e5c05bfce5b1245fd7b8315ab0"
+    "head": "99454d40514c2207d13dd1c3d3acc17d90050c37"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "d6b7e4dd78ed96e5c05bfce5b1245fd7b8315ab0",
+  "ran_at_head": "99454d40514c2207d13dd1c3d3acc17d90050c37",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

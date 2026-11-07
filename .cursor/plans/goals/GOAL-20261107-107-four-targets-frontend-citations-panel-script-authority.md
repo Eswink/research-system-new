@@ -73,10 +73,12 @@ exit_criteria:
       三个常量保持 `None`。**
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/application/test_citation_distribution.py -q`
-      含四条判据：① 正例三份读数逐项等于期望；② 反证加一份手稿 ⇒ 分布随之变；
-      ③ `calibration_gate(1 份)` 返回「不足」并点名 `n=1 < 3`；④ **恒定判据**——
-      gate 返回不足时，任何非 `None` 阈值都判红。
-    status: PENDING
+      8 passed（四条判据 + 三条门边界 + 短语料参数化）。**实测读数**（2026-11-07 探针）：
+      仓内真实手稿 **2 份**（`3142b142` 57 句 / 6 标记 / 3 条；`6446406a` 39 句 / 9 标记 / 3 条），
+      `calibration_gate` 判「不足：2 of 3」⇒ 阈值仍全 `None`。反证臂按压留证：把
+      `marks=sum(...)` 改成常量 `6` ⇒ **恰好 2 条**判红（`test_adding_one_citation_moves_both_readings`
+      与摘要分布那条），复原后 8 passed。
+    status: PASS
   - id: EC-05
     criterion: >-
       分布读入 `tools/` 入口：一个脚本扫树内全部**真实** `manuscript.md`（排除测试夹具与
@@ -84,9 +86,11 @@ exit_criteria:
       该脚本必须过四道门（ruff format / ruff check / mypy strict / 450 行 + 50 行函数）
       并登记进 `tests/tooling/test_tooling_scripts_meet_product_gates.py` 的 `IN_SCOPE`。
     verify: >-
-      `tests/tooling/test_tooling_scripts_meet_product_gates.py` 全绿；
-      实跑该脚本对当前树输出 `n=1`（run 3142b142 那一份）且 gate 判「不足」。
-    status: PENDING
+      `tests/tooling/test_tooling_scripts_meet_product_gates.py` 8 passed；实跑
+      `tools/citation_corpus_report.py --root .` 对当前树输出 **2 份**手稿与 `gate: CLOSED`。
+      **语料来源不是 glob `manuscript*.md`**（实测 0 命中）：真实手稿是内容寻址 blob，
+      按 run 库 artifact id 的 `:manuscript.md` 后缀认、按 digest 到 blob store 取字节。
+    status: PASS
   - id: EC-06
     criterion: >-
       新建 `packages/application/deliverable/manuscript_panel.py`：`PANEL_RUBRICS` 是**闭集三条**，
@@ -336,3 +340,4 @@ memory_entries: []
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
 | `d6b7e4dd` | [M0 42284126993](https://github.com/Eswink/research-system-new/actions/runs/42284126993) / [Push 42284126448](https://github.com/Eswink/research-system-new/actions/runs/42284126448) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **建档**：GOAL-107 + 子 PLAN + RECHECK + 程序表序 75 + 阶梯两行 + 进展/修订各一行；同时付清 `320faa78` / `9ddd6360` 两笔 tip 债。治理门首轮点名七条（PLAN 缺 frontmatter / 缺五节 / RECHECK 状态词 / ALL_PLAN 投影 / 裸路径非链接），逐条修完才提交 |
+| `99454d40` | [M0 42297143259](https://github.com/Eswink/research-system-new/actions/runs/42297143259) / [Push 42297142744](https://github.com/Eswink/research-system-new/actions/runs/42297142744) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **靶子 C（EC-01…03）**：改稿并排 diff + 程序页三件 + TS 类型补齐 + 单路由基线重录。本地 e2e **112 passed**、单测 103、m0 见证全绿。**一处真红如实登记**：首次 m0 的 `typescript/lint` 与 `typescript/test` 各 1 红 —— 根 `eslint .` 比 `pnpm --dir apps/web lint` 宽（`tests/e2e/stub-routes-*.ts` 不在 `src` 下），且生产边界判据禁止前端出现判词枚举（`continue_on_verdicts: ["PASS"]` 撞上），两处修完才绿 |
