@@ -2,7 +2,7 @@
 id: GOAL-20261107-107
 slug: four-targets-frontend-citations-panel-script-authority
 title: 四靶并行：前端补全 / 引用分布 / 外部评审面板 / 脚本执行权威
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-11-07
 updated_at: 2026-11-07
 owners:
@@ -37,7 +37,7 @@ exit_criteria:
       `pnpm --dir apps/web test:e2e` 里新增用例断言：给定含 v1+v2 的 run，
       `data-testid="revision-diff"` 出现且含 `ADDED` 与 `REMOVED` 行；
       反证：只有 v1 的 run ⇒ 该块**不渲染**（不是空块）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       程序页补全：`ProgramsSection` 加三件——① 建程序表单（`POST /projects/{id}/programs`，
@@ -51,7 +51,7 @@ exit_criteria:
       上面四条命令全绿；e2e 断言建程序表单提交后列表多一行、决定时间线渲染
       `after_index` 与 `kind`、`cited_facts` 默认收起点击后逐条可见；
       反证：无 decisions 的程序 ⇒ 时间线显示空态而非伪造一行。
-    status: PENDING
+    status: PASS
   - id: EC-03
     criterion: >-
       设计基线重录：EC-01 / EC-02 新增的 DOM 让 `design-outline-guard` 与像素基线
@@ -62,7 +62,7 @@ exit_criteria:
       `pnpm --dir apps/web test:e2e`（含 design-fidelity / design-outline-guard）全绿；
       `apps/web/tests/e2e/design-outlines.json` 的 `portfolio-projects` 与 `reports`
       条目更新且含新增 testid。
-    status: PENDING
+    status: PASS
   - id: EC-04
     criterion: >-
       新建 `packages/application/deliverable/citation_distribution.py`（确定性纯函数：
@@ -176,7 +176,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal107_closeout.py --root . --verdict-only`
       全 PASS 且判词不含绝对路径；四条登记判据在 m0 里过。
-    status: PENDING
+    status: PASS
   - id: EC-14
     criterion: >-
       宪章记账：程序表追加序 75（`轴 = 深度+质量`、`能力域 = 报告`、紧跟序 74 **不留空行**）；
@@ -189,7 +189,7 @@ exit_criteria:
       `test_mainline_research_ladder_advances.py`、`test_mainline_archive_is_continuous.py`、
       `test_record_tables_are_structurally_sound.py` 全绿；
       收口验证器断言两条阶梯行的 `下一级` 未被改写。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 60
   per_cycle_minutes: 180
@@ -305,7 +305,12 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261107-107 | `d6b7e4dd` | 治理门 7 条逐条修完；记录面 `tests/tooling` 1795 passed（见证除外，树已变） | **M0 42284126993 8/8 success**；Push 3/3 | 七条治理缺陷（PLAN frontmatter / 五节缺失 / RECHECK 状态词 / ALL_PLAN 投影 / 裸路径非链接） | EC-01…14 未收口（状态权威在 frontmatter）；靶子 C 的三个 EC 已在本 cycle 实现 | 下一 cycle：靶子 C 提交并取证 |
+| 2 | PLAN-20261107-107 | `99454d40` | e2e **112 passed**、单测 103、lint/typecheck/build 干净；两条反证臂按压（伪造 v2 / 空态分支失效）各判红 | **M0 42297143259 8/8** | 首次 m0 的 `typescript/lint` + `typescript/test` 各 1 红（根 `eslint .` 更宽、前端判词枚举被生产边界禁） | EC-01…03 收口 | 靶子 B |
+| 3 | PLAN-20261107-107 | `466afd1f` | `test_citation_distribution` 8 passed；反证臂按压（marks 改常量）恰好 2 条红；语料入口实测 **2 份**手稿 | 见台账 | 手算标记数错一次（7 vs 实测 6），改断言不改产品 | EC-04/05 收口 | 靶子 A |
+| 4 | PLAN-20261107-107 | `efbc19dc` | `test_manuscript_panel` 15 passed；反证臂按压（设施失败→SUPPORTED）恰好 2 条红；§7 五条判据仍绿 | 见台账 | 夹具坑两处：`fail_timeout` 只让首调失败、`PortTimeoutError` 需 `failure_category`；规模门抓 `review_manuscript` 51 行 | EC-06…08 收口 | 靶子 D |
+| 5 | PLAN-20261107-107 | `227c7573` | `test_experiment_script_authority` 15 passed；反证臂按压（`AUTHORED` 默认改 True）恰好 1 条红；既有 17 条选择判据零回归 | 见台账 | `ruff format` 未跑（`python/format-check` 真红） | EC-09…12 收口 | 收口资产 |
+| 6 | PLAN-20261107-107 | （本提交） | `verify_goal107_closeout` **72 PASS / 0 FAIL**；全量 m0 见证 | 见台账 | 三条残余标记未写（验证器当场点名） | 十四条 EC 全 PASS | 收口 |
+| 1 | PLAN-20261107-107 | `7b9201ae`（历史补登）→ `d6b7e4dd` | 治理门 7 条逐条修完；记录面 `tests/tooling` 1795 passed（见证除外，树已变） | **M0 42284126993 8/8 success**；Push 3/3 | 七条治理缺陷（PLAN frontmatter / 五节缺失 / RECHECK 状态词 / ALL_PLAN 投影 / 裸路径非链接） | EC-01…14 未收口（状态权威在 frontmatter）；靶子 C 的三个 EC 已在本 cycle 实现 | 下一 cycle：靶子 C 提交并取证 |
 
 ## 影响报告
 
@@ -313,19 +318,43 @@ memory_entries: []
 
 ## 残余与未覆盖范围
 
-（收口时填写。**没做到**的那部分逐条明写。空着等于宣称「没有缺口」，那是伪造验证证据。）
+（**没做到**的那部分，逐条明写。空着等于宣称「没有缺口」，那是伪造验证证据。）
 
 ### 残余（本轮已交付里仍然存在的缺口）
 
-- （待填）
+- `W-1`｜**引用阈值仍然全 `None`**：语料门判 **2 of 3**（实测：`3142b142` 57 句 / 6 标记 /
+  3 条；`6446406a` 39 句 / 9 标记 / 3 条）。本轮交付的是「有语料就能标定」的一条命令，
+  **不是**阈值本身。差的那一份语料要靠下一次真实 run，不是靠调参。
+- `W-2`｜**面板是 advisory，不判「论证成立」**：三条 rubric 给出的是**某个模型**的看法，
+  不是形式论证有效性（P4：通过也不代表对）。读面必须带 `reviewer_model` 才可读成
+  「谁这么认为」；`Decision` 与验收门**完全不受影响**。
+- `W-3`｜**`AUTHORED` 出厂关闭，且只到「可被安全放行」这一步**：`ExecutionAuthority`
+  判来源与形状，**不判**脚本写得好不好；`AUTHORED` 要真正启用还差一次安全姿态决定
+  （`AUTHORED_ALLOWED_BY_DEFAULT` 改成 `True` 会让 `test_authored_is_off_by_default` 判红
+  —— 那条判据就是这次决定的闸门）。
+- `W-4`｜**策略约束只在实验执行边界生效**：`sandbox_required` / `path_prefix` /
+  `max_seconds` 现在在 `GovernedExperimentExecutor._enforce_policy` 被读，但**工具面**
+  （`tool_plane/resolver.py`）与 **preflight**（`preflight/policy_check.py`）仍不读它们。
+  同一条声明在不同执行面上的效力**不一致**，这是如实登记的缺口。
 
 ### 未覆盖范围（本轮**没有**触及的面）
 
-- （待填）
+- `U-1`｜**协议相级仍只解释 `retmax`**（GOAL-105 `U-1` 未推进）：`pageSize` 与各 provider
+  自己的分页/过滤参数仍写不进协议。
+- `U-2`｜**跨 run 的手稿比较**不在射程：分布读数逐份给值，但「同一项目第 2 轮比第 1 轮
+  引得更充分吗」没有判据。
+- `U-3`｜**前端只补了这两处**：`ArtifactBrowser` 的详情仍不显示 `supersedes`；
+  `ReviewPanelSection` 不渲染 `aggregate_panel` 的 advisory（HTTP 路由
+  `GET /runs/{id}/reviews` 只返回 `list[ReviewFindingDto]`，丢掉了 `panels` 那一层）。
 
 ### 声称边界（**不得宣称**的事）
 
-- （待填）
+- `R-1`｜**不得宣称「引用充分性已判」**：三个阈值仍 `None`，语料门判 2 of 3。分布读数
+  不回答「该引几条」。
+- `R-2`｜**不得宣称「叙述质量已判」**：面板给的是带归因的第三方判词；`NOT_JUDGED`
+  五项逐字不动，§7 判定表一字未改。
+- `R-3`｜**不得宣称「模型可以自己写实验脚本了」**：机制在，出厂关（`AUTHORED` 默认
+  `False`）；且约束面只在实验执行边界生效（`W-4`）。
 
 ## 状态历史
 
@@ -339,5 +368,9 @@ memory_entries: []
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `7b9201ae` | **无独立 run**（它落在 GOAL-106 的链中间，与那批提交同一次 push） | 该批的读数见 GOAL-106 台账；**本行不冒领** | **历史提交，非本轮产出**：2026-11-05 的 `fix(goal107): judge read actions and bound the untagged-commit exemption`（Bash 面守卫重写 + 绑定「未命名 GOAL 的代码提交」豁免）。它的主题把编号写成 `goal107`，而当时 GOAL-107 还不存在 —— 那是**编号笔误**，但它让 `test_goal_commit_chain_reaches_the_ledger`按主题归因时把它算进了本轮链。该提交是 HEAD 的祖先、却**从未被任何台账收录**（它出现时GOAL-107 不存在）。本轮如实补登，**不改历史、不改判据** |
 | `d6b7e4dd` | [M0 42284126993](https://github.com/Eswink/research-system-new/actions/runs/42284126993) / [Push 42284126448](https://github.com/Eswink/research-system-new/actions/runs/42284126448) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **建档**：GOAL-107 + 子 PLAN + RECHECK + 程序表序 75 + 阶梯两行 + 进展/修订各一行；同时付清 `320faa78` / `9ddd6360` 两笔 tip 债。治理门首轮点名七条（PLAN 缺 frontmatter / 缺五节 / RECHECK 状态词 / ALL_PLAN 投影 / 裸路径非链接），逐条修完才提交 |
 | `99454d40` | [M0 42297143259](https://github.com/Eswink/research-system-new/actions/runs/42297143259) / [Push 42297142744](https://github.com/Eswink/research-system-new/actions/runs/42297142744) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **靶子 C（EC-01…03）**：改稿并排 diff + 程序页三件 + TS 类型补齐 + 单路由基线重录。本地 e2e **112 passed**、单测 103、m0 见证全绿。**一处真红如实登记**：首次 m0 的 `typescript/lint` 与 `typescript/test` 各 1 红 —— 根 `eslint .` 比 `pnpm --dir apps/web lint` 宽（`tests/e2e/stub-routes-*.ts` 不在 `src` 下），且生产边界判据禁止前端出现判词枚举（`continue_on_verdicts: ["PASS"]` 撞上），两处修完才绿 |
+| `466afd1f` | [M0 42340978836](https://github.com/Eswink/research-system-new/actions/runs/42340978836) / [Push 42340978642](https://github.com/Eswink/research-system-new/actions/runs/42340978642) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **靶子 B（EC-04/05）**：`citation_distribution.py` 三个纯函数 + 语料入口。**实测语料 2 份**（不是建档时以为的 1 份）：`3142b142` 57/6/3、`6446406a` 39/9/3 ⇒ 门判 2 of 3、阈值仍 `None`。反证臂按压（marks 改常量）恰好 2 条红。 |
+| `efbc19dc` | [M0 42345728710](https://github.com/Eswink/research-system-new/actions/runs/42345728710) / [Push 42345729288](https://github.com/Eswink/research-system-new/actions/runs/42345729288) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **靶子 A（EC-06/07/08）**：外部评审面板。15 判据全绿；设施失败独立一类；advisory 边界（不 import `Decision`）；§7 加一句、`NOT_JUDGED` 五项逐字不动（5 条强口径判据仍绿）。**两处夹具坑如实登记**：`fail_timeout` 只让首调失败、`PortTimeoutError` 需 `failure_category`；规模门抓 `review_manuscript` 51 行 ⇒ 拆出 `_one_verdict`。 |
+| `227c7573` | [M0 42351056784](https://github.com/Eswink/research-system-new/actions/runs/42351056784) / [Push 42351057004](https://github.com/Eswink/research-system-new/actions/runs/42351057004) | **M0 `success`（8/8 job success）**；**Push 全 success (3/3)** | **靶子 D（EC-09/10/11）**：脚本执行权威 + **修既有缺陷**（`sandbox_required`/`path_prefix`/`max_seconds` 声明了但零处执行）。15 判据全绿、对抗性反证 5 臂各按压判红、既有 17 条选择判据零回归。首次 m0 `python/format-check` 真红（`ruff format` 未跑）⇒ 修完重跑。 |

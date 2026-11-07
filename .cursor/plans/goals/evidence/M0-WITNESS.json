@@ -1844,11 +1844,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "6acca94460a5025891e39389c0702d850944e385"
+        "sha256": "485b2838991dd90555dfac0c013d03ad6b795fc3"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "74183e76b6589963044e6f75357c8a8b634640a0"
+        "sha256": "e92e48dc55c7b2ed573827aa442aa855239f8f24"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -4420,7 +4420,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261107-107-four-targets.md",
-        "sha256": "556acaf2131eb890be1d63b5b7a5e4b86efeede1"
+        "sha256": "9190fee52cf190d792c3aef2f5958d160482d6d7"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -19064,7 +19064,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "ae40e3883773e4773a3c0b749dfac5124702426e"
+        "sha256": "ba09d1bd953abcc3d0e87f2f200ebd48ac41de35"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -19200,7 +19200,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "b02f8337f2803a86f2b7f2c2e16d8ebc89373f3c"
+        "sha256": "3ca7cc139b1a9ca2cb67c330c8a65d72c8e91770"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -19815,6 +19815,10 @@
         "sha256": "2008f4d78fcb77ce2aec76236d5ffaf45508dff0"
       },
       {
+        "path": "tools/goal107_closeout_assertions.py",
+        "sha256": "574ae46830fb856c8475444345aa37298af5d6c0"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -20279,6 +20283,10 @@
         "sha256": "c66cec0ceae8412b0384e0d2abfa03565d85f013"
       },
       {
+        "path": "tools/verify_goal107_closeout.py",
+        "sha256": "1b8fe7e1d189363bb236aee497000f7c9e5f9433"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -20291,7 +20299,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "efbc19dc6470224fd985adc7e6e98b9fb33bf129"
+    "head": "227c75735c7641a70ea79a5284d98eef08c3fe5f"
   },
   "fingerprint_before": {
     "files": [
@@ -22137,11 +22145,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "6acca94460a5025891e39389c0702d850944e385"
+        "sha256": "485b2838991dd90555dfac0c013d03ad6b795fc3"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "74183e76b6589963044e6f75357c8a8b634640a0"
+        "sha256": "e92e48dc55c7b2ed573827aa442aa855239f8f24"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -24713,7 +24721,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261107-107-four-targets.md",
-        "sha256": "556acaf2131eb890be1d63b5b7a5e4b86efeede1"
+        "sha256": "9190fee52cf190d792c3aef2f5958d160482d6d7"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -39357,7 +39365,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "ae40e3883773e4773a3c0b749dfac5124702426e"
+        "sha256": "ba09d1bd953abcc3d0e87f2f200ebd48ac41de35"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -39493,7 +39501,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "b02f8337f2803a86f2b7f2c2e16d8ebc89373f3c"
+        "sha256": "3ca7cc139b1a9ca2cb67c330c8a65d72c8e91770"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -40108,6 +40116,10 @@
         "sha256": "2008f4d78fcb77ce2aec76236d5ffaf45508dff0"
       },
       {
+        "path": "tools/goal107_closeout_assertions.py",
+        "sha256": "574ae46830fb856c8475444345aa37298af5d6c0"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -40572,6 +40584,10 @@
         "sha256": "c66cec0ceae8412b0384e0d2abfa03565d85f013"
       },
       {
+        "path": "tools/verify_goal107_closeout.py",
+        "sha256": "1b8fe7e1d189363bb236aee497000f7c9e5f9433"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -40584,11 +40600,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "efbc19dc6470224fd985adc7e6e98b9fb33bf129"
+    "head": "227c75735c7641a70ea79a5284d98eef08c3fe5f"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "efbc19dc6470224fd985adc7e6e98b9fb33bf129",
+  "ran_at_head": "227c75735c7641a70ea79a5284d98eef08c3fe5f",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

@@ -149,6 +149,7 @@ _VERIFIERS: tuple[str, ...] = (
     # 与 NCBI 的搜索后端同时不可用）⇒ 本条判据与 `test_verifier_main_files_…` 会红。
     # 这是**如实状态**：登记与判负同时存在，直到真跑读数落地。把判负藏起来才是违规。
     "tools/verify_goal106_closeout.py",
+    "tools/verify_goal107_closeout.py",
 )
 #: 断言**内联**的旧一代验证器（逐条登记 + 理由非空；与 `_VERIFIERS` 的分区判据同形）。
 LEGACY_INLINE: tuple[tuple[str, str], ...] = (
