@@ -313,7 +313,7 @@ provider 超时都能达到）—— 后者会改产品配置面，属**待拍�
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PLAN-20261111-108 | `371b6a8f` | 探针 4/4 免费模型可用；独立性 93 passed；规模门 1422 passed；合约 62 passed | 见 `## CI 台账` | 三处真缺陷（novelty_writer 撞 domain_a / research_strong fallback 落评审 A / task_contracts 被写成 CRLF） | EC-08…11 待收口 | 真跑 + 文档 + 收口资产 |
-| 2 | PLAN-20261111-108 | 见 `## CI 台账` | 收口验证器 **87 PASS / 0 FAIL**；可靠性 36 passed；loaders+contracts 92 passed；文档 28 passed；credential_audit 四面 `offenders=0`；ruff/format/mypy 三道具名 | 见 `## CI 台账` | **五处**：① `.env` 的 key 是上一个站的（门开着、每次 401）；② EC-01 的判据点名了一个**不存在**的判据文件；③ EC-07 同上；④ live harness 覆盖 GOAL-106 的**封存**读数（须 `RESEARCHOS_LIVE_EVIDENCE` 出口）；⑤ 宪章进度行写了状态枚举词（被 `test_no_goal_or_criterion_status_is_mirrored_in_the_charter` 抓到） | `W-1` / `W-2` / `W-3` 三条残余（均待拍板）；`U-1` / `U-2` 两条未覆盖。**run 3 终态 `SUCCEEDED`（十一相全绿 / 45 件产物 / 0 缺失）** | 序 77（配对消融） |
+| 2 | PLAN-20261111-108 | `371b6a8f`、`31049501` | 收口验证器 **87 PASS / 0 FAIL**；可靠性 36 passed；loaders+contracts 92 passed；文档 28 passed；credential_audit 四面 `offenders=0`；ruff/format/mypy 三道具名 | 见 `## CI 台账` | **五处**：① `.env` 的 key 是上一个站的（门开着、每次 401）；② EC-01 的判据点名了一个**不存在**的判据文件；③ EC-07 同上；④ live harness 覆盖 GOAL-106 的**封存**读数（须 `RESEARCHOS_LIVE_EVIDENCE` 出口）；⑤ 宪章进度行写了状态枚举词（被 `test_no_goal_or_criterion_status_is_mirrored_in_the_charter` 抓到） | `W-1` / `W-2` / `W-3` 三条残余（均待拍板）；`U-1` / `U-2` 两条未覆盖。**run 3 终态 `SUCCEEDED`（十一相全绿 / 45 件产物 / 0 缺失）** | 序 77（配对消融） |
 
 ## 影响报告
 
@@ -396,3 +396,4 @@ isn't mapped yet` —— 这是**读数**（该模型不在 litellm 的 cost map
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
 | `371b6a8f` | `43003040534` Push on main / `43003040916` M0 Quality Gates | 两者均 `success` | 首轮交付（探针 / 换站 / 分工 / R-1…R-4）。M0 run 覆盖同一次 push 的全部提交。 |
+| `31049501` | [M0 43075846785](https://github.com/Eswink/research-system-new/actions/runs/43075846785) / [Push 43075845717](https://github.com/Eswink/research-system-new/actions/runs/43075845717) | **M0 `success`（8/8 job success，含 `quality-windows-latest`）**；**Push 全 success (3/3)** | **序 76 收口**：真跑四次（后两次连续 `SUCCEEDED`，十一相全绿 / 各 45 件产物）、两条补建的判据文件、`RESEARCHOS_LIVE_EVIDENCE` 出口、收口验证器 87 判词 / 0 FAIL、MEM-20261112-241、tip 债 `7fd4f45e` 付清。本地 m0 见证 `PASS: profile=m0; 23 deterministic checks`、`tree changed: False`；两树复检两树各 87 判词、`sha256=bbb84eec…` 完全相同。**本行由下一笔提交补写（收口提交自己写不进自己携带的内容）** |
