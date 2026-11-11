@@ -154,6 +154,10 @@ _VERIFIERS: tuple[str, ...] = (
     # 它判**换站 / 四模型分工 / 四件可靠性 / 两页文档**，并判 EC-08 的读数文件在树
     # （真跑读数**成功或失败都算达成** —— 那一节判的是「有没有如实记录」，不是成功）。
     "tools/verify_goal108_closeout.py",
+    # GOAL-20261111-109 EC-07：收口验证器（断言集 `goal109_closeout_assertions.py`）。
+    # 它判**配对消融四件交付**（可比键 / 两臂 / 读数 / 报告与门）与**阶梯试点射程**
+    # （「计划」行带新 bar；其余三格不得被越级推广）。
+    "tools/verify_goal109_closeout.py",
 )
 #: 断言**内联**的旧一代验证器（逐条登记 + 理由非空；与 `_VERIFIERS` 的分区判据同形）。
 LEGACY_INLINE: tuple[tuple[str, str], ...] = (
