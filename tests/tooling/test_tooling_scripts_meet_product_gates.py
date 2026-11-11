@@ -226,6 +226,8 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/citation_corpus_report.py",  # GOAL-107 EC-05
     "tools/goal107_closeout_assertions.py",
     "tools/verify_goal107_closeout.py",  # GOAL-107 EC-13：语料读数入口
+    "tools/goal108_closeout_assertions.py",
+    "tools/verify_goal108_closeout.py",  # GOAL-20261111-108 EC-11：换站 + 分工 + 可靠性
     "tools/charter_progress.py",
     "tools/check_ledger_run_attribution.py",
     # ZCode 侧门禁：技能正文只经 Skill 工具加载（纯收紧 ⇒ 只增不删）。

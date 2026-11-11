@@ -200,6 +200,73 @@ circuit_breaker:
 
 不要在 MVP 引入复杂智能路由。
 
+### 10.1 当前部署：局域网免费中转站（GOAL-20261111-108）
+
+| 面 | 值 |
+| --- | --- |
+| `base_url` | `http://192.168.101.9:8798/v1`（**私有 IP**，不是域名） |
+| `credential_ref` | `LLM_MAIN_KEY`（值只在 gitignored 的 `.env`） |
+| `request_timeout_seconds` | `300`（原 120） |
+| `allow_models` | 四个 `credits: x0.00` 模型 |
+
+`allow_models` 只作用于发现面，运行路径不受它限制；它在这里是「我们只用免费模型」
+这条纪律的**可读声明**。
+
+**四个免费模型的真实分工**（`examples/config/models.yaml`）：
+
+| 角色组 | `model_name` | 上下文 |
+| --- | --- | --- |
+| 写作组（`writer` / `director` / `domain_a` / `editor`） | `hy4free` | 960K |
+| 评审 A（`critic_independent`） | `hy4-preview-f` | 1M |
+| 评审 B | `hy4flash-exp4` | 960K |
+| 创新点评审（`novelty_review_model`） | `hy4-preview-f` | **与评审 A 同**（见下） |
+| 创新点作者（`novelty_author_model`） | `hy3` | 与写作组、两位评审全不同 |
+
+**这里有一处**不满足**全独立**，且它是数学结论不是配置疏漏**：把
+「写作组 / 评审 A / 评审 B / 创新点评审 / 创新点作者」五个目标要求两两互异，
+在四个免费模型上穷举 `4^7` 得 **0 解**。用户 2026-11-11 拍板「**保作者独立**」
+⇒ 创新点评审与评审 A 共用 `hy4-preview-f`。**关键的那一面仍成立**：写作组与评审组的
+交集是**空集**。判据 `test_the_shared_review_target_is_recorded`
+（`tests/contracts/test_direction_to_report_v2_novelty.py`）把共用的目标逐字枚举 ——
+放宽是**可读事实**，不是静默降级。
+
+**超时为什么是 300 秒**：同一模型同一条请求实测延迟 99.8 / 76.1 / 78.4 秒，另有一条
+120.1 秒的 read timeout ⇒ 120 秒压在实测分布的右尾上，长请求会被整齐地砍掉。
+这是把阈值移到**实测分布之外**，不是为绿调参。
+
+**四个模型都是 reasoning 模型**：`max_tokens` 给小了会拿到 `content: null` +
+`reasoning_tokens` 吃满预算 —— 那看起来像「模型没回答」，实际是输出上限不足。
+输出上限必须按**正文长度**给，不能按「一句话够不够」给。
+
+### 10.2 局域网地址的两道门（`RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS` 的名字误导）
+
+`192.168.101.9` 是**私有**地址 ⇒ `endpoint_policy` **默认拒绝**（§9 的 deny 姿态不变，
+这是**正确**行为）；拒绝的分类错误是 `ENDPOINT_URL_DENIED`。
+
+**放行开关叫 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS`，但它同时覆盖 private 与 link-local**
+（`services/api/assembly.py` 把同一个布尔量映射到 `allow_localhost` / `allow_private` /
+`allow_link_local` 三个字段）。**名字带 localhost 是历史命名，读的时候不要按字面理解**：
+设了它，`192.168.x.x` 也能过。取值语义与既有开发开关同形（`1`/`true`/`yes`/`on` 为开）。
+
+**它不改产品默认**：不设变量时仍然是 deny。放行只发生在**显式**设置了它的进程里。
+
+**判据侧读同一个变量**：`tests/e2e/manuscript_chain_live_support.py` 的
+`_allow_local_endpoints()` 读的就是它 —— 写死 `False` 会让「产品能跑、判据不能跑」，
+那条 live 判据就永远证明不了产品面可用（这是 GOAL-20261111-108 的 `R-4`）。
+
+### 10.3 一条实测陷阱：`.env` 里的 key 会**过期**，而门判不出这件事
+
+`LLM_MAIN_KEY` 在换站时**必须一起换**。实测（2026-11-11）：换站后 `.env` 里还留着上一个
+接入商的 key，于是
+
+- `EnvCredentialResolver.has("LLM_MAIN_KEY")` 仍然**为 `True`**（凭据「可解析」）；
+- `live_run_gate` 因此**开门**（三个条件里凭据那一格满足）；
+- 每一次真实调用都返回 **HTTP 401** `invalid api key`。
+
+也就是说：**「凭据可解析」与「凭据有效」是两件事**，门只判前者。判断后者只能靠一次
+真实调用。遇到 `MODEL_RELAY_UNAVAILABLE` 且上游正文含 401 时，先核 `.env` 的 key 是不是
+**本站**的，再怀疑产品代码。
+
 ## 11. 首次真实 run（live-gated）
 
 真实端点上的第一次 run 是**门控**动作，不是默认路径（AGENTS.md §11：Fake 仍是默认 runtime）。

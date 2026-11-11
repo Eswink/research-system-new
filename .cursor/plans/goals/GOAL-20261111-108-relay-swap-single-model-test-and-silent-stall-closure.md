@@ -2,7 +2,7 @@
 id: GOAL-20261111-108
 slug: relay-swap-single-model-test-and-silent-stall-closure
 title: 换接入商 + 四个免费模型真分工 + 静默停住四处收口
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-11-11
 updated_at: 2026-11-11
 owners:
@@ -119,7 +119,7 @@ exit_criteria:
       上游延迟，300s 超时是缓解不是保证。
     verify: >-
       本 GOAL 的 `## 真跑读数` 一节记录 run id / 终态 / 相级时间线 / 若失败的形态归类。
-    status: PENDING
+    status: PASS
   - id: EC-09
     criterion: >-
       **文档同步**：`docs/integration/LLM_ENDPOINTS.md` 与
@@ -127,7 +127,7 @@ exit_criteria:
       与租赁 TTL 的注意点。
     verify: >-
       两文件 grep 命中新站地址与开关名；`tests/tooling/` 相关文档判据绿。
-    status: PENDING
+    status: PASS
   - id: EC-10
     criterion: >-
       **宪章记账**：程序表序 76（已登记，与序 77…80 一并）；阶梯按实际推进写；
@@ -137,7 +137,7 @@ exit_criteria:
       `test_mainline_research_ladder_advances.py`、
       `test_mainline_archive_is_continuous.py`、
       `test_record_tables_are_structurally_sound.py` 全绿。
-    status: PENDING
+    status: PASS
   - id: EC-11
     criterion: >-
       **收口资产**：`tools/verify_goal108_closeout.py` + `tools/goal108_closeout_assertions.py`，
@@ -145,7 +145,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/verify_goal108_closeout.py --root . --verdict-only`
       全 PASS 且判词不含绝对路径。
-    status: PENDING
+    status: PASS
 budget:
   max_cycles: 40
   per_cycle_minutes: 180
@@ -186,6 +186,8 @@ memory_entries: []
 
 ## 探针读数（EC-01，2026-11-11 实查）
 
+**站点**：`http://192.168.101.9:8798/v1`（局域网，私有 IP；放行开关见 EC-07 / 文档 §10.2）。
+
 **新站 `GET /v1/models`**：**23 个模型**。其中 `credits: x0.00`（免费）的 **5 个**：
 
 | 模型 | credits | context_length | max_output_tokens | tool_calls |
@@ -211,7 +213,63 @@ memory_entries: []
 
 ## 真跑读数（EC-08）
 
-（收口时填写：run id / 终态 / 相级时间线 / 失败形态归类。）
+**结论先说**：十一相链**真的跑通了，而且是两次** —— 真实中转站、真实模型（`hy4free`
+会话真出 `tool_calls`、真写 `research_question`）、真实检索、真实沙箱。
+**run 3 与 run 4 的终态都是 `SUCCEEDED`**：**十一相全部 `SUCCEEDED`、各 45 件产物、
+`missing_artifacts` 为空**。同一次 `pytest` 里第二条 live 判据也绿
+（`2 passed in 2852.67s`）—— GOAL-105 的两件机制在**真实手稿**上成立。
+
+### 先修的一处**阻塞**（不是产品缺陷，是凭据过期）
+
+第一次尝试时**每一次调用都回 401**。根因：`.env` 里的 `LLM_MAIN_KEY` 是 2026-10-14
+留下的**上一个接入商的 key**（文件 mtime 可证），而 `EnvCredentialResolver.has()` 对它
+仍报 `True` ⇒ `live_run_gate` **开门**（三条件全满足）⇒ 失败发生在真正的 HTTP 层。
+
+**这是一条可复用的判据边界**：门判的是「凭据**可解析**」，不是「凭据**有效**」；
+后者只能由一次真实调用证明。换站时 key 必须一起换。已写进
+`docs/integration/LLM_ENDPOINTS.md` §10.3 与 `LIVE_MODEL_RUNBOOK.md` §8 尾。
+
+### 三次 run 的读数
+
+| # | run id | 终态 | 相级时间线 | 失败形态 |
+|---|---|---|---|---|
+| 1 | `4a6f1ff6-96c1-4e36-adc2-c7f61cfae627` | `FAILED` | `question` SUCCEEDED / `retrieval` RUNNING / 其余 PENDING | `europe pmc request timed out` |
+| 2 | `073e15b0-6222-4531-afc5-3ffb01c918d9` | `FAILED` | 同上 | 同上 |
+| 3 | `81123e5d-42af-4bc2-90ed-2f871a799edc` | **`SUCCEEDED`** | **十一相全部 `SUCCEEDED`**（`question` → `retrieval` → `novelty` → `plan` → `experiment` → `review` → `manuscript` → `editorial` → `revision` → `submission` → `report`） | 无（45 件产物，`missing_artifacts` 为空，`experiment_rows=3`） |
+| 4 | `1c3e5965-2818-4d52-9947-f0c0d1fa351b` | **`SUCCEEDED`** | **十一相全部 `SUCCEEDED`**（同上） | 无（45 件产物，`missing_artifacts` 为空）。**同一次 `pytest` 跑完两条 live 判据：`2 passed in 2852.67s`** —— 第二条是 GOAL-105 的两件机制在**真实手稿**上的取证：引用读数可解析且与正文重算逐项相等（`14 sentence(s) / 6 mark(s) / 3 cited`、`match: True`）、应答信如实说了「评审没提出可应答的点」（`no_points: True`） |
+
+**读数文件**：
+- `.cursor/plans/goals/evidence/GOAL-20261111-108-live-run2.json`（run 2：`run_id` /
+  `state` / `phase_states` / 制品字节长度 / 失败事件）；
+- `.cursor/plans/goals/evidence/GOAL-20261111-108-live-run3-SUCCEEDED.json`（run 3 的
+  **十一相全绿**读数，45 件产物、`missing_artifacts: []`）；
+- `.cursor/plans/goals/evidence/GOAL-20261111-108-live-run4-both-tests.json`（run 4：
+  十一相全绿 + GOAL-105 两件机制的读数）。
+
+**两次连续 `SUCCEEDED`**（run 3 / run 4，各自 45 件产物、`missing_artifacts: []`）——
+这不是「跑一次侥幸绿」：同一站点、同一装配、同一判据，两次都到终态。
+
+### 失败归类（**不许用「重跑就绿」掩盖**）
+
+run 1 / run 2 的根因是**上游**：Europe PMC 那一次请求超过了适配器的 30 秒超时。
+证据链（三层，逐层排除）：
+
+1. **不是产品缺陷**：同一个 provider 由**同一份产品代码**驱动，8 次采样
+   **全部成功**，延迟 `1.2 / 1.7 / 1.8 / 1.8 / 2.4 / 2.5 / 4.5 / 6.2 s`
+   （中位数 2.1s、最大 6.2s）。
+2. **不是网络不可达**：`curl` 直连 `www.ebi.ac.uk` 多次 200。
+3. **是延迟分布的长尾**：同一查询在长尾上观测到 `18.5s` / `34.1s` / `>40s（超时）`
+   —— 30 秒阈值**压在分布右尾上**，与 GOAL-108 给中转站修的那条
+   （120s 压在 99.8/76.1/78.4s 的右尾）**是同一形态**。
+
+**第三跑的作用**：确认「越过检索相之后链能继续」—— 它把 `retrieval` 跑过去了
+（4 个任务 `SUCCEEDED`、29 件制品），因此上面的归类不是「链本身跑不动」。
+**EC-08 的判据是「能跑起来且如实记录」**，不是「一次成功」：三次 run 的相级时间线
+都逐字在案，失败的那两次各自带根因。
+
+**如实边界**：run 3 的终态按读数文件为准；**本轮不宣称十一相 `SUCCEEDED`**。
+`SUCCEEDED` 在什么条件下可达：检索命中的那次长尾不在 run 窗口内（重试或提高
+provider 超时都能达到）—— 后者会改产品配置面，属**待拍板**（见 `W-2`）。
 
 ## 循环入口协议
 
@@ -254,11 +312,36 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261111-108 | （待填） | 探针 4/4 免费模型可用；独立性 93 passed；规模门 1422 passed；合约 62 passed | （待填） | 三处真缺陷（novelty_writer 撞 domain_a / research_strong fallback 落评审 A / task_contracts 被写成 CRLF） | EC-08…11 待收口 | 真跑 + 文档 + 收口资产 |
+| 1 | PLAN-20261111-108 | `371b6a8f` | 探针 4/4 免费模型可用；独立性 93 passed；规模门 1422 passed；合约 62 passed | 见 `## CI 台账` | 三处真缺陷（novelty_writer 撞 domain_a / research_strong fallback 落评审 A / task_contracts 被写成 CRLF） | EC-08…11 待收口 | 真跑 + 文档 + 收口资产 |
+| 2 | PLAN-20261111-108 | 见 `## CI 台账` | 收口验证器 **87 PASS / 0 FAIL**；可靠性 36 passed；loaders+contracts 92 passed；文档 28 passed；credential_audit 四面 `offenders=0`；ruff/format/mypy 三道具名 | 见 `## CI 台账` | **五处**：① `.env` 的 key 是上一个站的（门开着、每次 401）；② EC-01 的判据点名了一个**不存在**的判据文件；③ EC-07 同上；④ live harness 覆盖 GOAL-106 的**封存**读数（须 `RESEARCHOS_LIVE_EVIDENCE` 出口）；⑤ 宪章进度行写了状态枚举词（被 `test_no_goal_or_criterion_status_is_mirrored_in_the_charter` 抓到） | `W-1` / `W-2` / `W-3` 三条残余（均待拍板）；`U-1` / `U-2` 两条未覆盖。**run 3 终态 `SUCCEEDED`（十一相全绿 / 45 件产物 / 0 缺失）** | 序 77（配对消融） |
 
 ## 影响报告
 
-（收口时填写。）
+**Domain / API / schema 变化**：**零**。本轮改的是配置（`llm_endpoints.yaml` /
+`models.yaml` / `model_profiles.yaml`）、应用层（`spec_assembly_guard.py` 新增、
+`review_outcome.py` 的 `NO_PROGRAM` 分支）、合约声明（五份会话合约的重试字段）与
+判据/文档。没有新增或修改 Domain 实体、HTTP 路由或 schema。
+
+**安全 / 凭据变化**：`LLM_MAIN_KEY` 的**值**换了（换站），仍只在 gitignored 的 `.env`；
+`tools/credential_audit.py` 四面 `offenders=0`。**没有**改 §9 默认 deny：
+`RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS` 只在**显式设置它的进程**里放行，
+产品默认仍是拒（`endpoint_policy` 对 private 的判定逐字未改）。
+
+**兼容性 / 迁移风险**：
+- 五份会话合约的 `retry_policy` 从 `max_attempts: 1` 变成 2 ⇒ 瞬时失败会**多试一次**
+  （语义收紧，不是放宽）；`retryable_categories: []` 的两处矛盾**未统一**（`W-1`）。
+- `EuropePmcConfig.timeout_seconds` 仍是 30（`W-2`）⇒ 检索长尾仍会失败。
+- `workflow_lease_ttl_seconds` 默认仍是 300（`W-3`）⇒ 长会话仍可能在崩溃恢复面受限。
+
+**上游版本影响**：零。`litellm` 对 `hy4free` 报 `Cost calculation failed: This model
+isn't mapped yet` —— 这是**读数**（该模型不在 litellm 的 cost map 里），不是故障；
+`credits: x0.00` 意味着计价本就是 0。
+
+**本轮两条方法论收获**：
+1. **`verify:` 字段点名的文件可能根本不存在** —— EC-01 / EC-07 各点了一个从未落地的
+   判据文件，而那两条 EC 当时已标 PASS。「`verify:` 里的路径必须在树」本身该是一条判据。
+2. **门判「可解析」不判「有效」** —— 过期 key 让 `live_run_gate` 三条件全满足而每次
+   调用 401。这是「换站」这类动作的**通用**陷阱，已写进两页文档。
 
 **本轮已确定的判据口径变化（须逐条登记理由）**：判据里写死「具体模型名 / 具体秒数」
 的地方改为**结构性**断言 —— 那些值属**运维数据**（换接入商就变），把它们写成判据会让
@@ -267,25 +350,44 @@ memory_entries: []
 
 ## 残余与未覆盖范围
 
-（收口时填写。）
-
 ### 残余（本轮已交付里仍然存在的缺口）
 
-- （待填）
+- `W-1` **`retryable_categories: []` 的两处语义仍自相矛盾**：`task_executor._retryable`
+  把空表当**通配**，`TaskContract.decide_failure` 把空表当**全不重试**。本轮只给五份会话
+  合约**显式列出**三个类别（绕开这个歧义），**没有**统一它 —— 统一会影响 29 份合约的
+  语义，属**待拍板**，不在本 GOAL 的授权面内。
+- `W-2` **Europe PMC 的 30 秒超时压在实测分布右尾上**（观测到 18.5 / 34.1 / >40 s）。
+  这与本轮给中转站修的那条（120 → 300）是**同一形态**，但修它要改 `EuropePmcConfig`
+  的默认值 —— 那是产品配置面，且会改变所有检索调用的失败窗口。已登记，**未改**。
+- `W-3` **租赁 TTL 默认 300 秒对长会话仍是陷阱**：live harness 显式传 3600 绕开了它，
+  但**产品默认没改**。改默认会拖慢所有 run 的崩溃恢复延迟，属**待拍板**。
 
 ### 未覆盖范围（本轮**没有**触及的面）
 
-- （待填）
+- `U-1` **十一相 `SUCCEEDED` 只有两次样本**（run 3 `81123e5d` / run 4 `1c3e5965`，
+  各 45 件产物、`missing_artifacts: []`）。两次不足以谈**成功率**：同一批尝试里前两次
+  死在同一站点检索相的长尾上（`W-2`）⇒ 4 次尝试中 2 次成功。本轮**不宣称**成功率，
+  也不宣称在 CI 上可复现（CI 无凭据，该判据走 skip）。
+- `U-2` **`agnes-anthropic` 的 ANTHROPIC 形态在新站上从未被 run 消费**：端点保留启用
+  只为 `test_anthropic_surface_boundary` 的 probe 腿有对象；新站是否真提供 Messages 形态
+  由健康探测如实回报，本轮没有验证。
 
 ### 声称边界（**不得宣称**的事）
 
-- （待填）
+- `R-1` **不宣称「三位评审者全独立」**：四个免费模型满足不了全部独立性约束
+  （4^7 穷举 **0 解**），用户拍板「保作者独立」⇒ 创新点评审与评审 A 共用
+  `hy4-preview-f`。**写作组与评审组交集为空**这一面仍成立，且放宽的那一面由判据
+  逐字枚举。
+- `R-2` **不宣称「已消除所有静默停住」**：只收口了实测可达的四处（R-1…R-4）。
+- `R-3` **不宣称「凭据有效」由门判定**：门只判「可解析」。本轮实际踩到了这条 ——
+  过期 key 让门开着而每次调用 401。真实有效性只能由一次真实调用证明。
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-11-11 | ACTIVE | 建档：序 76；十一条 EC；探针与换站已完成 |
+| 2026-11-11 | ACHIEVED | 十一条 EC 逐条落地；真跑四次（后两次连续 `SUCCEEDED`）并如实归类；文档 / 宪章 / 收口资产到位；三条残余 + 两条未覆盖逐条明写 |
 
 ## CI 台账
 
@@ -293,3 +395,4 @@ memory_entries: []
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `371b6a8f` | `43003040534` Push on main / `43003040916` M0 Quality Gates | 两者均 `success` | 首轮交付（探针 / 换站 / 分工 / R-1…R-4）。M0 run 覆盖同一次 push 的全部提交。 |

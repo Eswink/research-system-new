@@ -473,4 +473,62 @@ Windows 上按**大小写不敏感**查找，但解析器把它拷贝成**普通
 但这**只降低追责口径，不放松纪律**：值仍然**不得**写入任何 tracked 文件、数据库、记录
 （PLAN / RECHECK / MEM / GOAL）、日志或命令回显；扫描面见 `tools/credential_audit.py`。
 
+**换站时 key 必须一起换（2026-11-11 实测，最容易踩的一条）**：换到局域网中转站后，
+`.env` 里还留着上一个接入商的 key，结果
+
+| 环节 | 实际发生 |
+| --- | --- |
+| `EnvCredentialResolver.has("LLM_MAIN_KEY")` | **`True`**（凭据「可解析」） |
+| `live_run_gate` 三条件 | **全满足** ⇒ 门**开** |
+| 每一次真实调用 | **HTTP 401** `invalid api key` |
+
+⇒ **门判的是「凭据可解析」，不是「凭据有效」**。后者只能由一次真实调用证明。看到
+`MODEL_RELAY_UNAVAILABLE` 且上游正文含 401 时，**先核 `.env` 的 key 是不是本站的**，
+再怀疑产品代码。判据：`curl -H "Authorization: Bearer $LLM_MAIN_KEY" <base_url>/models`
+应回 200 —— 401 就是 key 过期，换 key 后**新起进程**（解析器是快照，见上表）。
+
+## 9. 局域网中转站：开关、模型与两条陷阱
+
+**站点**：`http://192.168.101.9:8798/v1`（私有 IP）。端点、模型分工与超时的完整读数见
+[LLM_ENDPOINTS.md](LLM_ENDPOINTS.md) §10.1；本节只写**跑 live 前必须知道的四件事**。
+
+### 9.1 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS` 的名字是误导
+
+私有 IP 被 `endpoint_policy` 判成 `private` ⇒ **默认拒绝**（§9 的 deny 姿态，正确）。
+放行开关叫 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS`，但 `services/api/assembly.py`
+把它**同时**映射到 `allow_private` / `allow_link_local` ⇒ **设了它，`192.168.x.x` 也能过**。
+名字里的 localhost 只是历史命名。
+
+**它不持久化、也不改默认**：不设就仍然是 deny。live 判据侧读**同一个变量**
+（`tests/e2e/manuscript_chain_live_support.py` 的 `_allow_local_endpoints()`）——
+写死 `False` 会让「产品能跑、判据不能跑」。
+
+### 9.2 租约 TTL 300 秒对长会话是陷阱
+
+`workflow_lease_ttl_seconds` 默认 **300**（`services/api/settings.py`）。同步执行路径只在
+**会话开始前**心跳一次，而真实会话常常超过 300 秒 ⇒ 租约过期 ⇒
+`no matching lease for task`（GOAL-097 实测反复出现）。
+
+**live harness 一律用 3600**（`tests/e2e/manuscript_chain_live_support.py` 的
+`workflow_lease_ttl_seconds=3600`）。改**产品默认**会拖慢所有 run 的崩溃恢复延迟，
+所以那是**待拍板**项，不在本 runbook 的射程内；这里只记「跑长会话要显式传大值」。
+
+### 9.3 四个免费模型都是 reasoning 模型
+
+`max_tokens` 给小了会拿到 `content: null` + `reasoning_tokens` 吃满预算 ——
+**看起来像「模型没回答」，实际是输出上限不足**。输出上限按**正文长度**给。
+
+### 9.4 一次完整的 live 形态
+
+```bash
+set -a; . ./.env; set +a
+RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1 \
+RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1 \
+  uv run --frozen --no-sync python -B -m pytest \
+  tests/e2e/test_the_manuscript_chain_runs_live.py -q -rs
+```
+
+三个变量**逐命令传**，绝不写进 `.env` 或示例配置（`test_live_switch_is_single_source.py`
+会把持久化读成缺陷）。
+
 

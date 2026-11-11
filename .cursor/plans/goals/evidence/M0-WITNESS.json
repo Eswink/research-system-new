@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "0fd75a342f569e393072f16ade62e52d305f4e04"
+        "sha256": "0c849b955fd16984b464384e713144751cd732fd"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1383,8 +1383,12 @@
         "sha256": "4f227a2a504fafb77f67879d5fd437854fc2a832"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261112-241-verify-paths-and-credential-validity.md",
+        "sha256": "0c20f9f4eb169b62f8b32de179cb3dc94a0bf99c"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "13bf9736083ad619016e28f49b32b0472cbcc2e1"
+        "sha256": "2c3bfa86583bb0f4977fd820514a940df68bb7e8"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1844,15 +1848,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "305b6613d1c4d55008d472b5b67956303107228c"
+        "sha256": "177bb639dfb6472502a3b8738ece58b7c27958b8"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-108-relay-swap-single-model-test-and-silent-stall-closure.md",
-        "sha256": "cb6ef6c4351fec1d79ea321d82ab3776e21debd5"
+        "sha256": "c8f8b4bb963c785872ee510098e84edff2e3a8a4"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "4976bad054f6b20d11b3b8ed8d9671190bb7c369"
+        "sha256": "c72c797abf9d93a3606625c68aba1763fcd08905"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -2933,6 +2937,18 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-upstream-availability.txt",
         "sha256": "0b776d210ece52e2013c4cc038ae8a303ec71737"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261111-108-live-run2.json",
+        "sha256": "b977903974b7a4bb27edb16943eb41cadd53b2a7"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261111-108-live-run3-SUCCEEDED.json",
+        "sha256": "dbae5fbac26819e05296aebd20237becb7cc469a"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261111-108-live-run4-both-tests.json",
+        "sha256": "6166aa91a575cddbeabb1657b2d71a73dd853f39"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -4436,7 +4452,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261111-108-relay-swap-and-reliability.md",
-        "sha256": "9474276c19ef2a65b6f73d7fa5a53a877a222809"
+        "sha256": "8a4c3243db9d5e68c006abfd044ac64fd28740df"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -5868,7 +5884,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261111-108-relay-swap-and-reliability.md",
-        "sha256": "d8ca6d24dbab7da5cc1c880305bdf500d3d960b4"
+        "sha256": "eae3a60e45ad4fd96abb69faebc9b613c2b50cdc"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -12768,11 +12784,11 @@
       },
       {
         "path": "docs/integration/LIVE_MODEL_RUNBOOK.md",
-        "sha256": "365ac15df2d36dbc33ef061ed9bd3e83eb999958"
+        "sha256": "c2c23088f06d8d32e60810fda53b90a6063d452f"
       },
       {
         "path": "docs/integration/LLM_ENDPOINTS.md",
-        "sha256": "5080b67bfcb00c95a889f2ba1d7ce13322878ce3"
+        "sha256": "13fdfb7bdc4b22933f493e4cb835279c2038338a"
       },
       {
         "path": "docs/integration/MCP_TOOL_PROVIDERS.md",
@@ -18276,7 +18292,7 @@
       },
       {
         "path": "tests/e2e/manuscript_chain_live_support.py",
-        "sha256": "3e2296af8f3d2a74dfd52d120e41e3d6bc25547c"
+        "sha256": "ea6fe5874561adc47ceb964975ff3fabb8b60e21"
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
@@ -19100,7 +19116,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "ba09d1bd953abcc3d0e87f2f200ebd48ac41de35"
+        "sha256": "48b047b074cdf72f130c5ffd0099706828a5341a"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -19129,6 +19145,14 @@
       {
         "path": "tests/tooling/test_goal099_closeout_verifier_goes_red.py",
         "sha256": "7864e5e95e4ae2e1204957d452b9bc347bd4abdc"
+      },
+      {
+        "path": "tests/tooling/test_goal108_live_harness_reads_the_switch.py",
+        "sha256": "371ef35680df6a6a7b3b71aca01b4a70908ecf10"
+      },
+      {
+        "path": "tests/tooling/test_goal108_probe_readings.py",
+        "sha256": "139aef1640c99320566cd84dc279c4e13c441a86"
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
@@ -19236,7 +19260,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "3ca7cc139b1a9ca2cb67c330c8a65d72c8e91770"
+        "sha256": "e268649bb0f2ff657a319a7c11b1eea3f357d3ca"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -19855,6 +19879,10 @@
         "sha256": "574ae46830fb856c8475444345aa37298af5d6c0"
       },
       {
+        "path": "tools/goal108_closeout_assertions.py",
+        "sha256": "e2e9463d404a1ccf1baafb7d0c8f2efe0307dba8"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -20323,6 +20351,10 @@
         "sha256": "1b8fe7e1d189363bb236aee497000f7c9e5f9433"
       },
       {
+        "path": "tools/verify_goal108_closeout.py",
+        "sha256": "6c271665959478c66a684ae25c55ca96552e0214"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -20335,7 +20367,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "7fd4f45e37d2ca09ffe270c18143947735004e99"
+    "head": "371b6a8ff3b0ac19713720afd7c36433f0e86f0b"
   },
   "fingerprint_before": {
     "files": [
@@ -20757,7 +20789,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "0fd75a342f569e393072f16ade62e52d305f4e04"
+        "sha256": "0c849b955fd16984b464384e713144751cd732fd"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -21720,8 +21752,12 @@
         "sha256": "4f227a2a504fafb77f67879d5fd437854fc2a832"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261112-241-verify-paths-and-credential-validity.md",
+        "sha256": "0c20f9f4eb169b62f8b32de179cb3dc94a0bf99c"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "13bf9736083ad619016e28f49b32b0472cbcc2e1"
+        "sha256": "2c3bfa86583bb0f4977fd820514a940df68bb7e8"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22181,15 +22217,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261107-107-four-targets-frontend-citations-panel-script-authority.md",
-        "sha256": "305b6613d1c4d55008d472b5b67956303107228c"
+        "sha256": "177bb639dfb6472502a3b8738ece58b7c27958b8"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-108-relay-swap-single-model-test-and-silent-stall-closure.md",
-        "sha256": "cb6ef6c4351fec1d79ea321d82ab3776e21debd5"
+        "sha256": "c8f8b4bb963c785872ee510098e84edff2e3a8a4"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "4976bad054f6b20d11b3b8ed8d9671190bb7c369"
+        "sha256": "c72c797abf9d93a3606625c68aba1763fcd08905"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -23270,6 +23306,18 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261104-106-upstream-availability.txt",
         "sha256": "0b776d210ece52e2013c4cc038ae8a303ec71737"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261111-108-live-run2.json",
+        "sha256": "b977903974b7a4bb27edb16943eb41cadd53b2a7"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261111-108-live-run3-SUCCEEDED.json",
+        "sha256": "dbae5fbac26819e05296aebd20237becb7cc469a"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261111-108-live-run4-both-tests.json",
+        "sha256": "6166aa91a575cddbeabb1657b2d71a73dd853f39"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -24773,7 +24821,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261111-108-relay-swap-and-reliability.md",
-        "sha256": "9474276c19ef2a65b6f73d7fa5a53a877a222809"
+        "sha256": "8a4c3243db9d5e68c006abfd044ac64fd28740df"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -26205,7 +26253,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261111-108-relay-swap-and-reliability.md",
-        "sha256": "d8ca6d24dbab7da5cc1c880305bdf500d3d960b4"
+        "sha256": "eae3a60e45ad4fd96abb69faebc9b613c2b50cdc"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -33105,11 +33153,11 @@
       },
       {
         "path": "docs/integration/LIVE_MODEL_RUNBOOK.md",
-        "sha256": "365ac15df2d36dbc33ef061ed9bd3e83eb999958"
+        "sha256": "c2c23088f06d8d32e60810fda53b90a6063d452f"
       },
       {
         "path": "docs/integration/LLM_ENDPOINTS.md",
-        "sha256": "5080b67bfcb00c95a889f2ba1d7ce13322878ce3"
+        "sha256": "13fdfb7bdc4b22933f493e4cb835279c2038338a"
       },
       {
         "path": "docs/integration/MCP_TOOL_PROVIDERS.md",
@@ -38613,7 +38661,7 @@
       },
       {
         "path": "tests/e2e/manuscript_chain_live_support.py",
-        "sha256": "3e2296af8f3d2a74dfd52d120e41e3d6bc25547c"
+        "sha256": "ea6fe5874561adc47ceb964975ff3fabb8b60e21"
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
@@ -39437,7 +39485,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "ba09d1bd953abcc3d0e87f2f200ebd48ac41de35"
+        "sha256": "48b047b074cdf72f130c5ffd0099706828a5341a"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -39466,6 +39514,14 @@
       {
         "path": "tests/tooling/test_goal099_closeout_verifier_goes_red.py",
         "sha256": "7864e5e95e4ae2e1204957d452b9bc347bd4abdc"
+      },
+      {
+        "path": "tests/tooling/test_goal108_live_harness_reads_the_switch.py",
+        "sha256": "371ef35680df6a6a7b3b71aca01b4a70908ecf10"
+      },
+      {
+        "path": "tests/tooling/test_goal108_probe_readings.py",
+        "sha256": "139aef1640c99320566cd84dc279c4e13c441a86"
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
@@ -39573,7 +39629,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "3ca7cc139b1a9ca2cb67c330c8a65d72c8e91770"
+        "sha256": "e268649bb0f2ff657a319a7c11b1eea3f357d3ca"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -40192,6 +40248,10 @@
         "sha256": "574ae46830fb856c8475444345aa37298af5d6c0"
       },
       {
+        "path": "tools/goal108_closeout_assertions.py",
+        "sha256": "e2e9463d404a1ccf1baafb7d0c8f2efe0307dba8"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -40660,6 +40720,10 @@
         "sha256": "1b8fe7e1d189363bb236aee497000f7c9e5f9433"
       },
       {
+        "path": "tools/verify_goal108_closeout.py",
+        "sha256": "6c271665959478c66a684ae25c55ca96552e0214"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -40672,11 +40736,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "7fd4f45e37d2ca09ffe270c18143947735004e99"
+    "head": "371b6a8ff3b0ac19713720afd7c36433f0e86f0b"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "7fd4f45e37d2ca09ffe270c18143947735004e99",
+  "ran_at_head": "371b6a8ff3b0ac19713720afd7c36433f0e86f0b",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

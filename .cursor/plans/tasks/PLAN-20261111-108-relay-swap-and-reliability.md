@@ -2,7 +2,7 @@
 id: PLAN-20261111-108
 slug: relay-swap-and-reliability
 title: GOAL-108 子计划 —— 换接入商 + 四个免费模型真分工 + 静默停住四处收口
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-11-11
 updated_at: 2026-11-11
 parent_goal: GOAL-20261111-108
@@ -10,7 +10,8 @@ owners:
   - root-agent
 subagent_parallel_limit: 3
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261111-108-relay-swap-and-reliability.md
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20261112-241-verify-paths-and-credential-validity.md
 ---
 
 # PLAN-20261111-108
@@ -28,9 +29,9 @@ memory_entries: []
 - [x] R-2 `review_outcome` 的 resume 阻塞（`NO_PROGRAM`）
 - [x] R-3 五份会话合约重试声明
 - [x] R-4 live harness 读产品同一开关
-- [ ] 真跑一次十一相链（需要凭据与开关，另窗口）
-- [ ] 文档同步
-- [ ] 收口资产与宪章收口
+- [x] 真跑一次十一相链（三次独立 run；读数逐条落盘，根因归类见 GOAL 的 `## 真跑读数`）
+- [x] 文档同步（`LLM_ENDPOINTS.md` §10.1-10.3 / `LIVE_MODEL_RUNBOOK.md` §9 + §8 尾）
+- [x] 收口资产与宪章收口（`verify_goal108_closeout.py` + 断言集，已登记两处）
 
 ## 复检
 
@@ -53,20 +54,27 @@ memory_entries: []
 - [x] 换站（EC-02）
 - [x] 模型分工（EC-03）
 - [x] R-1…R-4（EC-04…07）
-- [ ] 真跑（EC-08）
-- [ ] 文档（EC-09）
-- [ ] 宪章（EC-10）
-- [ ] 收口资产（EC-11）
+- [x] 真跑（EC-08）
+- [x] 文档（EC-09）
+- [x] 宪章（EC-10）
+- [x] 收口资产（EC-11）
 
 ## 证据
 
 探针读数见 GOAL 的 `## 探针读数`；可靠性四件的判据见：
 `tests/application/test_spec_assembly_guard.py`（9 passed）、
 `tests/application/test_review_outcome_no_program.py`（6 passed）、
-`tests/application/test_session_contract_retries.py`（12 passed）。
+`tests/application/test_session_contract_retries.py`（12 passed）、
+`tests/tooling/test_goal108_live_harness_reads_the_switch.py`（8 passed）、
+`tests/tooling/test_goal108_probe_readings.py`（9 passed）。
+
+**本轮补建的两个判据文件**：EC-01 与 EC-07 的 `verify:` 字段各点名了一个**从未落地**的
+判据文件，而那两条 EC 当时已标 PASS —— 补建时才暴露。形态可复用：
+**「`verify:` 字段里的路径必须在树」本身就该是一条判据。**
 
 ## 状态历史
 
 | 日期 | 状态 | 说明 |
 | --- | --- | --- |
 | 2026-11-11 | IN_PROGRESS | 建档；探针 / 换站 / 分工 / R-1…R-4 已完成 |
+| 2026-11-11 | DONE | 十一条 EC 全 PASS；真跑三次并如实归类；文档与收口资产落地 |

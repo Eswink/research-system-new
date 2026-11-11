@@ -23,7 +23,18 @@ from pathlib import Path
 from typing import Any
 
 #: 本轮的取证文件（读数逐条落盘；**失败路径也写**）。
-EVIDENCE = Path(".cursor/plans/goals/evidence/GOAL-20261104-106-manuscript-chain-live.json")
+#:
+#: **GOAL-20261111-108 实测的一处缺陷**：这个路径是**GOAL-106 已封存的读数**，
+#: 而判据每跑一次就覆盖它 —— 于是「再跑一次 live 判据」会把一个**已完成 GOAL** 的
+#: 证据换成本次读数（实测：GOAL-106 的 `SUCCEEDED` 被换成 `FAILED`，
+#: `goal106_closeout_assertions.py` 的两条同向判据随之判负）。
+#: 修法不是改 GOAL-106 的判据（那会让它失去受判对象），而是给**新的 live 轮次**一个
+#: 显式出口：`RESEARCHOS_LIVE_EVIDENCE` 指向别的文件时写那里；缺省仍是原路径
+#: （GOAL-106 的判据因此逐字不受影响）。
+EVIDENCE = Path(
+    os.environ.get("RESEARCHOS_LIVE_EVIDENCE")
+    or ".cursor/plans/goals/evidence/GOAL-20261104-106-manuscript-chain-live.json"
+)
 #: 十一相协议。
 PROTOCOL = "direction_to_manuscript_v1.yaml"
 PROTOCOL_ID = "direction_to_manuscript_v1_0_0"

@@ -1,0 +1,175 @@
+{
+  "protocol": "direction_to_manuscript_v1_0_0",
+  "direction": "retrieval augmentation for scientific hypothesis generation",
+  "direction_status": 200,
+  "interface": "assemble() product root, no seams patched",
+  "http_status": 200,
+  "http_body": "{\"id\":\"1c3e5965-2818-4d52-9947-f0c0d1fa351b\",\"project_id\":\"example-project\",\"protocol_id\":\"direction_to_manuscript_v1_0_0\",\"state\":\"SUCCEEDED\",\"manifest_digest\":\"sha256:1cd415cb718dbd2754e40c16cd7b5d604cf8f38f2dd3a8ad938a4f4f0daabc2e\",\"manifest_semantic_digest\":\"sha256:677bc42cc6c9ef31340f34a978b46aba8461daf57b2eb8354c8c3b2770a115af\",\"protocol_body_digest\":\"sha256:8029a00d39ce4b03066bc07b45f41f5b29cd48851dbfc2d1aa2bedeeb3411511\",\"paused_dispatch\":null,\"dispatch\":{\"kind\":\"NONE\",\"retry\":{\"scheduled\":0,\"due\":0,\"next_retry_at\":null},\"holders\":[]},\"rebuild\":{\"status\":\"SELF_CONTAINED\",\"missing\":[]},\"execution\":{\"execution_backend\":null,\"runtime_fingerprint\":{\"status\":\"NOT_VERIFIED\",\"substrate\":null,\"reason\":\"missing fingerprint fields: returned_model_identifier\",\"source\":\"RUN_OBSERVATION\",\"endpoint_config_digest\":\"sha256:446ac9ca19e93213b0695cef099c751c636a6bc8df5bf4308e76bdd41bd6e429\",\"returned_model_identifier\":null,\"probe_suite_digest\":\"sha256:d384cbb5911eb67f0b2a51e12a067e29b9180b11d7a56e77ae44f38d52b85405\",\"system_fingerprint\":null,\"observed_model_identifiers\":[\"openai/hy3\",\"openai/hy4-preview-f\",\"openai/hy4free\"],\"missing_fields\":[\"returned_model_identifier\",\"safe_response_metadata",
+  "run_id": "1c3e5965-2818-4d52-9947-f0c0d1fa351b",
+  "state": "SUCCEEDED",
+  "artifact_ids": [
+    "031e0217-fd14-430a-ad41-455fae279946:retrieval_context",
+    "031e0217-fd14-430a-ad41-455fae279946:submission_package",
+    "0950c0fa-598f-4af9-8c38-fc09aa42d970:retrieval_context",
+    "0950c0fa-598f-4af9-8c38-fc09aa42d970:review_decision",
+    "13b0ae97-db47-4fee-b3f3-7bf2b9fecdbc:author_responses",
+    "13b0ae97-db47-4fee-b3f3-7bf2b9fecdbc:retrieval_context",
+    "1c3e5965-2818-4d52-9947-f0c0d1fa351b:author_contributions.md",
+    "1c3e5965-2818-4d52-9947-f0c0d1fa351b:conflicts_of_interest.md",
+    "1c3e5965-2818-4d52-9947-f0c0d1fa351b:cover_letter.md",
+    "1c3e5965-2818-4d52-9947-f0c0d1fa351b:data_availability.md",
+    "1c3e5965-2818-4d52-9947-f0c0d1fa351b:manuscript.md",
+    "1c3e5965-2818-4d52-9947-f0c0d1fa351b:manuscript_v2.md",
+    "1c3e5965-2818-4d52-9947-f0c0d1fa351b:research_report.md",
+    "1c3e5965-2818-4d52-9947-f0c0d1fa351b:response_letter.md",
+    "1c3e5965-2818-4d52-9947-f0c0d1fa351b:supplementary.md",
+    "1cb7e738-4131-443e-9127-14cd7f23a9e2:editorial_decision",
+    "1cb7e738-4131-443e-9127-14cd7f23a9e2:retrieval_context",
+    "3b0b75cb-3e31-4dad-8e23-f81c08cdfd64:retrieval_context",
+    "3b0b75cb-3e31-4dad-8e23-f81c08cdfd64:review_decision",
+    "448db7e5-ee15-4478-af1b-6dd38f09a046:manuscript_narrative",
+    "448db7e5-ee15-4478-af1b-6dd38f09a046:retrieval_context",
+    "780ebe85-1c0d-4a6b-b173-cbc3c5202256:experiment_result.json",
+    "780ebe85-1c0d-4a6b-b173-cbc3c5202256:metrics",
+    "780ebe85-1c0d-4a6b-b173-cbc3c5202256:stderr.log",
+    "780ebe85-1c0d-4a6b-b173-cbc3c5202256:stdout.log",
+    "79ad0d00-1cd4-4b0e-82c9-036bc947a16e:novelty_claim",
+    "79ad0d00-1cd4-4b0e-82c9-036bc947a16e:retrieval_context",
+    "8247ea0f-79ee-4886-8dc4-b7a4621b168a:research_question",
+    "8247ea0f-79ee-4886-8dc4-b7a4621b168a:retrieval_context",
+    "857176c9-0fdb-458e-904d-da4b7e58c31f:research_plan",
+    "857176c9-0fdb-458e-904d-da4b7e58c31f:retrieval_context",
+    "92234c91-ec01-479c-8d2d-cff843a1c20b:experiment_result.json",
+    "92234c91-ec01-479c-8d2d-cff843a1c20b:metrics",
+    "92234c91-ec01-479c-8d2d-cff843a1c20b:stderr.log",
+    "92234c91-ec01-479c-8d2d-cff843a1c20b:stdout.log",
+    "a3cc9762-6a6f-45d1-915d-8e92f70f909c:experiment_result.json",
+    "a3cc9762-6a6f-45d1-915d-8e92f70f909c:metrics",
+    "a3cc9762-6a6f-45d1-915d-8e92f70f909c:stderr.log",
+    "a3cc9762-6a6f-45d1-915d-8e92f70f909c:stdout.log",
+    "b0116db3-0caa-437e-b74a-56cdae6a2496:retrieval_context",
+    "b0116db3-0caa-437e-b74a-56cdae6a2496:retrieval_report",
+    "tool-args:b0116db3-0caa-437e-b74a-56cdae6a2496:literature_read:42787049+42964527+42955413",
+    "tool-args:b0116db3-0caa-437e-b74a-56cdae6a2496:literature_search",
+    "tool-result:b0116db3-0caa-437e-b74a-56cdae6a2496:literature_read:42787049+42964527+42955413:literature_read",
+    "tool-result:b0116db3-0caa-437e-b74a-56cdae6a2496:literature_search:literature_search"
+  ],
+  "missing_artifacts": [],
+  "artifact_count": 45,
+  "present:research_question": true,
+  "length:research_question": 896,
+  "present:retrieval_report": true,
+  "length:retrieval_report": 2105,
+  "present:novelty_claim": true,
+  "length:novelty_claim": 1747,
+  "present:research_plan": true,
+  "length:research_plan": 5620,
+  "present:review_decision": true,
+  "length:review_decision": 3810,
+  "present:manuscript_narrative": true,
+  "length:manuscript_narrative": 6784,
+  "present:editorial_decision": true,
+  "length:editorial_decision": 1644,
+  "present:author_responses": true,
+  "length:author_responses": 9698,
+  "present:submission_package": true,
+  "length:submission_package": 1365,
+  "present:research_report.md": true,
+  "length:research_report.md": 3955,
+  "present:manuscript.md": true,
+  "length:manuscript.md": 11679,
+  "present:cover_letter.md": true,
+  "length:cover_letter.md": 974,
+  "present:author_contributions.md": true,
+  "length:author_contributions.md": 987,
+  "present:conflicts_of_interest.md": true,
+  "length:conflicts_of_interest.md": 481,
+  "present:data_availability.md": true,
+  "length:data_availability.md": 3969,
+  "present:supplementary.md": true,
+  "length:supplementary.md": 1031,
+  "present:manuscript_v2.md": true,
+  "length:manuscript_v2.md": 14576,
+  "present:response_letter.md": true,
+  "length:response_letter.md": 70,
+  "manuscript": "# Retrieval Augmentation for Scientific Hypothesis Generation: An Evidence-Limited Controlled Report\n\n- **run**: `1c3e5965-2818-4d52-9947-f0c0d1fa351b`\n- **protocol**: `direction_to_manuscript_v1_0_0`\n- **assembly state**: `RUNNING`\n- **narrative author**: model_assisted:writer\n- **returned model**: ``\n- **narrative digest**: `163c94ee8100e53a19b3c7cc309b5d50beed1aa97d7cf8e2fc3b7bc309c28a76`\n- **research question (this run's own; quoted verbatim)**: {\"research_question\": {\"query\": \"retrieval augmented generation scientific hypothesis\", \"rationale\": \"This follows from the direction because the gap concerns how retrieval-augmented generation grounds scientific hypothesis generation.\"}}\n\n## Abstract\n\nWe ask whether retrieval augmentation can make scientific hypothesis generation literature grounded and evaluable at the same time. The agentic retrieval-augmented language-model record for integrated animal-human nutrition intelligence [1] motivates the question; the study of retrieval configurations for clinical information extraction from electronic health record notes [2] shows that configuration choices matter in an applied setting; and the BILBO platform for self-hosted large-scale RNA-Seq analysis with functional annotation clustering [3] shows how structured domain interpretation can be organized. The reviewed run record supplied for writing names no arms, parameter settings, measurements, or outcome facts beyond these sources. We therefore present a submission-shaped evidence report that states the question, positions it against the retrieved literature, records the absence of run-level methods and measurements, and explains why that absence prevents claims of benefit, harm, or equivalence. The contribution is a disciplined boundary: a citable problem statement and a transparent account of what cannot yet be concluded.\n\n## 1. Introduction\n\nScientific hypothesis generation matters because a proposed mechanism must be novel enough to motivate investigation and grounded enough to be checked against prior evidence. Retrieval augmentation is attractive because it can expose a generator to literature before a hypothesis is stated, yet the same exposure can narrow exploration or import errors from retrieved text. The defensible novelty claim is not that access to literature automatically improves hypotheses, but that literature grounding and controlled attribution must be evaluated together. The central question is whether literature access improves evidential quality under a controlled comparison, not merely whether a system can produce fluent suggestions. Answering it requires named experimental arms, parameter choices, and measured facts tied to the constructs under test. The supplied run record provides none, so the question remains important but unresolved.\n\n## 2. Related Work\n\nThe closest retrieved record is the agentic retrieval-augmented language-model study for integrated animal-human nutrition intelligence [1]. It establishes a domain-specific vision for agentic retrieval in scientific reasoning, but leaves open whether retrieval-supported hypothesis generation transfers beyond nutrition and whether controlled comparisons separate retrieval effects from generator effects. The clinical extraction study [2] evaluates retrieval configurations on electronic health record notes in aged care, showing that configuration is consequential for extraction, while leaving open generative hypothesis quality, cross-domain evidence use, and mechanism-level novelty. The BILBO platform [3] offers self-hosted large-scale RNA-Seq analysis with functional annotation clustering, which is relevant to structured biological interpretation, but it leaves open literature-grounded hypothesis generation and the evaluation of retrieved evidence in generated claims. These records motivate retrieval-aware scientific reasoning, yet no record supplies the controlled hypothesis-generation comparison needed here.\n\n## 3. Methods\n\nThe reviewed run record supplied for this writing phase contains the project direction and the retrieved citations, but no arm labels, parameter settings, corpus divisions, retrieval configurations, generator settings, prompting rules, judging rules, repetition counts, or named outcome facts. Because the experiment is described as already run yet its arms and parameters are not listed, we do not reconstruct them. The method reported here is therefore evidence-limited: we retain the citable research question, identify the comparison constructs that a controlled study would need, and mark run-specific procedural detail as unrecoverable from the supplied record. This avoids inventing a protocol that the run did not actually use.\n\n## 4. Results\n\nNo measured facts from the run are available by name, so no arm-level direction, separation, ranking, or significance can be reported. The retrieved records provide citable context for why such facts would be needed: agentic retrieval in nutrition intelligence [1], retrieval configurations in clinical extraction [2], and annotation clustering in RNA-Seq analysis [3] concern evidence handling, but no retrieved record reports the outcomes of the hypothesis-generation experiment described in this run. The separate machine-assembled data table under Results is the designated home for quantities; because no table content was supplied, this section states the absence rather than substituting narrative numbers. The result that can be checked is therefore negative in an evidential sense: the available record supports no comparative claim about retrieval augmentation for scientific hypothesis generation.\n\n### Table 1. Measured quantities and retrieved records (assembler-written; the only place in this manuscript where numbers appear)\n\n| 类别 | 名称 | 值 | 来源 |\n| --- | --- | --- | --- |\n| 指标 | `agreement` | true | `780ebe85-1c0d-4a6b-b173-cbc3c5202256` |\n| 指标 | `agreement` | true | `92234c91-ec01-479c-8d2d-cff843a1c20b` |\n| 指标 | `agreement` | true | `a3cc9762-6a6f-45d1-915d-8e92f70f909c` |\n| 指标 | `comparison_reduction_ratio` | 956.0 | `780ebe85-1c0d-4a6b-b173-cbc3c5202256` |\n| 指标 | `comparison_reduction_ratio` | 178.5 | `92234c91-ec01-479c-8d2d-cff843a1c20b` |\n| 指标 | `comparison_reduction_ratio` | 238.0 | `a3cc9762-6a6f-45d1-915d-8e92f70f909c` |\n| 指标 | `duplicates_expected` | 30 | `780ebe85-1c0d-4a6b-b173-cbc3c5202256` |\n| 指标 | `duplicates_expected` | 40 | `92234c91-ec01-479c-8d2d-cff843a1c20b` |\n| 指标 | `duplicates_expected` | 30 | `a3cc9762-6a6f-45d1-915d-8e92f70f909c` |\n| 指标 | `duplicates_found` | 30 | `780ebe85-1c0d-4a6b-b173-cbc3c5202256` |\n| 指标 | `duplicates_found` | 40 | `92234c91-ec01-479c-8d2d-cff843a1c20b` |\n| 指标 | `duplicates_found` | 30 | `a3cc9762-6a6f-45d1-915d-8e92f70f909c` |\n| 指标 | `indexed_comparisons` | 30 | `780ebe85-1c0d-4a6b-b173-cbc3c5202256` |\n| 指标 | `indexed_comparisons` | 40 | `92234c91-ec01-479c-8d2d-cff843a1c20b` |\n| 指标 | `indexed_comparisons` | 30 | `a3cc9762-6a6f-45d1-915d-8e92f70f909c` |\n| 指标 | `n_items` | 240 | `780ebe85-1c0d-4a6b-b173-cbc3c5202256` |\n| 指标 | `n_items` | 120 | `92234c91-ec01-479c-8d2d-cff843a1c20b` |\n| 指标 | `n_items` | 120 | `a3cc9762-6a6f-45d1-915d-8e92f70f909c` |\n| 指标 | `pairwise_comparisons` | 28680 | `780ebe85-1c0d-4a6b-b173-cbc3c5202256` |\n| 指标 | `pairwise_comparisons` | 7140 | `92234c91-ec01-479c-8d2d-cff843a1c20b` |\n| 指标 | `pairwise_comparisons` | 7140 | `a3cc9762-6a6f-45d1-915d-8e92f70f909c` |\n| 指标 | `seed` | 42 | `780ebe85-1c0d-4a6b-b173-cbc3c5202256` |\n| 指标 | `seed` | 42 | `92234c91-ec01-479c-8d2d-cff843a1c20b` |\n| 指标 | `seed` | 42 | `a3cc9762-6a6f-45d1-915d-8e92f70f909c` |\n| 来源 | `42787049` | Toward an integrated animal-human nutrition intelligence via agentic retrieval-augmented language models. | `evidence:1c3e5965-2818-4d52-9947-f0c0d1fa351b:b0116db3-0caa-437e-b74a-56cdae6a2496:literature_read:42787049+42964527+42955413` |\n| 来源 | `42955413` | BILBO: a self-hosted platform for large-scale RNA-Seq analysis with a functional annotation clustering framework. | `evidence:1c3e5965-2818-4d52-9947-f0c0d1fa351b:b0116db3-0caa-437e-b74a-56cdae6a2496:literature_read:42787049+42964527+42955413` |\n| 来源 | `42964527` | Evaluating RAG Configurations for Clinical Information Extraction from EHR Notes: Aged Care Case Study. | `evidence:1c3e5965-2818-4d52-9947-f0c0d1fa351b:b0116db3-0caa-437e-b74a-56cdae6a2496:literature_read:42787049+42964527+42955413` |\n| 评审 | `decision` | PASS | `review_findings` |\n| 评审 | `reason` | ARTIFACT_EXISTS: artifact author_responses exists; EVIDENCE_COVERAGE: 1 >= 1 sources | `review_findings` |\n\n## 5. Discussion\n\nThe position that remains defensible is narrow. Retrieval augmentation is a plausible route to literature-grounded scientific hypothesis generation, and the retrieved record [1] gives that route a concrete agentic formulation, while [2] warns that configuration choices can change what a system recovers and [3] shows how domain annotation can organize interpretation. What is weak is the evidentiary chain: without named arms, parameters, and measured facts, a reviewer cannot attribute any difference to retrieval, cannot assess whether hypotheses were novel or merely paraphrased, and cannot judge citation fidelity or robustness across domains. The missing table matters because it would have separated observed effects from rhetorical claims; its absence makes the study suitable as a problem statement and a caution about reporting discipline, not as evidence that retrieval helps or harms hypothesis generation.\n\n## 6. Conclusion\n\nThis manuscript defines a citable question, positions it against the retrieved literature, and records why the supplied run cannot answer it. The next necessary step is to publish the actual arms, parameters, and named measurements in the separate data table, then interpret those facts without adding quantities to the prose. Until then, retrieval augmentation for scientific hypothesis generation remains an open, important, and unproven claim.\n\n## References\n\n1. Tedeschi LO, Greer N, Kaniyamattam K, Mudireddy D, Strong R, Surabhi PSM, et al. Toward an integrated animal-human nutrition intelligence via agentic retrieval-augmented language models. Front Nutr. 2026. doi:10.3389/fnut.2026.1815038 PMID:42787049\n2. Vithanage D, Duong QV, Deng C, Acharya R, Gu Z, Song T, et al. Evaluating RAG Configurations for Clinical Information Extraction from EHR Notes: Aged Care Case Study. J Healthc Inform Res. 2026. doi:10.1007/s41666-026-00254-8 PMID:42964527\n3. da Silva VLC, Alvarenga JVR, Linhares-Neto MV, Noman M, Chalfun-Junior A.. BILBO: a self-hosted platform for large-scale RNA-Seq analysis with a functional annotation clustering framework. Funct Integr Genomics. 2026. doi:10.1007/s10142-026-02091-9 PMID:42955413\n\n**Who wrote which face (recorded, not asserted)**:\n\n- The Abstract and the six numbered sections are **model-written** (model_assisted:writer, returned model ``): the body carries no digits — a numeral is refused by name, never silently stripped.\n- The data table under Results and the whole of ## References are **assembler-written**: every value is taken verbatim from this run's persisted facts, every reference line from the retrieved tool-result bytes. Columns: 类别, 名称, 值, 来源.\n- The manuscript covers **this run only**; conclusions across runs are not in it, and the reliability of the findings rests on the upstream phases' own criteria.\n- **Citation distribution (readings, not a judgement)**: 14 sentence(s) scored / 6 mark(s) / 3 cited reference(s) / single-support section(s): none. These are counts: whether the citation set is **sufficient** is not decided here (no threshold is calibrated) — see `docs/architecture/MANUSCRIPT_QUALITY.md` §7.\n",
+  "response_letter": "## Response to Review\n\n_This run's review raised no points to answer._",
+  "author_responses": "{\"content\":\"```json\\n{\\\"author_responses\\\": []}\\n```\\n\\n```json\\n{\\\"revised_manuscript\\\": {\\\"title\\\": \\\"Retrieval-Augmented Scientific Hypothesis Generation: Grounding Discovery in Organized Evidence\\\", \\\"abstract\\\": \\\"Scientific hypothesis generation depends on connecting dispersed findings across literatures, yet language models used in isolation tend to produce plausible but ungrounded claims. We examine retrieval augmentation as a means of anchoring generative reasoning in curated evidence. Drawing on agentic retrieval for integrated animal-human nutrition intelligence [1], comparative evaluation of retrieval configurations for clinical information extraction [2], and functional annotation clustering for large-scale transcriptomic analysis [3], we outline a framework in which retrieved documents both constrain and inspire candidate hypotheses. The proposed pipeline decomposes a research question, retrieves heterogeneous evidence, clusters related functional signals, and generates hypotheses with explicit evidential provenance. Our design analysis indicates that configuration choices in retrieval strongly affect the specificity and traceability of generated hypotheses, and that clustering annotations before generation reduces paraphrastic redundancy. We discuss limitations, including corpus bias and the risk of confirmatory retrieval, and we propose evaluation practices centered on novelty, testability, and fidelity to sources. We make no claim of empirical superiority, because the evidence we synthesize does not establish one.\\\", \\\"introduction\\\": \\\"Hypothesis formation is the creative core of scientific work, but the volume of published evidence exceeds what any investigator can hold in view. Retrieval augmentation offers a practical response: instead of asking a language model to generate from parametric memory alone, the system supplies documents at inference time and asks the model to reason over them. Recent domain studies show both the promise and the fragility of this arrangement. Agentic retrieval has been used to bridge animal and human nutrition knowledge [1]; systematic comparisons of retrieval configurations reveal marked differences in extraction quality from clinical notes [2]; and self-hosted analysis platforms demonstrate that clustering functional annotations can turn high-throughput data into interpretable structure [3]. Together, these lines of work suggest that hypothesis generation may benefit less from a larger generator than from a better organized evidence stream. In this manuscript we ask how retrieval design, evidence clustering, and provenance tracking jointly shape the hypotheses a system proposes, and we offer a framework that treats retrieval as an active component of discovery rather than a passive lookup step. We restrict our claims to what the cited evidence supports, and we frame the contribution as a synthesis with testable design commitments rather than a reported empirical benchmark.\\\", \\\"related_work\\\": \\\"Prior work falls into three strands. The first concerns agentic retrieval, in which a model plans searches, issues queries, and revises them in light of intermediate results; the integrated nutrition intelligence system illustrates how such loops can connect otherwise separate literatures [1]. The second concerns configuration evaluation: work on clinical information extraction from electronic health record notes compares alternative retrieval setups and shows that extraction quality is sensitive to choices often left implicit [2]. The third concerns the organization of derived evidence at scale; a self-hosted sequencing platform with functional annotation clustering shows how grouping related signals makes downstream interpretation tractable [3]. Our synthesis differs in emphasis. Where these strands target question answering, extraction, or annotation, we target the generation of hypotheses that are both novel and testable, and we treat provenance and clustering as central requirements. We also note a gap: configuration studies in clinical settings [2] caution that gains attributed to a generator may in fact arise from retrieval choices, a confound that any evaluation of hypothesis generation must control.\\\", \\\"methods\\\": \\\"Our framework comprises four stages. Question decomposition splits a broad research direction into subquestions that can be matched against a corpus. Retrieval then draws candidate documents using a configuration held fixed across comparisons, because the configuration sensitivity documented in clinical extraction [2] would otherwise confound the interpretation of generated hypotheses. Evidence organization groups retrieved items by functional annotation, following the clustering logic used in transcriptomic platforms [3], so that the generator sees coherent bundles rather than a flat list of passages. Generation asks the model to propose hypotheses, each accompanied by the identifiers of supporting documents and an explicit statement of what would falsify the claim; agentic query revision is used only when the retrieved set fails to cover a subquestion, mirroring the planning loop described for nutrition intelligence [1]. We specify no new benchmark here; instead, we define a qualitative protocol in which each proposed hypothesis is checked for evidential support, internal consistency, and testability. Provenance links are retained throughout, so that every claim can be traced to a retrieved item and every retrieval decision can be inspected. Because we report a synthesis, we deliberately avoid numeric performance claims that our sources do not support.\\\", \\\"results\\\": \\\"Because this work is a synthesis rather than a new empirical study, our results are analytic. Treating retrieval configuration as a controlled variable follows directly from comparative findings in clinical information extraction [2], where configuration choices materially changed what was extracted from the same notes; accordingly, we report design consequences rather than performance figures. Clustering functional annotations before generation, as in large-scale sequencing analysis [3], reduces the chance that the model restates a single dominant source in several paraphrases, and it exposes where evidence is thin. Agentic retrieval can broaden coverage across disconnected literatures, as shown in integrated nutrition intelligence [1], but the same flexibility can amplify confirmatory search, so we constrain query revision to documented coverage gaps. Applied together, these commitments yield hypotheses that carry explicit provenance, that name a falsifying observation, and that can be audited against the retrieved corpus. At the level of design analysis, we observe that traceability and novelty pull against each other: tighter grounding improves fidelity while narrowing the space of surprising proposals. These analytic findings are stated as commitments to be tested, not as measured effects.\\\", \\\"discussion\\\": \\\"The central implication is methodological. Evaluation of retrieval-augmented hypothesis generation should separate the contribution of retrieval from that of generation, a distinction that configuration studies in clinical settings already make visible [2]. Our emphasis on clustering also generalizes beyond transcriptomics: the functional annotation framework [3] suggests that grouping evidence by mechanism, rather than by lexical similarity, may improve the coherence of generated hypotheses. Agentic retrieval adds breadth [1], yet it introduces a failure mode specific to hypothesis generation, namely that a planner can search for support of a favored idea. We therefore recommend logging queries, requiring coverage checks before a hypothesis is emitted, and reporting the retrieved set alongside each claim. Limitations are substantial. The framework inherits corpus bias, depends on annotation quality, and has not been validated against prospective laboratory or clinical outcomes. Claims about novelty are especially fragile, since a system can only be novel relative to what it retrieved. We also caution that the cited studies come from nutrition, clinical extraction, and sequencing platforms [1], [2], [3]; transfer to other domains is a hypothesis, not an established result. Where reasonable disagreement is possible, we retain our design commitments rather than weakening them to fit an untested benchmark.\\\", \\\"conclusion\\\": \\\"We have argued that retrieval augmentation for scientific hypothesis generation is best understood as an evidence-organization problem. Agentic retrieval [1], configuration-aware evaluation [2], and functional annotation clustering [3] each address part of the challenge; combined, they support a pipeline in which hypotheses are grounded, clustered, and auditable. We make no claim of empirical superiority, and we deliberately avoid reporting quantities that our sources do not establish. Instead, we commit to a set of design practices: fix and disclose retrieval configuration, cluster evidence before generation, require provenance and a falsifying observation for every hypothesis, and log retrieval decisions. Future work should test these commitments prospectively, compare clustered against flat evidence presentation, and measure whether provenance constraints change expert judgments of novelty and testability. If retrieval is to serve discovery rather than mere recall, it must leave a trace that a scientist can check.\\\"}}\\n```\",\"contract_id\":\"author_response\",\"conversation_id\":\"608fc226-24ab-4a24-9e27-46aa42597ed7\",\"declared_artifact\":\"author_responses\",\"fact_name\":\"session_message\",\"message_count\":2,\"session_id\":\"11c6484b-bc80-4d49-b114-de819a62b594\"}",
+  "review_decision": "{\"content\":\"# EC-04 独立复核报告（评审 phase 交付物）\\n\\n## 0. 本交付物的契约自证（按我自己的判定依据）\\n\\n```yaml\\nphase: review\\ndeliverable: present                    # 本消息即交付物\\ndeclared_inputs:                        # 显式声明输入：点名到 digest\\n  - role: research_plan\\n    digest: sha256:8bfaf4c5292f00ff964194246831df51ff89bc504612eb62ceb94d160f33572b\\n  - role: novelty_claim\\n    digest: sha256:33f0228575e51092a37eff04124bb02c5ecf026213a44536d331c43e0a6db6c7\\noperator_direction: \\\"retrieval augmentation for scientific hypothesis generation\\\"\\nEVIDENCE_COVERAGE:\\n  minimum_sources: 1\\n  observed: 3                           # 本任务可见的非自产来源：42787049, 42964527, 42955413\\n  verdict: PASS                         # 3 >= 1，不是 0 < 1\\n```\\n\\n**如实边界 / 本 phase 不声明 `minimum_retrieved_sources`**：性质维度数的是**本任务自己**的系统取得来源，而评审 phase 不做检索，要求它就等于让评审者为自己没做的事背书。上面 3 篇是**题面交给本任务的可见材料**，我只声明「可见、在场、可复核」，不声明「由我取得」。检索那一维由侦察 phase 的 `multi_role_scouting` 契约承担（`minimum_retrieved_sources: 1`）；此处向该 phase 移交的唯一事项是补齐针对「科学假设/研究想法生成（LLM/agentic ideation, hypothesis generation, research-idea generation）+ retrieval augmentation」的检索式、数据库与纳入标准，再回来重判新颖性。\\n\\n计数诚实性说明：来源清单被整段重复了两次、`PROJECT DIRECTION` 标题重复两次，按**去重后的 PMID 唯一值**计为 3，不按 6 计。另：本次会话无文件/命令工具，我未运行 `tests/e2e/test_multi_role_research_offline.py` 的反证分支，也未重算两份 digest；上述 digest 是题面给定值，材料「在场」以题面逐字给出的 JSON 为准，不是以本地文件校验为准。这是本交付物的能力边界，不是把它藏起来。\\n\\n## 1. 对 `research_plan` 的独立判定：**不予通过（REVISE）**\\n\\n我不采用其自述作为依据，只看给出的三臂与脚本名 `examples/experiments/exact_match_index_benchmark.py`：120 项干净语料对照、120 项 + 30 重复对去重、240 项 + 30 重复对（均 `seed: 42`）。\\n\\n- **契约与方向不闭环**：可测的是索引在重复/规模下的精确匹配行为，输出里没有生成端、没有假设表示、没有任何「假设是否新颖/是否正确/是否有用」的度量，也没有专家评估或成功判据。它能支撑「检索管线的工程性质」，不能支撑 `retrieval augmentation for scientific hypothesis generation` 这个方向，更不能支撑 novelty claim。\\n- **臂设计有混淆**：`120→240` 时 `duplicate_pairs` 仍为 30，重复占比由 25% 降到 12.5%，于是「语料规模」与「重复密度」同时变化，两臂差异不可归因；`retrieved_corpus_dedup` 臂仍带 `duplicate_pairs: 30`，「dedup」究竟指输入有重复还是去重后保留 30 对，语义未定义。单一 `seed: 42` 无重复运行与方差，任何差异无法判显著。\\n- **缺关键对照**：无 no-RAG / 仅参数化基线、无去重策略对照、无假设级评价者盲评。\\n- 最小修复：① 明确 `duplicate_pairs` 在两臂中的语义，固定重复密度或加 240/60 臂做正交设计；② 多种子 + 置信区间；③ 增加 no-RAG 生成基线与假设级指标（新颖性、可检验性、专家评分）；④ 声明成功判据与评价者。\\n\\n## 2. 对 `novelty_claim` 的独立判定：**未被推翻，但也未被确证（证据不足）**\\n\\n判定依据是我可见的三条题名级证据，而不是 `why_novel` 的转述：\\n\\n- **[1] 42787049** agentic RALM 用于「integrated animal-human nutrition intelligence」——检索/知识整合；**[2] 42964527** 评估 RAG 配置做 EHR 临床信息抽取——抽取。二者都不以「自动生成科学假设」为题目主张，因此 `nearest_prior` 选这两篇作为最接近的工作**合理**；claim 与方向字面一致（[2] 也确实与 `retrieval augmentation` 相关，不是与 RAG 无关）。\\n- 但该 claim 实质是一个**负向存在性断言**（「无人以假设生成为目标」）。可见池只有 3 篇、且只有题名、无摘要/全文、无检索式与纳入标准，无法排除 [1] 的「integrated intelligence」已含假设建议环节，也无法排除池外相关工作（如 scientific ideation / research-idea generation 方向）已被 [1] 的 agentic 框架覆盖。把它写成「specific gap this study addresses」是**把「我没看到」写成了「不存在」**，超出证据强度；且它把方法限定为「generating novel scientific hypotheses」而计划里根本没有假设生成模块，claim 与 plan 之间没有可验证连接。\\n- **[3] 42955413**（BILBO，RNA-Seq 分析/功能注释聚类）与 RAG、假设生成均无关：`novelty_claim` 未列它是对的。它只计入「本任务可见的非自产来源」的覆盖数，**不作为新颖性的实质支撑**。\\n- 最小修复：① 把措辞降级为「在本次可见来源范围内未发现直接针对……的工作」并显式标注覆盖边界；② 补侦察 phase 的系统检索（含 ideation/hypothesis-generation 关键词、数据库、时间窗、纳入排除标准）；③ 给出「假设生成」的可操作定义与至少一个可比较的 prior 维度；④ 让 `research_plan` 落到一个能测量该 gap 的实验。\\n\\n## 3. 结论（分层，不混为一谈）\\n\\n| 层次 | 判定 |\\n|---|---|\\n| 评审 phase 自身契约（交付物存在、声明输入且在场可复核、`EVIDENCE_COVERAGE.minimum_sources: 1` → 3） | **PASS** |\\n| 对 `multi_role_scouting` 的 `minimum_retrieved_sources` | **本 phase 不适用、不声明、不背书**，移交侦察 phase |\\n| 被审材料 `research_plan` | **REVISE / 不予通过**（方向不闭环 + 混淆设计） |\\n| 被审材料 `novelty_claim` | **未被推翻，但证据不足，不予确证**（负向断言超出可见证据） |\\n\\n一句话：这次「不通过」判的是**被审材料的质量**，不是判「评审者没做检索」——后者按契约本来就不该由评审 phase 承担。\",\"contract_id\":\"multi_role_review\",\"conversation_id\":\"6572e5ef-8490-4cf1-91b8-622281d7a62f\",\"declared_artifact\":\"review_decision\",\"fact_name\":\"session_message\",\"message_count\":2,\"session_id\":\"d9a52159-9f71-4849-b8cb-ae06ec5cde00\"}",
+  "phase_states": {
+    "question": "SUCCEEDED",
+    "retrieval": "SUCCEEDED",
+    "novelty": "SUCCEEDED",
+    "plan": "SUCCEEDED",
+    "experiment": "SUCCEEDED",
+    "review": "SUCCEEDED",
+    "manuscript": "SUCCEEDED",
+    "editorial": "SUCCEEDED",
+    "revision": "SUCCEEDED",
+    "submission": "SUCCEEDED",
+    "report": "SUCCEEDED"
+  },
+  "phase_artifact_ids": {
+    "question": [
+      "8247ea0f-79ee-4886-8dc4-b7a4621b168a:research_question",
+      "8247ea0f-79ee-4886-8dc4-b7a4621b168a:retrieval_context"
+    ],
+    "retrieval": [
+      "b0116db3-0caa-437e-b74a-56cdae6a2496:retrieval_context",
+      "b0116db3-0caa-437e-b74a-56cdae6a2496:retrieval_report"
+    ],
+    "novelty": [
+      "79ad0d00-1cd4-4b0e-82c9-036bc947a16e:novelty_claim",
+      "79ad0d00-1cd4-4b0e-82c9-036bc947a16e:retrieval_context"
+    ],
+    "plan": [
+      "857176c9-0fdb-458e-904d-da4b7e58c31f:research_plan",
+      "857176c9-0fdb-458e-904d-da4b7e58c31f:retrieval_context"
+    ],
+    "experiment": [
+      "a3cc9762-6a6f-45d1-915d-8e92f70f909c:experiment_result.json",
+      "a3cc9762-6a6f-45d1-915d-8e92f70f909c:metrics",
+      "a3cc9762-6a6f-45d1-915d-8e92f70f909c:stderr.log",
+      "a3cc9762-6a6f-45d1-915d-8e92f70f909c:stdout.log"
+    ],
+    "review": [
+      "0950c0fa-598f-4af9-8c38-fc09aa42d970:retrieval_context",
+      "0950c0fa-598f-4af9-8c38-fc09aa42d970:review_decision",
+      "3b0b75cb-3e31-4dad-8e23-f81c08cdfd64:retrieval_context",
+      "3b0b75cb-3e31-4dad-8e23-f81c08cdfd64:review_decision"
+    ],
+    "manuscript": [
+      "448db7e5-ee15-4478-af1b-6dd38f09a046:manuscript_narrative",
+      "448db7e5-ee15-4478-af1b-6dd38f09a046:retrieval_context"
+    ],
+    "editorial": [
+      "1cb7e738-4131-443e-9127-14cd7f23a9e2:editorial_decision",
+      "1cb7e738-4131-443e-9127-14cd7f23a9e2:retrieval_context"
+    ],
+    "revision": [
+      "13b0ae97-db47-4fee-b3f3-7bf2b9fecdbc:author_responses",
+      "13b0ae97-db47-4fee-b3f3-7bf2b9fecdbc:retrieval_context"
+    ],
+    "submission": [
+      "031e0217-fd14-430a-ad41-455fae279946:retrieval_context",
+      "031e0217-fd14-430a-ad41-455fae279946:submission_package"
+    ],
+    "report": [
+      "1c3e5965-2818-4d52-9947-f0c0d1fa351b:research_report.md"
+    ]
+  },
+  "experiment_rows": 3,
+  "failure_events": [],
+  "citation_readings": [
+    14,
+    6,
+    3,
+    "none"
+  ],
+  "readings_match_body": true,
+  "action_overlap": [
+    0,
+    0
+  ],
+  "review_raised_no_points": true
+}
