@@ -1855,6 +1855,10 @@
         "sha256": "52c912ed2c1f94f014746f33d08a2360725844a6"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261111-109-paired-ablation-content-adoption-judgeable.md",
+        "sha256": "9e5eca27b40f40a3fbf12a8ca0c9785f90b8b7d7"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
         "sha256": "eabcb556bf37a1807fc965acd47539341ce921c5"
       },
@@ -4455,6 +4459,10 @@
         "sha256": "8a4c3243db9d5e68c006abfd044ac64fd28740df"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261112-109-paired-ablation.md",
+        "sha256": "2e2ab4154c41373af1efbcadf75e93739a10303e"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5885,6 +5893,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261111-108-relay-swap-and-reliability.md",
         "sha256": "eae3a60e45ad4fd96abb69faebc9b613c2b50cdc"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261111-109-paired-ablation.md",
+        "sha256": "8209e1679f5b3e12a759370b48c73d173bc9fa60"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -19923,6 +19935,10 @@
         "sha256": "e2e9463d404a1ccf1baafb7d0c8f2efe0307dba8"
       },
       {
+        "path": "tools/goal109_closeout_assertions.py",
+        "sha256": "1d2bd06474bd850ae5eb4bee948f121151f6381a"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -20395,6 +20411,10 @@
         "sha256": "6c271665959478c66a684ae25c55ca96552e0214"
       },
       {
+        "path": "tools/verify_goal109_closeout.py",
+        "sha256": "9acaa7382c539253ac698ed7d09d66e8216252c9"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -20407,7 +20427,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "e003bfcc65a3dd8e8a2a38137ff7ae972fcb1412"
+    "head": "c1c85da3df18a5f4d597bfa4d09870ec9ba9fa0f"
   },
   "fingerprint_before": {
     "files": [
@@ -22264,6 +22284,10 @@
         "sha256": "52c912ed2c1f94f014746f33d08a2360725844a6"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261111-109-paired-ablation-content-adoption-judgeable.md",
+        "sha256": "9e5eca27b40f40a3fbf12a8ca0c9785f90b8b7d7"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
         "sha256": "eabcb556bf37a1807fc965acd47539341ce921c5"
       },
@@ -24864,6 +24888,10 @@
         "sha256": "8a4c3243db9d5e68c006abfd044ac64fd28740df"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261112-109-paired-ablation.md",
+        "sha256": "2e2ab4154c41373af1efbcadf75e93739a10303e"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26294,6 +26322,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261111-108-relay-swap-and-reliability.md",
         "sha256": "eae3a60e45ad4fd96abb69faebc9b613c2b50cdc"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261111-109-paired-ablation.md",
+        "sha256": "8209e1679f5b3e12a759370b48c73d173bc9fa60"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -40332,6 +40364,10 @@
         "sha256": "e2e9463d404a1ccf1baafb7d0c8f2efe0307dba8"
       },
       {
+        "path": "tools/goal109_closeout_assertions.py",
+        "sha256": "1d2bd06474bd850ae5eb4bee948f121151f6381a"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -40804,6 +40840,10 @@
         "sha256": "6c271665959478c66a684ae25c55ca96552e0214"
       },
       {
+        "path": "tools/verify_goal109_closeout.py",
+        "sha256": "9acaa7382c539253ac698ed7d09d66e8216252c9"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -40816,11 +40856,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "e003bfcc65a3dd8e8a2a38137ff7ae972fcb1412"
+    "head": "c1c85da3df18a5f4d597bfa4d09870ec9ba9fa0f"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "e003bfcc65a3dd8e8a2a38137ff7ae972fcb1412",
+  "ran_at_head": "c1c85da3df18a5f4d597bfa4d09870ec9ba9fa0f",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

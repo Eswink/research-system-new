@@ -190,7 +190,7 @@ GOAL-082 EC-04 的阻塞论证是**混淆论证**：`duplicate_pairs` 既在参�
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261111-109 | `e003bfcc` | 消融四判据 + 阶梯射程判据 **55 passed**；收口验证器 **70 PASS / 0 FAIL**；governance 通过；ruff/format/mypy 三道具名 | 与收口提交同一次 push（无独立 run；run id 由下一笔 `.cursor` 提交回填——不冒领） | 两处真缺陷（夹具视图 dict 被渲染器静默丢段 ⇒ 两臂假相等；frozen dataclass 异常收不了消息） | `U-1` live k=3 未做 | 序 78（证据处置闭环） |
+| 1 | PLAN-20261111-109 | `c1c85da3` | 消融四判据 + 阶梯射程判据 **55 passed**；收口验证器 **70 PASS / 0 FAIL**；governance 通过；ruff/format/mypy 三道具名 | 与收口提交同一次 push（无独立 run；run id 由下一笔 `.cursor` 提交回填——不冒领） | 两处真缺陷（夹具视图 dict 被渲染器静默丢段 ⇒ 两臂假相等；frozen dataclass 异常收不了消息） | `U-1` live k=3 未做 | 序 78（证据处置闭环） |
 
 ## 残余与未覆盖范围
 
@@ -237,4 +237,4 @@ GOAL-082 EC-04 的阻塞论证是**混淆论证**：`duplicate_pairs` 既在参�
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `e003bfcc` | 与收口提交（HEAD）**同一次 push**，无独立 run | 该 run 跑在收口树（含本行所指提交的全部内容）；run id 由下一笔 `.cursor` 提交回填 | 机制半场：四件交付 + 六个判据文件。同一次 push 的多个提交只有一个 M0 run ⇒ 本行不冒领（不点名 run） |
+| `c1c85da3` | 与收口提交（HEAD）**同一次 push**，无独立 run | 该 run 跑在收口树（含本行所指提交的全部内容）；run id 由下一笔 `.cursor` 提交回填 | 机制半场：四件交付 + 六个判据文件。同一次 push 的多个提交只有一个 M0 run ⇒ 本行不冒领（不点名 run） |
