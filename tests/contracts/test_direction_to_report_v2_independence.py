@@ -143,10 +143,13 @@ def test_the_two_agents_land_on_different_models() -> None:
         "the author and the reviewer can land on the same execution target "
         f"(endpoint/model_name): {sorted(shared)}"
     )
-    # 四个不同的底层模型：生产侧 + 三位评审者 + 作者，彼此全部不同。
+    # GOAL-20261111-108：**不再断言具体模型名**。原先写
+    # `author_target[0].endswith("/deepseek-v4-pro-0813")` —— 那守的是「作者不在评审者
+    # 那一组里」，而它上一行（`shared` 为空）已经判过了。把接入商的产品名写进判据的
+    # 后果是：换接入商时这条会红，而它红**不代表独立性坏了**。真正要守的是「作者组内部
+    # 唯一」（本行）与「与评审组不相交」（上一行）。
     author_target = sorted(targets[_AUTHOR_AGENT])
     assert len(author_target) == 1, author_target
-    assert author_target[0].endswith("/deepseek-v4-pro-0813"), author_target
 
 
 def test_the_phase_assignments_name_the_author_in_the_author_phase() -> None:

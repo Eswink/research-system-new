@@ -151,10 +151,11 @@ def test_two_reviewers_on_one_phase_form_one_panel() -> None:
     # 落库事实：两条判词**同 phase**、**不同任务**、**不同模型目标**
     assert {item.phase_id for item in result.records} == {_PHASE}
     assert len({item.task_id for item in result.records}) == 2
-    assert {item.finding.reviewer_model for item in result.records} == {
-        "main/glm-5.3",
-        "main/kimi-k2.6",
-    }
+    # **GOAL-20261111-108**：原断言钉具体产品名。判据的本意是「两**个**不同的模型目标」
+    # —— 名字由运维选，数量与互异由角色决定。现在从记录里取集合再判基数与互异。
+    targets = {item.finding.reviewer_model for item in result.records}
+    assert len(targets) == 2, targets
+    assert None not in targets, f"评审目标必须可归因：{targets}"
     panels = result.panels
     assert len(panels) == 1, panels
     panel = panels[0]
@@ -172,9 +173,11 @@ def test_pressing_the_second_reviewer_to_the_first_model_flips_independence() ->
     panels = result.panels
     assert len(panels) == 1, panels
     panel = panels[0]
-    assert panel["targets"] == ["main/glm-5.3"], panel
+    # 按压臂：两个评审者**压到同一个模型** ⇒ targets 收缩为 1、判不独立并点名那个目标。
+    assert len(panel["targets"]) == 1, panel
+    pressed = panel["targets"][0]
     assert panel["independent"] is False, panel
-    assert any("main/glm-5.3" in note for note in panel["independence_notes"]), panel
+    assert any(pressed in note for note in panel["independence_notes"]), panel
 
 
 def test_reviewers_on_different_phases_do_not_share_a_panel() -> None:

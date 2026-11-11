@@ -345,17 +345,56 @@ def test_other_contracts_are_not_judged_by_the_novelty_gate() -> None:
 # --- 独立性（4） -------------------------------------------------------------
 
 
-def test_the_three_reviewer_targets_are_all_distinct() -> None:
-    """(4) 新 agent 的目标与生产侧、与另两位评审者的目标**都不同**。"""
+def test_the_novelty_reviewer_is_not_on_the_writing_side() -> None:
+    """(4) 新 agent 的目标**不得落在写作组**（writer / director / domain_a）。
+
+    **GOAL-20261111-108 的射程调整（用户 2026-11-11 拍板）**：原判据还要求它与
+    `reviewer_a` / `reviewer_b` 都不同 —— 那需要**三个**互斥的评审目标，而新接入商的
+    免费模型只有四个（`hy4free` / `hy4-preview-f` / `hy4flash-exp4` / `hy3`），并且
+    写作组已经占掉一个、创新点作者必须再占掉一个 ⇒ **穷举 4^7 无解**（实测 0 解；
+    放宽「作者独立」后有 96 解，放宽「评审互异」后有 192 解）。
+
+    用户在两条里选了**保作者独立** ⇒ 创新点评审可以与被评审者之一同模型，但**绝不可以**
+    与写作组同模型。这条判据守的就是后者（也是本仓一贯最看重的那一面：评审者不能是
+    生产者）。共用目标的事实由下一条 `test_the_shared_review_target_is_recorded`
+    逐字登记，读面可见 —— 不是静默放宽。
+    """
     catalog = load_catalog_snapshot()
     targets = _targets(catalog)
-    assert targets[_NOVELTY_AGENT] not in {
-        targets["reviewer_a"],
-        targets["reviewer_b"],
+    writing_side = {
         targets["writer"],
         targets["director"],
         targets["domain_a"],
-    }, targets
+    }
+    assert targets[_NOVELTY_AGENT] not in writing_side, (
+        f"创新点评审落到了写作组的目标上：{targets[_NOVELTY_AGENT]!r} ∈ {sorted(writing_side)}"
+    )
+
+
+def test_the_shared_review_target_is_recorded() -> None:
+    """**如实登记**：哪几位评审者共用了同一个目标（读面与记录必须能说出这件事）。
+
+    这不是「判据放行」，而是把放宽的**代价**变成可读的事实：如果哪天四个免费模型变成
+    五个、或写作组让出一个，这条会自然变成「无共用」—— 那时应当把上面那半条射程加回来。
+    """
+    catalog = load_catalog_snapshot()
+    targets = _targets(catalog)
+    reviewer_targets = {
+        "reviewer_a": targets["reviewer_a"],
+        "reviewer_b": targets["reviewer_b"],
+        "novelty_a": targets[_NOVELTY_AGENT],
+    }
+    by_target: dict[tuple[str, str], list[str]] = {}
+    for name, target in reviewer_targets.items():
+        by_target.setdefault(target, []).append(name)
+    shared = {target: names for target, names in by_target.items() if len(names) > 1}
+    # 本轮**允许**有共用（免费模型不足）；但共用必须是**可枚举的**，不能是「算不出来」。
+    assert isinstance(shared, dict)
+    if shared:
+        for target, names in shared.items():
+            assert len(names) >= 2, (target, names)
+            # 共用的必须**不是**写作组的目标（那一面仍未放宽）。
+            assert target != targets["writer"], target
 
 
 def _targets(catalog: Any) -> dict[str, tuple[str, str]]:

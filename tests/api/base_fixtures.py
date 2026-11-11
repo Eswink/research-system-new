@@ -10,8 +10,8 @@
 from __future__ import annotations
 
 import sqlite3
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, Any, cast
 
 from adapters.fakes.budget_ledger import FakeBudgetLedger
 from adapters.fakes.credential_resolver import FakeCredentialResolver
@@ -95,7 +95,23 @@ def build_base_deps(
     # 代理面与 sqlite3.Connection 同形（execute/cursor/commit/with 块/row_factory），
     # 但类型上不是它的子类：装配边界显式 cast，覆盖由池单测 + 整库 API 套件提供。
     connection = cast("sqlite3.Connection", ThreadLocalConnection(db_path))
-    return _base_api_deps(connection, _base_sqlite_parts(connection, runtime=runtime), gateway)
+    deps = _base_api_deps(connection, _base_sqlite_parts(connection, runtime=runtime), gateway)
+    # GOAL-20261111-108：注入放行局域网的 URL 策略（见 `test_endpoint_url_policy` 的理由）。
+    return replace(deps, endpoint_url_policy=test_endpoint_url_policy())
+
+
+def test_endpoint_url_policy() -> Any:
+    """**测试装配**用的 URL 策略：放行局域网端点（GOAL-20261111-108）。
+
+    出厂目录现在指向局域网中转站（`http://192.168.101.9:8798/v1`），而
+    `EndpointUrlPolicy()` 默认拒 private —— 那是 §9 的 deny 姿态，**正确**。但本目录的
+    判据测「真实装配能否过预检 / 跑到 SUCCEEDED」，不是地址策略，故在**测试装配**放行。
+    **产品默认不变**（仍要 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1`）。地址策略本身由
+    `tests/application/test_endpoint_policy.py` 逐类判（含 private 默认拒的反证臂）。
+    """
+    from packages.application.model_relay.endpoint_policy import EndpointUrlPolicy
+
+    return EndpointUrlPolicy(allow_private=True)
 
 
 def _base_api_deps(

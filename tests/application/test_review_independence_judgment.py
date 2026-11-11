@@ -24,7 +24,6 @@ from tests.application.review_independence_fixtures import (
     PRODUCER_MODEL_NAME,
     REVIEWER_MODEL_NAME,
     REVIEWER_ROLE,
-    SECOND_REVIEWER_MODEL_NAME,
     WRITER_ROLE,
     agent,
     binding_explicit,
@@ -45,7 +44,19 @@ VIOLATION = "HETEROGENEITY_VIOLATION"
 
 
 def test_the_factory_reviewer_and_producer_sit_on_different_underlying_models() -> None:
-    """**本轮落地后的真实读数**：评审者的 `(endpoint, model_name)` 与生产者**不同**。"""
+    """**本轮落地后的真实读数**：评审者的 `(endpoint, model_name)` 与生产者**不同**。
+
+    **GOAL-20261111-108 的口径修正**：原先这里断言 `targets == {(FACTORY_ENDPOINT,
+    PRODUCER_MODEL_NAME)}` 这类**具体模型名**。那守的是「目录里那三个值恰好是
+    `deepseek-v4-flash-vision` / `glm-5.3` / `kimi-k2.6`」—— 是**运维数据**，不是
+    独立性。换接入商时它必红，而红不代表独立性坏了；反过来，如果有人把三者都设成
+    同一个名字，**下面那三行 `not (... & ...)` 才是真正抓它的**。
+
+    现在判三件（强度不变）：
+    ① 三方都解析成功且**各自非空**（受判面成立）；
+    ② 三方落在**同一个 endpoint**（出厂形态：一个中转站带多个模型）；
+    ③ **逐对互不相同**（不是并集掩蔽）—— 这才是独立性。
+    """
     models = load_models("examples/config/models.yaml")
     profiles = load_model_profiles("examples/config/model_profiles.yaml")
     agents = load_agents("examples/config/agents.yaml")
@@ -54,16 +65,16 @@ def test_the_factory_reviewer_and_producer_sit_on_different_underlying_models() 
     reviewer_a = resolve_agent_targets("reviewer_a", agents["reviewer_a"], snapshot)
     reviewer_b = resolve_agent_targets("reviewer_b", agents["reviewer_b"], snapshot)
     assert producer.resolved and reviewer_a.resolved and reviewer_b.resolved
-    assert producer.targets == {(FACTORY_ENDPOINT, PRODUCER_MODEL_NAME)}, producer.targets
-    assert reviewer_a.targets == {(FACTORY_ENDPOINT, REVIEWER_MODEL_NAME)}, reviewer_a.targets
-    assert reviewer_b.targets == {(FACTORY_ENDPOINT, SECOND_REVIEWER_MODEL_NAME)}, (
-        reviewer_b.targets
-    )
-    # 受判面非空 + **逐对**比较（不是并集掩蔽）
+    # ① 受判面非空
     assert producer.targets and reviewer_a.targets and reviewer_b.targets
-    assert not (producer.targets & reviewer_a.targets)
-    assert not (producer.targets & reviewer_b.targets)
-    assert not (reviewer_a.targets & reviewer_b.targets)
+    # ② 同一个 endpoint（出厂形态；模型名由运维选）
+    assert {endpoint for endpoint, _name in producer.targets} == {FACTORY_ENDPOINT}
+    assert {endpoint for endpoint, _name in reviewer_a.targets} == {FACTORY_ENDPOINT}
+    assert {endpoint for endpoint, _name in reviewer_b.targets} == {FACTORY_ENDPOINT}
+    # ③ 逐对互不相同（不是并集掩蔽）
+    assert not (producer.targets & reviewer_a.targets), "生产与评审 A 同目标"
+    assert not (producer.targets & reviewer_b.targets), "生产与评审 B 同目标"
+    assert not (reviewer_a.targets & reviewer_b.targets), "两位评审者同目标"
 
 
 def test_the_critic_profile_no_longer_falls_back_to_the_producers_model() -> None:

@@ -1384,7 +1384,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "ff864c59188cbfdef688cd25901dc536720f9ff8"
+        "sha256": "13bf9736083ad619016e28f49b32b0472cbcc2e1"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1847,8 +1847,12 @@
         "sha256": "305b6613d1c4d55008d472b5b67956303107228c"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261111-108-relay-swap-single-model-test-and-silent-stall-closure.md",
+        "sha256": "cb6ef6c4351fec1d79ea321d82ab3776e21debd5"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "e92e48dc55c7b2ed573827aa442aa855239f8f24"
+        "sha256": "4976bad054f6b20d11b3b8ed8d9671190bb7c369"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -2089,6 +2093,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-07-revisions-72-only.md",
         "sha256": "900e7574ef8701a25bc8118e2006b4997211b923"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-11-progress-106-only.md",
+        "sha256": "537a977483b2455aae345c024600ec2bb2ef756c"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-11-revisions-74-only.md",
+        "sha256": "9e24efffed4ff639226c064c8ccbcfc0a947c937"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -4423,6 +4435,10 @@
         "sha256": "843b4ade2e919c02ca5f9618a309696faf7604ee"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261111-108-relay-swap-and-reliability.md",
+        "sha256": "9474276c19ef2a65b6f73d7fa5a53a877a222809"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5849,6 +5865,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261107-107-four-targets.md",
         "sha256": "25fd83d87b924fca5691eb069259392fc29e8ea6"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261111-108-relay-swap-and-reliability.md",
+        "sha256": "d8ca6d24dbab7da5cc1c880305bdf500d3d960b4"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -13892,7 +13912,7 @@
       },
       {
         "path": "examples/config/llm_endpoints.yaml",
-        "sha256": "6ebd506e6fca8cd7280eb7dcbe239ca7a0bc1de0"
+        "sha256": "8861c329799eaa12c4ca3526fad3216c1cb072be"
       },
       {
         "path": "examples/config/memory_policy.yaml",
@@ -13900,11 +13920,11 @@
       },
       {
         "path": "examples/config/model_profiles.yaml",
-        "sha256": "675136acde73cc1e5757d1b4172fb9b2c2b87353"
+        "sha256": "ef78471fcc323685dbf8ae4c57e17f9572b6366c"
       },
       {
         "path": "examples/config/models.yaml",
-        "sha256": "a5a34ec6f548e03d726de5055f58c120a175833a"
+        "sha256": "fdfb8d7926249eaa8e6229ea14beb6183212bd98"
       },
       {
         "path": "examples/config/policy.yaml",
@@ -13968,7 +13988,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "bf6bff73af28029a33f1026918439a242c04a104"
+        "sha256": "aa8bf52cda7e62a2086b9f2072eb4954350d5196"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -14976,7 +14996,7 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_runner.py",
-        "sha256": "107dfb02cafb768c08254bf01fd4c9b950b273fd"
+        "sha256": "7053b12a7bf8f9606bddea71e81e9bd875c99fcb"
       },
       {
         "path": "packages/application/run_orchestration/prior_knowledge.py",
@@ -15048,7 +15068,7 @@
       },
       {
         "path": "packages/application/run_orchestration/review_outcome.py",
-        "sha256": "2221eff873f880f3c79c4248f228cbdc702ea0f0"
+        "sha256": "1f5c63fd97c379f59650ca948b97d35997f02cd4"
       },
       {
         "path": "packages/application/run_orchestration/review_panel_judging.py",
@@ -15109,6 +15129,10 @@
       {
         "path": "packages/application/run_orchestration/snapshot_migration.py",
         "sha256": "b2a01f5f7f86012d844aa327197162b053429211"
+      },
+      {
+        "path": "packages/application/run_orchestration/spec_assembly_guard.py",
+        "sha256": "4413f03319ce9e89ed959d26e98293be695c67e7"
       },
       {
         "path": "packages/application/run_orchestration/submission_assembly.py",
@@ -16424,7 +16448,7 @@
       },
       {
         "path": "tests/api/base_fixtures.py",
-        "sha256": "b8faa5465ebbb6fec524cebf25f5dc201e7b5d6a"
+        "sha256": "1dbcf5768a348f14d92b700ee887ce583eca3014"
       },
       {
         "path": "tests/api/conftest.py",
@@ -16692,7 +16716,7 @@
       },
       {
         "path": "tests/api/test_runtime_egress_gate.py",
-        "sha256": "809259aee7341444cb0e89c5bae94b24d325206e"
+        "sha256": "4350e24e908f44058785adb3225cf69a63f127c7"
       },
       {
         "path": "tests/api/test_runtime_selection_surface.py",
@@ -17024,7 +17048,7 @@
       },
       {
         "path": "tests/application/preflight/test_policy_surface_consistency.py",
-        "sha256": "8e570a2fde5daafbbf8ef1e1bb033403dc413f2c"
+        "sha256": "c983e910cedc1008bd2593564a5db2a646338110"
       },
       {
         "path": "tests/application/preflight/test_policy_surface_difference_set.py",
@@ -17040,7 +17064,7 @@
       },
       {
         "path": "tests/application/preflight/test_review_independence_gate.py",
-        "sha256": "45cd93333bf0983cb919ddbf7cebf8805372fe07"
+        "sha256": "e34f1da6b088ef54d973b8e50953aef0deacded9"
       },
       {
         "path": "tests/application/protocol_authoring/test_draft_service.py",
@@ -17484,7 +17508,11 @@
       },
       {
         "path": "tests/application/test_review_independence_judgment.py",
-        "sha256": "bbfd9f2bfa81a03ca8928ae1ce124bdb9bc32209"
+        "sha256": "47269604ab323dbfb670b290b7d79dd9a2ef193e"
+      },
+      {
+        "path": "tests/application/test_review_outcome_no_program.py",
+        "sha256": "7615fcbbf72ef63d91ea24c2f1387cbe350daf3c"
       },
       {
         "path": "tests/application/test_review_panel_aggregation.py",
@@ -17503,12 +17531,20 @@
         "sha256": "d6f121b34b8be70a5093890913adffd0f030e5d7"
       },
       {
+        "path": "tests/application/test_session_contract_retries.py",
+        "sha256": "3c14573af3fe97b1c2669fd42e98837266aff2aa"
+      },
+      {
         "path": "tests/application/test_skill_registry.py",
         "sha256": "0ebffb2b603c795915c244affefca93f8e48b2b7"
       },
       {
         "path": "tests/application/test_snapshot_tree.py",
         "sha256": "57bd3da1ee1f96699cd129da45f7b340309d8cd9"
+      },
+      {
+        "path": "tests/application/test_spec_assembly_guard.py",
+        "sha256": "87bf9b176cc646c7f43104ee4e832db7debc59cd"
       },
       {
         "path": "tests/application/test_submission_package.py",
@@ -17532,7 +17568,7 @@
       },
       {
         "path": "tests/architecture/module_file_naming.py",
-        "sha256": "5f36023a778c6bf90724fc692a365788add1d087"
+        "sha256": "3429220a586427e227868338bd201464fe1782c4"
       },
       {
         "path": "tests/architecture/python/fixtures/invalid/architecture_fixture/__init__.py",
@@ -17744,7 +17780,7 @@
       },
       {
         "path": "tests/architecture/test_module_file_naming.py",
-        "sha256": "28088c31fe8c5932d6d1a1aacd8db82f72712544"
+        "sha256": "33a9dc121d5fe7b317657bd2e0ea108dea6c87d1"
       },
       {
         "path": "tests/architecture/test_overclaiming_gate.py",
@@ -17876,11 +17912,11 @@
       },
       {
         "path": "tests/contracts/test_direction_to_report_v2_independence.py",
-        "sha256": "f4be4849f811da6c4c181e0d56f571565cdd1b67"
+        "sha256": "88688e2af76b3c26a42c8e8df2a4d7c0d8c63584"
       },
       {
         "path": "tests/contracts/test_direction_to_report_v2_novelty.py",
-        "sha256": "d398328a82d74c44173fd4780187b3cdc2613da7"
+        "sha256": "7db56c40b25fe1ccbf440f9326bcb64543bbc9af"
       },
       {
         "path": "tests/contracts/test_dispatch_ownership_contract.py",
@@ -18240,7 +18276,7 @@
       },
       {
         "path": "tests/e2e/manuscript_chain_live_support.py",
-        "sha256": "2a175e1917657d55c4c5329d21bb2b38d4caf27b"
+        "sha256": "3e2296af8f3d2a74dfd52d120e41e3d6bc25547c"
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
@@ -18272,7 +18308,7 @@
       },
       {
         "path": "tests/e2e/test_a_rejecting_reviewer_does_not_cancel_the_panel.py",
-        "sha256": "0cef4f6c415af0e3601bba5b3c1e44b40429f9f9"
+        "sha256": "01d24eb4a6feb1a3620d6ada44cdb9cca75a32a6"
       },
       {
         "path": "tests/e2e/test_cancel_resume.py",
@@ -18560,7 +18596,7 @@
       },
       {
         "path": "tests/e2e/test_reviewers_on_one_phase_form_a_panel.py",
-        "sha256": "a1b1db417eab98cefb2f08f4fd503321d858fdad"
+        "sha256": "f57bf777cb5f07f63912fc8904f2d70b61e5c450"
       },
       {
         "path": "tests/e2e/test_run_chain_retrieval_live.py",
@@ -18616,7 +18652,7 @@
       },
       {
         "path": "tests/e2e/test_two_models_judge_the_same_artifact.py",
-        "sha256": "c7824b3b5a789fcdcdffef1723fcea8b86a81100"
+        "sha256": "9d84c4f561da39a5e13296e5d2b243bc68509493"
       },
       {
         "path": "tests/e2e/test_two_models_judge_the_same_artifact_live.py",
@@ -18740,7 +18776,7 @@
       },
       {
         "path": "tests/loaders/test_contract_loaders.py",
-        "sha256": "f7c6f7e4e07502a4efe83714c4a9404efd80ee2e"
+        "sha256": "c846de0f421f48a83c23faa4b1f6d54a8046536e"
       },
       {
         "path": "tests/loaders/test_example_protocol_integration.py",
@@ -19708,7 +19744,7 @@
       },
       {
         "path": "tools/goal082_closeout_assertions.py",
-        "sha256": "0396873f40d1c8d4bae5ddfdfc5c9223b6f4a520"
+        "sha256": "e27030eb5039633c9bdae53823efdb3f76797671"
       },
       {
         "path": "tools/goal083_closeout_assertions.py",
@@ -19716,7 +19752,7 @@
       },
       {
         "path": "tools/goal084_closeout_assertions.py",
-        "sha256": "3bbe086bfa0a04b6e812e48bf3fda6a662ff26dc"
+        "sha256": "345916fb7ef4806e943a01e4b1eb174d4e52d16e"
       },
       {
         "path": "tools/goal085_closeout_assertions.py",
@@ -19768,7 +19804,7 @@
       },
       {
         "path": "tools/goal097_closeout_assertions.py",
-        "sha256": "9d3f7602dc9dde5e7d41c47ddce7b50b4e9e1048"
+        "sha256": "38aa187f9c9fc57f81f0dd18a4b7286d2bf9bc8a"
       },
       {
         "path": "tools/goal098_closeout_assertions.py",
@@ -20299,7 +20335,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "e1cb5f2d893304514a3d91145812ddb247e6ed2a"
+    "head": "7fd4f45e37d2ca09ffe270c18143947735004e99"
   },
   "fingerprint_before": {
     "files": [
@@ -21685,7 +21721,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "ff864c59188cbfdef688cd25901dc536720f9ff8"
+        "sha256": "13bf9736083ad619016e28f49b32b0472cbcc2e1"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22148,8 +22184,12 @@
         "sha256": "305b6613d1c4d55008d472b5b67956303107228c"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261111-108-relay-swap-single-model-test-and-silent-stall-closure.md",
+        "sha256": "cb6ef6c4351fec1d79ea321d82ab3776e21debd5"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "e92e48dc55c7b2ed573827aa442aa855239f8f24"
+        "sha256": "4976bad054f6b20d11b3b8ed8d9671190bb7c369"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -22390,6 +22430,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-07-revisions-72-only.md",
         "sha256": "900e7574ef8701a25bc8118e2006b4997211b923"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-11-progress-106-only.md",
+        "sha256": "537a977483b2455aae345c024600ec2bb2ef756c"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-11-revisions-74-only.md",
+        "sha256": "9e24efffed4ff639226c064c8ccbcfc0a947c937"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -24724,6 +24772,10 @@
         "sha256": "843b4ade2e919c02ca5f9618a309696faf7604ee"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261111-108-relay-swap-and-reliability.md",
+        "sha256": "9474276c19ef2a65b6f73d7fa5a53a877a222809"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26150,6 +26202,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261107-107-four-targets.md",
         "sha256": "25fd83d87b924fca5691eb069259392fc29e8ea6"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261111-108-relay-swap-and-reliability.md",
+        "sha256": "d8ca6d24dbab7da5cc1c880305bdf500d3d960b4"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -34193,7 +34249,7 @@
       },
       {
         "path": "examples/config/llm_endpoints.yaml",
-        "sha256": "6ebd506e6fca8cd7280eb7dcbe239ca7a0bc1de0"
+        "sha256": "8861c329799eaa12c4ca3526fad3216c1cb072be"
       },
       {
         "path": "examples/config/memory_policy.yaml",
@@ -34201,11 +34257,11 @@
       },
       {
         "path": "examples/config/model_profiles.yaml",
-        "sha256": "675136acde73cc1e5757d1b4172fb9b2c2b87353"
+        "sha256": "ef78471fcc323685dbf8ae4c57e17f9572b6366c"
       },
       {
         "path": "examples/config/models.yaml",
-        "sha256": "a5a34ec6f548e03d726de5055f58c120a175833a"
+        "sha256": "fdfb8d7926249eaa8e6229ea14beb6183212bd98"
       },
       {
         "path": "examples/config/policy.yaml",
@@ -34269,7 +34325,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "bf6bff73af28029a33f1026918439a242c04a104"
+        "sha256": "aa8bf52cda7e62a2086b9f2072eb4954350d5196"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -35277,7 +35333,7 @@
       },
       {
         "path": "packages/application/run_orchestration/phase_runner.py",
-        "sha256": "107dfb02cafb768c08254bf01fd4c9b950b273fd"
+        "sha256": "7053b12a7bf8f9606bddea71e81e9bd875c99fcb"
       },
       {
         "path": "packages/application/run_orchestration/prior_knowledge.py",
@@ -35349,7 +35405,7 @@
       },
       {
         "path": "packages/application/run_orchestration/review_outcome.py",
-        "sha256": "2221eff873f880f3c79c4248f228cbdc702ea0f0"
+        "sha256": "1f5c63fd97c379f59650ca948b97d35997f02cd4"
       },
       {
         "path": "packages/application/run_orchestration/review_panel_judging.py",
@@ -35410,6 +35466,10 @@
       {
         "path": "packages/application/run_orchestration/snapshot_migration.py",
         "sha256": "b2a01f5f7f86012d844aa327197162b053429211"
+      },
+      {
+        "path": "packages/application/run_orchestration/spec_assembly_guard.py",
+        "sha256": "4413f03319ce9e89ed959d26e98293be695c67e7"
       },
       {
         "path": "packages/application/run_orchestration/submission_assembly.py",
@@ -36725,7 +36785,7 @@
       },
       {
         "path": "tests/api/base_fixtures.py",
-        "sha256": "b8faa5465ebbb6fec524cebf25f5dc201e7b5d6a"
+        "sha256": "1dbcf5768a348f14d92b700ee887ce583eca3014"
       },
       {
         "path": "tests/api/conftest.py",
@@ -36993,7 +37053,7 @@
       },
       {
         "path": "tests/api/test_runtime_egress_gate.py",
-        "sha256": "809259aee7341444cb0e89c5bae94b24d325206e"
+        "sha256": "4350e24e908f44058785adb3225cf69a63f127c7"
       },
       {
         "path": "tests/api/test_runtime_selection_surface.py",
@@ -37325,7 +37385,7 @@
       },
       {
         "path": "tests/application/preflight/test_policy_surface_consistency.py",
-        "sha256": "8e570a2fde5daafbbf8ef1e1bb033403dc413f2c"
+        "sha256": "c983e910cedc1008bd2593564a5db2a646338110"
       },
       {
         "path": "tests/application/preflight/test_policy_surface_difference_set.py",
@@ -37341,7 +37401,7 @@
       },
       {
         "path": "tests/application/preflight/test_review_independence_gate.py",
-        "sha256": "45cd93333bf0983cb919ddbf7cebf8805372fe07"
+        "sha256": "e34f1da6b088ef54d973b8e50953aef0deacded9"
       },
       {
         "path": "tests/application/protocol_authoring/test_draft_service.py",
@@ -37785,7 +37845,11 @@
       },
       {
         "path": "tests/application/test_review_independence_judgment.py",
-        "sha256": "bbfd9f2bfa81a03ca8928ae1ce124bdb9bc32209"
+        "sha256": "47269604ab323dbfb670b290b7d79dd9a2ef193e"
+      },
+      {
+        "path": "tests/application/test_review_outcome_no_program.py",
+        "sha256": "7615fcbbf72ef63d91ea24c2f1387cbe350daf3c"
       },
       {
         "path": "tests/application/test_review_panel_aggregation.py",
@@ -37804,12 +37868,20 @@
         "sha256": "d6f121b34b8be70a5093890913adffd0f030e5d7"
       },
       {
+        "path": "tests/application/test_session_contract_retries.py",
+        "sha256": "3c14573af3fe97b1c2669fd42e98837266aff2aa"
+      },
+      {
         "path": "tests/application/test_skill_registry.py",
         "sha256": "0ebffb2b603c795915c244affefca93f8e48b2b7"
       },
       {
         "path": "tests/application/test_snapshot_tree.py",
         "sha256": "57bd3da1ee1f96699cd129da45f7b340309d8cd9"
+      },
+      {
+        "path": "tests/application/test_spec_assembly_guard.py",
+        "sha256": "87bf9b176cc646c7f43104ee4e832db7debc59cd"
       },
       {
         "path": "tests/application/test_submission_package.py",
@@ -37833,7 +37905,7 @@
       },
       {
         "path": "tests/architecture/module_file_naming.py",
-        "sha256": "5f36023a778c6bf90724fc692a365788add1d087"
+        "sha256": "3429220a586427e227868338bd201464fe1782c4"
       },
       {
         "path": "tests/architecture/python/fixtures/invalid/architecture_fixture/__init__.py",
@@ -38045,7 +38117,7 @@
       },
       {
         "path": "tests/architecture/test_module_file_naming.py",
-        "sha256": "28088c31fe8c5932d6d1a1aacd8db82f72712544"
+        "sha256": "33a9dc121d5fe7b317657bd2e0ea108dea6c87d1"
       },
       {
         "path": "tests/architecture/test_overclaiming_gate.py",
@@ -38177,11 +38249,11 @@
       },
       {
         "path": "tests/contracts/test_direction_to_report_v2_independence.py",
-        "sha256": "f4be4849f811da6c4c181e0d56f571565cdd1b67"
+        "sha256": "88688e2af76b3c26a42c8e8df2a4d7c0d8c63584"
       },
       {
         "path": "tests/contracts/test_direction_to_report_v2_novelty.py",
-        "sha256": "d398328a82d74c44173fd4780187b3cdc2613da7"
+        "sha256": "7db56c40b25fe1ccbf440f9326bcb64543bbc9af"
       },
       {
         "path": "tests/contracts/test_dispatch_ownership_contract.py",
@@ -38541,7 +38613,7 @@
       },
       {
         "path": "tests/e2e/manuscript_chain_live_support.py",
-        "sha256": "2a175e1917657d55c4c5329d21bb2b38d4caf27b"
+        "sha256": "3e2296af8f3d2a74dfd52d120e41e3d6bc25547c"
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
@@ -38573,7 +38645,7 @@
       },
       {
         "path": "tests/e2e/test_a_rejecting_reviewer_does_not_cancel_the_panel.py",
-        "sha256": "0cef4f6c415af0e3601bba5b3c1e44b40429f9f9"
+        "sha256": "01d24eb4a6feb1a3620d6ada44cdb9cca75a32a6"
       },
       {
         "path": "tests/e2e/test_cancel_resume.py",
@@ -38861,7 +38933,7 @@
       },
       {
         "path": "tests/e2e/test_reviewers_on_one_phase_form_a_panel.py",
-        "sha256": "a1b1db417eab98cefb2f08f4fd503321d858fdad"
+        "sha256": "f57bf777cb5f07f63912fc8904f2d70b61e5c450"
       },
       {
         "path": "tests/e2e/test_run_chain_retrieval_live.py",
@@ -38917,7 +38989,7 @@
       },
       {
         "path": "tests/e2e/test_two_models_judge_the_same_artifact.py",
-        "sha256": "c7824b3b5a789fcdcdffef1723fcea8b86a81100"
+        "sha256": "9d84c4f561da39a5e13296e5d2b243bc68509493"
       },
       {
         "path": "tests/e2e/test_two_models_judge_the_same_artifact_live.py",
@@ -39041,7 +39113,7 @@
       },
       {
         "path": "tests/loaders/test_contract_loaders.py",
-        "sha256": "f7c6f7e4e07502a4efe83714c4a9404efd80ee2e"
+        "sha256": "c846de0f421f48a83c23faa4b1f6d54a8046536e"
       },
       {
         "path": "tests/loaders/test_example_protocol_integration.py",
@@ -40009,7 +40081,7 @@
       },
       {
         "path": "tools/goal082_closeout_assertions.py",
-        "sha256": "0396873f40d1c8d4bae5ddfdfc5c9223b6f4a520"
+        "sha256": "e27030eb5039633c9bdae53823efdb3f76797671"
       },
       {
         "path": "tools/goal083_closeout_assertions.py",
@@ -40017,7 +40089,7 @@
       },
       {
         "path": "tools/goal084_closeout_assertions.py",
-        "sha256": "3bbe086bfa0a04b6e812e48bf3fda6a662ff26dc"
+        "sha256": "345916fb7ef4806e943a01e4b1eb174d4e52d16e"
       },
       {
         "path": "tools/goal085_closeout_assertions.py",
@@ -40069,7 +40141,7 @@
       },
       {
         "path": "tools/goal097_closeout_assertions.py",
-        "sha256": "9d3f7602dc9dde5e7d41c47ddce7b50b4e9e1048"
+        "sha256": "38aa187f9c9fc57f81f0dd18a4b7286d2bf9bc8a"
       },
       {
         "path": "tools/goal098_closeout_assertions.py",
@@ -40600,11 +40672,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "e1cb5f2d893304514a3d91145812ddb247e6ed2a"
+    "head": "7fd4f45e37d2ca09ffe270c18143947735004e99"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "e1cb5f2d893304514a3d91145812ddb247e6ed2a",
+  "ran_at_head": "7fd4f45e37d2ca09ffe270c18143947735004e99",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

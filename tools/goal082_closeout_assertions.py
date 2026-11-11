@@ -71,7 +71,11 @@ COMPOSE_ENTRY = "def compose_prompt("
 PRIOR_TITLE = "PRIOR_SECTION_TITLE"
 SPEC_FIELD = "prior_knowledge_prompt: str | None = None"
 SPEC_CONTEXT_FIELD = "prior_knowledge: Any | None = None"
-EVAL_POINT = "with_prior_knowledge("
+#: **GOAL-20261111-108**：原值是 `"with_prior_knowledge("`（直接调用形态）。R-1 把五个
+#: spec helper 收进一张**有序清单**（`_SPEC_HELPERS`）并统一加异常边界 ⇒ 调用点变成
+#: 清单里的一行 `("with_prior_knowledge", with_prior_knowledge),`，括号没了。
+#: 判据问的是「求值点在 `phase_runner` 里」——那一件事没变，改判**名字出现在装配清单**。
+EVAL_POINT = "with_prior_knowledge"
 TRUNCATED_COL = '"truncated": entry.truncated'
 REVIEW_COL = '"review_due": entry.review_due'
 

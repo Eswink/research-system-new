@@ -184,7 +184,8 @@ def test_the_two_reviewers_run_on_different_targets_and_read_the_same_artifact()
     reviews = result.review_records
     assert len(reviews) == 2, [(item.task_id, item.finding.reviewed_by) for item in reviews]
     models = {str(item.finding.reviewer_model) for item in reviews}
-    assert models == {"main/glm-5.3", "main/kimi-k2.6"}, models
+    # GOAL-20261111-108：判「两**个**不同目标」而不是「恰好这两个名字」。
+    assert len(models) == 2 and None not in models, models
     # 同一被评对象那一格：同 phase、不同任务。
     assert {item.phase_id for item in reviews} == {_PHASE}
     assert len({item.task_id for item in reviews}) == 2
@@ -199,10 +200,9 @@ def test_a_constructed_split_produces_two_verdicts_and_a_readable_dissent() -> N
     """② 构造的分歧：同一被评对象、0.95 vs 0.4 ⇒ verdict 相异、`dissent` 非空且点名。"""
     result = _run_with_workflow()
     by_model = result.by_model()
-    assert by_model["main/glm-5.3"].finding.verdict == "PASS", by_model["main/glm-5.3"].finding
-    assert by_model["main/kimi-k2.6"].finding.verdict == "REJECT", by_model[
-        "main/kimi-k2.6"
-    ].finding
+    ordered = sorted(by_model)
+    assert by_model[ordered[0]].finding.verdict == "PASS", by_model[ordered[0]].finding
+    assert by_model[ordered[1]].finding.verdict == "REJECT", by_model[ordered[1]].finding
     panels = result.panels
     assert len(panels) == 1, panels
     panel = panels[0]
@@ -212,7 +212,7 @@ def test_a_constructed_split_produces_two_verdicts_and_a_readable_dissent() -> N
     assert dissent, panel
     assert any("REJECT" in item for item in dissent), dissent
     # 判负那位在失败消息里被**逐条点名**（不只说「评审拒了」）。
-    assert "main/kimi-k2.6=REJECT" in result.message, result.message
+    assert f"{ordered[1]}=REJECT" in result.message, result.message
 
 
 def test_pressing_both_reviewers_to_one_model_flips_independence() -> None:
@@ -221,9 +221,10 @@ def test_pressing_both_reviewers_to_one_model_flips_independence() -> None:
     panels = result.panels
     assert len(panels) == 1, panels
     panel = panels[0]
-    assert panel["targets"] == ["main/glm-5.3"], panel
+    assert len(panel["targets"]) == 1, panel
+    pressed = panel["targets"][0]
     assert panel["independent"] is False, panel
-    assert any("main/glm-5.3" in note for note in panel["independence_notes"]), panel
+    assert any(pressed in note for note in panel["independence_notes"]), panel
 
 
 def test_a_single_reviewer_produces_no_panel() -> None:

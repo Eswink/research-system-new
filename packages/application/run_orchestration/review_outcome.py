@@ -63,6 +63,11 @@ NO_ATTRIBUTABLE = "prior run has no attributable review finding"
 #: 本 run 的行**还没落库**时的理由前缀（**逐字**）。这不是失败：run 行由调用方在编排
 #: 返回之后才写入 ⇒ 第一轮开工时必然查不到自己（与 `prior_conclusion_reader` 同一口径）。
 NO_RUN_ROW = "this run's row is not persisted yet (first round of the program)"
+#: **GOAL-20261111-108 R-2**：本 run 不属于任何研究程序 ⇒ 没有前序面板可读。
+#: 与 `NO_FINDINGS`（有前序、但读不到判词 —— fail-closed）**严格区分**：前者是
+#: 「本来就没有」，后者是「应该有却读不到」。原实现为此抛 `ValueError`，会让任何
+#: 非程序 run 在 resume 时静默停住。
+NO_PROGRAM = "this run belongs to no research program (no prior panel to carry)"
 
 
 @dataclass(frozen=True, slots=True)
@@ -199,10 +204,17 @@ def build_review_outcome(
         return _empty(f"{NO_RUN_ROW} (run {run_id})")
     program_id = getattr(run, "program_id", None)
     if not program_id:
-        raise ValueError(
-            f"run {run_id} belongs to no research program "
-            "(the program is the read entry for a prior panel; not guessed)"
-        )
+        # GOAL-20261111-108 R-2：**这条曾经是 resume 的硬阻塞**。
+        # 原实现抛 `ValueError`，而 `with_review_outcome` 在**每个任务**前都被调用
+        # （`phase_runner._run_group_task`）⇒ 任何不属于程序的 run 一旦走 resume 路径
+        # （那时 run 行**已**落库，`get_run` 不再 `KeyError`）就会在第一个任务上抛错；
+        # 而装配面当时**没有异常边界** ⇒ **静默停住**（GOAL-106 `F-17` 的同族形态：
+        # run 既不失败也不报错，20 分钟后连一句判词都没有）。
+        #
+        # 现在给一个**点名的**空视图 `NO_PROGRAM`：它与「有前序但读不到判词」
+        # （`NO_FINDINGS`，fail-closed）严格区分 —— 前者是「这个 run 本来就没有前序面板」，
+        # 后者是「应该有却读不到」。两者判词不同，读面能分开，且都不让链子停住。
+        return _empty(f"{NO_PROGRAM} (run {run_id})")
     prior = [item for item in runs.for_program(program_id) if item.id.value != run_id]
     if not prior:
         return _empty(NO_PRIOR_RUN)

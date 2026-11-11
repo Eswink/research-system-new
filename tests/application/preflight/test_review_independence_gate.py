@@ -33,9 +33,19 @@ from services.api.catalog import (
 
 ROOT = Path(__file__).resolve().parents[3]
 PROTOCOL = "m12_reference_research_v1.yaml"
-PRODUCER_MODEL = "reviewer_gamma"  # 与生产者同 `model_name`（== research_alpha）
-PRODUCER_TARGET = "main/deepseek-v4-flash-vision"
+#: **GOAL-20261111-108**：按压臂原先写 `reviewer_gamma`（当时它与生产者同为
+#: `deepseek-v4-flash-vision`）。换站后 `reviewer_gamma` 承载的是**评审 A** 的模型，
+#: 于是这个常量不再代表「生产者模型」—— 按压臂会**压不中**（它把评审者绑到评审者自己的
+#: 模型上，当然不违规）。改为从目录**读出**生产者当前的模型 id：按压臂问的是
+#: 「把评审者绑回生产者会怎样」，生产者是谁由目录决定，不是由这个常量决定。
+PRODUCER_MODEL = "research_alpha"  # writer 的 primary（`research_strong.primary`）
 VIOLATION = "HETEROGENEITY_VIOLATION"
+
+
+def _producer_target() -> str:
+    """生产者（`research_alpha`）在目录里的 `endpoint/model_name`（不写死）。"""
+    model = load_catalog_snapshot().models[PRODUCER_MODEL]
+    return f"{model.endpoint_id}/{model.model_name}"
 
 
 def _preflight(catalog: CatalogSnapshot) -> PreflightReport:
@@ -74,7 +84,7 @@ def test_the_gate_still_bites_when_the_reviewer_goes_back_to_the_producer_model(
     report = _preflight(_with_reviewer_on(PRODUCER_MODEL))
     messages = _violations(report)
     assert len(messages) == 1, messages
-    assert PRODUCER_TARGET in messages[0], messages[0]
+    assert _producer_target() in messages[0], messages[0]
     assert "research_writer" in messages[0] and "scientific_reviewer" in messages[0], messages[0]
 
 

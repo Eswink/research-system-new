@@ -1,11 +1,18 @@
 model_profiles:
+  # GOAL-20261111-108：**fallback 不得落到评审者的目标上**。
+  # 原先 `research_strong.fallback = [reviewer_gamma]`，而 `reviewer_gamma` 当时与生产者
+  # 同款模型（`deepseek-v4-flash-vision`）⇒ 回落无害。换站之后 `reviewer_gamma` 承载的是
+  # **评审 A** 的模型（`hy4-preview-f`）⇒ 同一条 fallback 变成「写作可以回落到评审 A 的
+  # 目标」，独立性被悄悄破坏。判据抓到了它（`test_the_factory_reviewer_and_producer_sit_
+  # on_different_underlying_models` 的「生产与评审 A 同目标」）。
+  # 修法与 `critic_independent` 同一条纪律：**回落到同侧**（写作 → 另一个写作面模型）。
   research_strong:
     primary: research_alpha
     fallback:
-      - reviewer_gamma
+      - coding_beta
 
   research_fast:
-    primary: reviewer_gamma
+    primary: coding_beta
     fallback:
       - research_alpha
 

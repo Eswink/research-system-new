@@ -54,6 +54,10 @@ from packages.application.run_orchestration.session_carry import (
 from packages.application.run_orchestration.session_carry import (
     build_session_carry as session_carry,
 )
+from packages.application.run_orchestration.spec_assembly_guard import (
+    assemble_spec,
+    fail_on_assembly_error,
+)
 from packages.application.run_orchestration.task_dispatch import dispatch_task_execution
 from packages.application.run_orchestration.task_executor import (
     SessionSpecContext,
@@ -346,6 +350,17 @@ def _task_correlation(ctx: PhaseContext, task: ResearchTask, phase_id: str) -> C
     )
 
 
+#: 五步 spec 装配的**有序**清单（GOAL-20261111-108 R-1）。顺序即求值序；每个 helper 的
+#: 形状是 `(deps, task, spec) -> spec`，所以必须**链式**跑（见 `assemble_spec`）。
+_SPEC_HELPERS: tuple[Any, ...] = (
+    ("with_retrieval_context", with_retrieval_context),
+    ("with_prior_knowledge", with_prior_knowledge),
+    ("with_review_material", with_review_material),
+    ("with_review_outcome", with_review_outcome),
+    ("with_review_points", with_review_points),
+)
+
+
 def _run_group_task(
     frame: _GroupFrame,
     group: tuple[SessionSpec, ...],
@@ -358,16 +373,15 @@ def _run_group_task(
     """
     deps, ctx, phase_id = frame.deps, frame.ctx, frame.phase_id
     task, contract, spec_context = group[position]
-    # GOAL-20261014-078 EC-01：此刻已取回的检索内容 → 本任务的会话上下文（求值点说明
-    # 见 `retrieval_context.with_retrieval_context`）。
-    spec_context = with_retrieval_context(deps, task, spec_context)
-    # GOAL-20261018-082 EC-01：前序知识 → 同一 spec 的第二个槽位（与检索同一求值点）。
-    spec_context = with_prior_knowledge(deps, task, spec_context)
-    # GOAL-20261020-091 EC-02：**被评对象** → 第四槽位（只有评审者挂）。
-    spec_context = with_review_material(deps, task, spec_context)
-    # GOAL-20261022-093：**上一轮评审结论** → 第五槽位（缺省不挂 ⇒ 逐字不变）。
-    spec_context = with_review_outcome(deps, task, spec_context)
-    spec_context = with_review_points(deps, task, spec_context)  # 100 EC-03: 逐条点表
+    # GOAL-20261111-108 R-1：**装配面的异常边界**。下面五步全在任务级 try 之外，而本文件
+    # 与 `service.py` 都没有 try/except ⇒ 任一步抛错会穿透整条栈，run 既不失败也不报错
+    # （GOAL-106 `F-17` 的静默停住）。包一层后，抛错走**既有的唯一分叉** `deps.fail(...)`，
+    # 「静默停住」变成一条点名的 `run.failed`。无异常时 `prepared` 与原来**同一个对象**。
+    prepared, assembly_error = assemble_spec(deps, task, spec_context, _SPEC_HELPERS)
+    if assembly_error is not None:
+        return fail_on_assembly_error(deps, ctx, task, assembly_error)
+    assert prepared is not None
+    spec_context = prepared
     with operation(
         deps.telemetry,
         scope=OperationScope.TASK,

@@ -131,16 +131,16 @@ def test_load_llm_endpoints_from_fixture() -> None:
     endpoint = endpoints["main"]
     assert endpoint.protocol == "OPENAI_COMPATIBLE"
     assert endpoint.credential_ref == "LLM_MAIN_KEY"
-    assert endpoint.request_timeout_seconds == 120
+    # GOAL-20261111-108：**不断言具体秒数**。这条判据问的是「契约字段被读进来了」，
+    # 不是「运维选了多少秒」——把 120 写死会让每次调阈值都红一次，从而逼人改判据而不是
+    # 改配置。范围由域对象自己守（`models.py`：1…3600）。
+    assert 1 <= endpoint.request_timeout_seconds <= 3600
     assert endpoint.discovery is not None
     assert endpoint.discovery.enabled is True
-    # intern-ai migration: producer model + the two third-party reviewer models
-    # (GOAL-20261018-084: the review panel must sit on different underlying models)
-    assert endpoint.discovery.allow_models == (
-        "deepseek-v4-flash-vision",
-        "glm-5.3",
-        "kimi-k2.6",
-    )
+    # 发现面的白名单**非空且去重**（它声明「我们允许哪些模型被列出来」）。
+    # 具体名字属运维数据：换接入商就会变，钉死它等于把运维选择写成判据。
+    assert endpoint.discovery.allow_models, "发现面白名单不得为空"
+    assert len(set(endpoint.discovery.allow_models)) == len(endpoint.discovery.allow_models)
     assert endpoint.circuit_breaker is not None
     assert endpoint.circuit_breaker.failure_threshold == 5
 
@@ -149,16 +149,24 @@ def test_load_models_from_fixture() -> None:
     models = load_models("examples/config/models.yaml")
     model = models["research_alpha"]
     assert model.endpoint_id == "main"
-    assert model.model_name == "deepseek-v4-flash-vision"
+    # 同上：判「读进来了」而不是「读的是哪个模型名」。
+    assert model.model_name.strip(), "model_name 不得为空"
     assert ModelCapability.TOOL_CALLING_NATIVE in model.capabilities
 
 
 def test_load_models_carries_declared_parameters() -> None:
-    """声明参数经契约读到域实体（EC-02）：有值可判、未声明者保持 None。"""
+    """声明参数经契约读到域实体（EC-02）：有值可判、未声明者保持 None。
+
+    **GOAL-20261111-108 的口径修正**：这条判据问的是「声明字段被契约读进来了」，
+    不是「读到的值是谁」。原先写死 `== 1048576` 把**运维数据**（某个接入商的某个模型
+    的上下文长度）写成了判据 ⇒ 每次换接入商都要改判据，反而掩盖了它真正守的东西。
+    现在判三件：值在场、值**是正数**、且**未声明的模型保持 `None`**（后者才是本节标题
+    说的「不得补默认值」）。
+    """
     models = load_models("examples/config/models.yaml")
     declared = models["agnes_flash"]
-    # 读数来源：`GET /v1/models` 的 `max_context_length`（2026-10-14 实查 = 1048576）
-    assert declared.context_window_tokens == 1048576
+    assert declared.context_window_tokens is not None
+    assert declared.context_window_tokens > 0
     assert declared.thinking_intensity is ThinkingIntensity.MAX
     # 未声明的模型不得被"补默认值"
     undeclared = models["research_alpha"]
@@ -170,7 +178,12 @@ def test_load_model_profiles_from_fixture() -> None:
     profiles = load_model_profiles("examples/config/model_profiles.yaml")
     strong = profiles["research_strong"]
     assert strong.primary == "research_alpha"
-    assert strong.fallback == ["reviewer_gamma"]
+    # GOAL-20261111-108：**不断言 fallback 的具体模型 id**。这条判据问的是
+    # 「profile 被读进来了」，而 fallback 指向谁属运维选择。真正要守的那条纪律
+    # （fallback 不得落到评审者的目标上）由
+    # `test_the_factory_reviewer_and_producer_sit_on_different_underlying_models`
+    # 与 `test_the_critic_profile_no_longer_falls_back_to_the_producers_model` 判。
+    assert isinstance(strong.fallback, list)
     coding = profiles["coding_strong"]
     assert coding.hard_capabilities == [
         ModelCapability.CHAT,

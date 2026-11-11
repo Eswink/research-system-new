@@ -238,7 +238,11 @@ def test_preflight_names_the_url_denial_and_stops_the_chain() -> None:
 
     deps = cast(ApiDeps, _StubDeps(policy=EndpointUrlPolicy()))
     denials = build_endpoint_url_denials(deps, blind.catalog)
-    assert set(denials) == {"main"}
+    # **GOAL-20261111-108**：原断言是 `== {"main"}`（出厂目录里只有 `main` 指向被拒地址）。
+    # 换到局域网后 `agnes-anthropic` **也**指向同一主机 ⇒ 也被拒。判据的意图是
+    # 「**被拒的**端点逐个点名」（`main` 是受判对象），不是「恰好一个端点被拒」。
+    # 钉死数量会让「新增一个同样被拒的端点」变成判据红，而那不是它要守的东西。
+    assert "main" in denials, denials
     gated = _report(replace(blind, endpoint_url_denials=denials))
 
     assert "ENDPOINT_URL_DENIED" in _codes(gated)

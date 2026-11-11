@@ -153,8 +153,14 @@ def test_a_rejecting_reviewer_does_not_cancel_the_panel() -> None:
     assert panels[0]["voters"] == 2, panels[0]
     assert panels[0]["votes"] == {"REJECT": 2}, panels[0]
     # 失败消息逐条点名两位评审者的**目标**（不是笼统「gate rejected」）
-    assert "main/glm-5.3=REJECT" in result.message, result.message
-    assert "main/kimi-k2.6=REJECT" in result.message, result.message
+    # **GOAL-20261111-108**：原断言钉的是具体产品名（`main/glm-5.3` / `main/kimi-k2.6`）。
+    # 判据的本意是「**两位评审者的目标都被逐条点名**」—— 名字由运维选，位置由角色决定。
+    # 现在从面板读数里取两个目标，逐个断言它们出现在判词里（仍是逐条、不是笼统一句）。
+    targets = panels[0]["targets"]
+    assert len(targets) == 2, targets
+    for target in targets:
+        assert f"{target}=REJECT" in result.message, result.message
+    assert panels[0]["independent"] is True, panels[0]
 
 
 def test_without_the_declaration_the_first_rejection_stops_the_group() -> None:

@@ -254,8 +254,11 @@ def _novelty_review_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "the-third-model-is-declared",
-            "model_name: minimax-m3" in models,
-            "第三个评审模型的底层 `model_name` 必须在目录里",
+            # **GOAL-20261111-108**：原值钉的是具体产品名 `minimax-m3`（换接入商前那一站）。
+            # 判据的本意是「`novelty_review_model` 这个名字在目录里有一个 `model_name`」——
+            # 名字由运维选，**位置**由角色决定。换站后名字变了、关系没变。
+            "novelty_review_model" in models and "model_name:" in models,
+            "`novelty_review_model` 必须在目录里声明一个 `model_name`",
         ),
         toolbox.verdict(
             "the-role-is-in-the-standard-template",

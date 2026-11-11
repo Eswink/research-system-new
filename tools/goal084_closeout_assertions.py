@@ -72,9 +72,15 @@ UNRESOLVED_PROMPT = "review independence cannot be judged for this role"
 #: 出厂目录的真实读数：评审者与生产者的 `model_name` 必须不同。
 FACTORY_MODELS = "examples/config/models.yaml"
 FACTORY_PROFILES = "examples/config/model_profiles.yaml"
-PRODUCER_MODEL_NAME = "deepseek-v4-flash-vision"
-REVIEWER_MODEL_NAME = "glm-5.3"
-SECOND_REVIEWER_MODEL_NAME = "kimi-k2.6"
+#: **GOAL-20261111-108**：这三个常量原先是**具体的产品名**（换接入商前那一站的读数）。
+#: 它们守的本意是「目录里存在**三个不同的**底层 `model_name`，且评审者与生产者不同」——
+#: 那是关系，不是名字。接入商一换，名字就变，而**关系仍然成立**；钉死名字会让这条判据
+#: 在「换站」时红，而它红**不代表独立性坏了**。改为**从当前目录读**：
+#: `producer` 取生产者 agent 绑定的模型名，两个评审取 `critic_independent` 与
+#: `kimi_k2_6` 的模型名（仍是「按目录解析」，不是从产品常量 import 当预言机）。
+PRODUCER_MODEL_NAME = ""  # 由 `current_factory_names()` 现读，保留常量只为签名兼容
+REVIEWER_MODEL_NAME = ""
+SECOND_REVIEWER_MODEL_NAME = ""
 CRITIC_PROFILE = "critic_independent"
 
 #: EC-04 的按压与边界用例（逐条点名）。
@@ -132,12 +138,23 @@ def collected_case_count(root: Path, relative: str) -> int:
 
 
 def _names_model_names(source: str) -> tuple[str, str, str]:
-    """从 `models.yaml` 里按 `model_name:` 取值（本判据只判「是否有这三个底层名」）。"""
-    names = re.findall(r"^\s+model_name:\s*(\S+)\s*$", source, re.MULTILINE)
+    """从 `models.yaml` 里按**模型 id** 取三个 `model_name`（生产者 / 评审 A / 评审 B）。
+
+    **按 id 取而不是按名字找**（GOAL-20261111-108）：判据问的是「这三**个位置**各自
+    指向一个模型名，且三者互不相同」—— 名字由运维选，位置由角色决定。
+    """
+    blocks = re.split(r"^  ([a-z_][a-z0-9_]*):\s*$", source, flags=re.MULTILINE)
+    by_id: dict[str, str] = {}
+    for index in range(1, len(blocks) - 1, 2):
+        model_id, body = blocks[index], blocks[index + 1]
+        # 行尾允许 `# 注释`（GOAL-20261111-108 换站时加了逐行理由）⇒ 只取第一个 token。
+        match = re.search(r"^\s+model_name:\s*([^\s#]+)", body, re.MULTILINE)
+        if match:
+            by_id[model_id] = match.group(1)
     return (
-        PRODUCER_MODEL_NAME if PRODUCER_MODEL_NAME in names else "",
-        REVIEWER_MODEL_NAME if REVIEWER_MODEL_NAME in names else "",
-        SECOND_REVIEWER_MODEL_NAME if SECOND_REVIEWER_MODEL_NAME in names else "",
+        by_id.get("research_alpha", ""),
+        by_id.get("reviewer_independent", ""),
+        by_id.get("kimi_k2_6", ""),
     )
 
 
@@ -181,9 +198,14 @@ def _judgment_verdicts(root: Path, toolbox: Any) -> list[Any]:
             UNRESOLVED_CODE in role_checks and UNRESOLVED_PROMPT in role_checks,
             "解析失败必须逐条 MODEL_MISSING 点名（不得静默跳过 ⇒ 不得把空集读成「无交集」）",
         ),
-        verdict("factory-producer-model-present", bool(producer_name), PRODUCER_MODEL_NAME),
-        verdict("factory-reviewer-model-present", bool(reviewer_name), REVIEWER_MODEL_NAME),
-        verdict("factory-second-reviewer-present", bool(second_name), SECOND_REVIEWER_MODEL_NAME),
+        verdict("factory-producer-model-present", bool(producer_name), producer_name),
+        verdict("factory-reviewer-model-present", bool(reviewer_name), reviewer_name),
+        verdict("factory-second-reviewer-present", bool(second_name), second_name),
+        verdict(
+            "the-three-factory-names-are-distinct",
+            len({producer_name, reviewer_name, second_name} - {""}) == 3,
+            f"{producer_name} / {reviewer_name} / {second_name}",
+        ),
         verdict(
             "factory-reviewer-differs-from-producer",
             bool(reviewer_name) and reviewer_name != producer_name,

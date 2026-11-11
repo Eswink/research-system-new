@@ -140,7 +140,10 @@ def test_python_module_containing_tests_requires_test_prefix(tmp_path: Path) -> 
 
 
 def test_legacy_baseline_is_exact_and_not_stale() -> None:
-    assert len(LEGACY_PATH_EXCEPTIONS) == 26
+    # 26 -> 27（GOAL-20261111-108）：新增 `tests/api/base_fixtures.py` —— 它是本轮**之前**
+    # 就存在的违规（在 `7fd4f45e` 上单跑本判据同样红）。登记而不是改名：它被 20+ 个既有
+    # 测试模块 import，改名要同轮改全部调用点。这个数字**故意钉死**：每加一条都要人显式改。
+    assert len(LEGACY_PATH_EXCEPTIONS) == 27
     assert not any(set(path) & {"*", "?", "[", "]"} for path in LEGACY_PATH_EXCEPTIONS)
     assert stale_legacy_exceptions(ROOT) == ()
 

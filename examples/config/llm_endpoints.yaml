@@ -2,21 +2,31 @@ llm_endpoints:
   main:
     name: Main Relay
     protocol: OPENAI_COMPATIBLE
-    base_url: https://discovery-api.intern-ai.org.cn/v1
+    # GOAL-20261111-108：**局域网中转站**（此前是 discovery-api.intern-ai.org.cn）。
+    # 这个地址是 **private IP** ⇒ `endpoint_policy` 默认拒绝（§9 的 deny 姿态不变）；
+    # 放行靠 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1`（设置名带 localhost，实际同时覆盖
+    # private/link-local —— 见 `services/api/assembly.py`）。判据不看 DNS，只分类字面量。
+    base_url: http://192.168.101.9:8798/v1
     credential_ref: LLM_MAIN_KEY
-    request_timeout_seconds: 120
+    # GOAL-20261111-108：120 -> 300。**依据是实测分布，不是为绿调参**：
+    # RECHECK-202607（GOAL-106 F-14）量到同一模型同一条请求延迟 99.8 / 76.1 / 78.4 秒，
+    # 另有一条 120.1 秒 ReadTimeout —— 120 秒正好压在分布右尾上，长请求会被整齐地砍掉。
+    # 300 秒把悬崖移到实测分布之外；schema 与域对象允许 1…3600。
+    request_timeout_seconds: 300
     max_retries: 2
     concurrency_limit: 8
     enabled: true
     discovery:
       enabled: true
-      # GOAL-20261018-084：`glm-5.3` / `kimi-k2.6` 是**第三方评审模型**（与生产侧的
-      # `deepseek-v4-flash-vision` 底层不同）⇒ 发现面必须放行它们，否则
-      # 「评审独立于生产者」只能靠目录声明、无法经发现面核对。
+      # GOAL-20261111-108：新站 23 个模型里有 5 个 `credits: x0.00`（免费），其中 4 个
+      # 支持 `tool_calls`（已逐个实测：`finish_reason: tool_calls` + 参数正确）。
+      # `allow_models` 只作用于发现面（`POST /llm-endpoints/{id}/discover-models`），
+      # **不在运行路径上**；但它同时是「我们只用免费模型」这条纪律的可读声明。
       allow_models:
-        - deepseek-v4-flash-vision
-        - glm-5.3
-        - kimi-k2.6
+        - hy4free
+        - hy4-preview-f
+        - hy4flash-exp4
+        - hy3
     circuit_breaker:
       failure_threshold: 5
       open_timeout_seconds: 60
@@ -25,9 +35,14 @@ llm_endpoints:
   agnes-anthropic:
     name: Intern Anthropic
     protocol: ANTHROPIC
-    base_url: https://discovery-api.intern-ai.org.cn/v1
+    # **GOAL-20261111-108**：本端点保留**启用**（`test_anthropic_surface_boundary` 的
+    # 「probe 腿」判据要求 `enabled is True` —— 判的是「可被探测」，不是「探测一定成功」）。
+    # 新站是否真的提供 Anthropic Messages 形态，由健康探测如实回报（不可用 ⇒ UNKNOWN，
+    # 那是**读数**不是配置）。运行链**不走**这条路：`test_run_leg_models_all_sit_on_the
+    # _openai_compatible_face` 钉住 run 腿必须留在 `OPENAI_COMPATIBLE`。
+    base_url: http://192.168.101.9:8798/v1
     credential_ref: LLM_MAIN_KEY
-    request_timeout_seconds: 120
+    request_timeout_seconds: 300
     max_retries: 2
     concurrency_limit: 4
     enabled: true

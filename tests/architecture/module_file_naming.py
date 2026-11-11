@@ -25,6 +25,15 @@ IGNORED_DIRECTORIES = frozenset({
     "test-results",
 })
 LEGACY_PATH_EXCEPTIONS = frozenset({
+    # **GOAL-20261111-108 实测的既有违规**（在本轮改动**之前**的 HEAD 上就红）：
+    # `tests/api/base_fixtures.py` 是**共享测试夹具模块**（不是测试模块），但它在 `tests/`
+    # 下、又不以 `test_` 开头 ⇒ 被本判据扫成违规。它不是本轮引入的：在 `7fd4f45e` 上
+    # 单跑本判据同样红（实测）。
+    # 处置 = **登记为祖父条款**，而不是改名：它是被 **20+ 个既有测试模块 import** 的
+    # 共享夹具（`from tests.api.base_fixtures import ...`），改名要同轮改全部调用点，
+    # 那是与本轮目标无关的大范围重构。**不把它当成"通过"**：它仍在这里逐条列出。
+    # 若将来做一次 `tests/` 布局整理，正确的名字是 `conftest`-级夹具或 `support.py`。
+    "tests/api/base_fixtures.py",
     "adapters/execution/容器归属v1.py",
     "adapters/postgres/migrations/010_GPU显存计量宽度v1.sql",
     "adapters/postgres/migrations/011_GPU时间精度v1.sql",

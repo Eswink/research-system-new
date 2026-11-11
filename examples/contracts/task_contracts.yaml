@@ -246,8 +246,16 @@ task_contracts:
         minimum_sources: 1
     timeout_seconds: 120
     retry_policy:
-      max_attempts: 1
-      retryable_categories: []
+      # GOAL-20261111-108 R-3：**瞬时上游失败不该是终态**。原先 `max_attempts: 1` +
+      # 空类别 ⇒ 一次 `MODEL_RELAY_UNAVAILABLE` 就走 `retry budget exhausted`
+      # （GOAL-106 F-10/F-11/F-16），而根因是上游延迟分布（实测 99.8/76.1/78.4s）。
+      # 只用**既有**机制：① `max_attempts: 2` ⇒ 进程内真再试一次；
+      # ② `backoff_seconds: 30` ⇒ 走 `retry deferred to the dispatcher`（→ PAUSED →
+      # 调度器续跑），不在原地干等。类别**显式列出**：空表在两处语义自相矛盾
+      # （进程内=通配、域层=全不重试），本行不赌哪一处生效（见 GOAL 的 W-NN）。
+      max_attempts: 2
+      retryable_categories: [MODEL_RELAY_UNAVAILABLE, MODEL_RATE_LIMIT, MODEL_TIMEOUT]
+      backoff_seconds: 30
 
   # GOAL-20261005-030 EC-01：**承接能力真的被一次 run 用上**的成对契约。
   #
@@ -925,8 +933,16 @@ task_contracts:
         minimum_tool_evidences: 1
     timeout_seconds: 300
     retry_policy:
-      max_attempts: 1
-      retryable_categories: []
+      # GOAL-20261111-108 R-3：**瞬时上游失败不该是终态**。原先 `max_attempts: 1` +
+      # 空类别 ⇒ 一次 `MODEL_RELAY_UNAVAILABLE` 就走 `retry budget exhausted`
+      # （GOAL-106 F-10/F-11/F-16），而根因是上游延迟分布（实测 99.8/76.1/78.4s）。
+      # 只用**既有**机制：① `max_attempts: 2` ⇒ 进程内真再试一次；
+      # ② `backoff_seconds: 30` ⇒ 走 `retry deferred to the dispatcher`（→ PAUSED →
+      # 调度器续跑），不在原地干等。类别**显式列出**：空表在两处语义自相矛盾
+      # （进程内=通配、域层=全不重试），本行不赌哪一处生效（见 GOAL 的 W-NN）。
+      max_attempts: 2
+      retryable_categories: [MODEL_RELAY_UNAVAILABLE, MODEL_RATE_LIMIT, MODEL_TIMEOUT]
+      backoff_seconds: 30
 
   # ─────────────────────────────────────────────────────────────────────────────
   # GOAL-20261028-099 EC-01/EC-02：**投稿形状的手稿**（投稿层 ≠ 报告层）。
@@ -1012,8 +1028,16 @@ task_contracts:
         minimum_retrieved_sources: 1
     timeout_seconds: 300
     retry_policy:
-      max_attempts: 1
-      retryable_categories: []
+      # GOAL-20261111-108 R-3：**瞬时上游失败不该是终态**。原先 `max_attempts: 1` +
+      # 空类别 ⇒ 一次 `MODEL_RELAY_UNAVAILABLE` 就走 `retry budget exhausted`
+      # （GOAL-106 F-10/F-11/F-16），而根因是上游延迟分布（实测 99.8/76.1/78.4s）。
+      # 只用**既有**机制：① `max_attempts: 2` ⇒ 进程内真再试一次；
+      # ② `backoff_seconds: 30` ⇒ 走 `retry deferred to the dispatcher`（→ PAUSED →
+      # 调度器续跑），不在原地干等。类别**显式列出**：空表在两处语义自相矛盾
+      # （进程内=通配、域层=全不重试），本行不赌哪一处生效（见 GOAL 的 W-NN）。
+      max_attempts: 2
+      retryable_categories: [MODEL_RELAY_UNAVAILABLE, MODEL_RATE_LIMIT, MODEL_TIMEOUT]
+      backoff_seconds: 30
 
   # GOAL-20261029-100 EC-02：**投稿决策**的交付物契约（`editorial` 相）。
   #
@@ -1165,8 +1189,16 @@ task_contracts:
         minimum_sources: 1
     timeout_seconds: 300
     retry_policy:
-      max_attempts: 1
-      retryable_categories: []
+      # GOAL-20261111-108 R-3：**瞬时上游失败不该是终态**。原先 `max_attempts: 1` +
+      # 空类别 ⇒ 一次 `MODEL_RELAY_UNAVAILABLE` 就走 `retry budget exhausted`
+      # （GOAL-106 F-10/F-11/F-16），而根因是上游延迟分布（实测 99.8/76.1/78.4s）。
+      # 只用**既有**机制：① `max_attempts: 2` ⇒ 进程内真再试一次；
+      # ② `backoff_seconds: 30` ⇒ 走 `retry deferred to the dispatcher`（→ PAUSED →
+      # 调度器续跑），不在原地干等。类别**显式列出**：空表在两处语义自相矛盾
+      # （进程内=通配、域层=全不重试），本行不赌哪一处生效（见 GOAL 的 W-NN）。
+      max_attempts: 2
+      retryable_categories: [MODEL_RELAY_UNAVAILABLE, MODEL_RATE_LIMIT, MODEL_TIMEOUT]
+      backoff_seconds: 30
 
   # ─────────────────────────────────────────────────────────────────────────────
   # GOAL-20261031-102 EC-03：**投稿包**的会话交付物契约（`submission` 相）。
@@ -1218,5 +1250,13 @@ task_contracts:
         minimum_sources: 1
     timeout_seconds: 180
     retry_policy:
-      max_attempts: 1
-      retryable_categories: []
+      # GOAL-20261111-108 R-3：**瞬时上游失败不该是终态**。原先 `max_attempts: 1` +
+      # 空类别 ⇒ 一次 `MODEL_RELAY_UNAVAILABLE` 就走 `retry budget exhausted`
+      # （GOAL-106 F-10/F-11/F-16），而根因是上游延迟分布（实测 99.8/76.1/78.4s）。
+      # 只用**既有**机制：① `max_attempts: 2` ⇒ 进程内真再试一次；
+      # ② `backoff_seconds: 30` ⇒ 走 `retry deferred to the dispatcher`（→ PAUSED →
+      # 调度器续跑），不在原地干等。类别**显式列出**：空表在两处语义自相矛盾
+      # （进程内=通配、域层=全不重试），本行不赌哪一处生效（见 GOAL 的 W-NN）。
+      max_attempts: 2
+      retryable_categories: [MODEL_RELAY_UNAVAILABLE, MODEL_RATE_LIMIT, MODEL_TIMEOUT]
+      backoff_seconds: 30

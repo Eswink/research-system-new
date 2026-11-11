@@ -1,11 +1,13 @@
 models:
   agnes_flash:
     endpoint: main
-    display_name: DeepSeek V4 Flash Vision
-    model_name: deepseek-v4-flash-vision
+    display_name: Hy4 Free (relay, writing/execution)
+    model_name: hy4free  # 写作组
     # 声明值（由登记方声明、非探测）：本版本不发送给 provider，也不参与 eligibility 判定
-    # 读数来源：`GET /v1/models` 的 `max_context_length`（2026-10-14 实查 = 1048576）。
-    context_window_tokens: 1048576
+    # 读数来源（GOAL-20261111-108 实查，`GET /v1/models`）：`context_length = 960000`、
+    # `max_output_tokens = 64000`。**它是 reasoning 模型**（实测 `reasoning_tokens` 会吃掉
+    # 输出预算：64 token 上限时 `content` 为空、`finish_reason: length`）。
+    context_window_tokens: 960000
     thinking_intensity: MAX
     capabilities:
       CHAT: &user_declared_supported
@@ -22,7 +24,7 @@ models:
   research_alpha:
     endpoint: main
     display_name: Research Alpha
-    model_name: deepseek-v4-flash-vision
+    model_name: hy4free  # 写作组（writer/director/domain_a）
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -33,7 +35,7 @@ models:
   coding_beta:
     endpoint: main
     display_name: Coding Beta
-    model_name: deepseek-v4-flash-vision
+    model_name: hy4free  # 写作组
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -43,7 +45,7 @@ models:
   reviewer_gamma:
     endpoint: main
     display_name: Reviewer Gamma
-    model_name: deepseek-v4-flash-vision
+    model_name: hy3  # 轻量面（scout_b / research_fast）
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -65,8 +67,8 @@ models:
   reviewer_independent:
     endpoint: main
     display_name: Reviewer Independent (GLM-5.3, third-party reviewer)
-    model_name: glm-5.3
-    context_window_tokens: 1048576
+    model_name: hy4-preview-f  # 评审 A（critic_independent primary）
+    context_window_tokens: 1000000  # hy4-preview-f 1M
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -85,8 +87,8 @@ models:
   kimi_k2_6:
     endpoint: main
     display_name: Kimi K2.6 (third-party reviewer, second panel member)
-    model_name: kimi-k2.6
-    context_window_tokens: 262144
+    model_name: hy4flash-exp4  # 评审 B
+    context_window_tokens: 960000  # hy4flash-exp4 960K
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -111,8 +113,8 @@ models:
   novelty_review_model:
     endpoint: main
     display_name: MiniMax M3 (third-party novelty reviewer)
-    model_name: minimax-m3
-    context_window_tokens: 1048576
+    model_name: hy4-preview-f  # 创新点评审（本轮与评审 A 同 —— W-NN）
+    context_window_tokens: 960000  # hy4flash-exp4 960K
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -138,8 +140,8 @@ models:
   novelty_author_model:
     endpoint: main
     display_name: DeepSeek V4 Pro 0813 (novelty author)
-    model_name: deepseek-v4-pro-0813
-    context_window_tokens: 1048576
+    model_name: hy3  # 创新点作者（≠ 写作组 与 两位评审者）
+    context_window_tokens: 960000  # hy4free 960K
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -165,8 +167,8 @@ models:
   scientific_editor_model:
     endpoint: main
     display_name: Qwen3.8 27B (handling editor)
-    model_name: qwen3.8-27b
-    context_window_tokens: 1048576
+    model_name: hy4free  # 编辑
+    context_window_tokens: 960000  # hy4free 960K
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported

@@ -122,6 +122,18 @@ def live_gate() -> Any:
     )
 
 
+def _allow_local_endpoints() -> bool:
+    """与产品**同一个**环境开关（`ApiSettings.from_env` 读的那一个）。
+
+    `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1` 的名字带 localhost，但
+    `services/api/assembly.py` 把它同时映射到 `allow_private` / `allow_link_local`
+    —— 所以局域网中转站靠它放行。判据侧读同一个变量，就没有「产品能跑、判据不能跑」
+    的分叉。
+    """
+    raw = os.environ.get("RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS", "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def assembled_product() -> Any:
     """**产品组合根**（`assemble()`）；不补任何缝（补了就与 GOAL-097 的口径分叉）。"""
     from services.api.composition import assemble
@@ -133,7 +145,14 @@ def assembled_product() -> Any:
             # 每次一个全新的库（pid 会复用 ⇒ 按 pid 命名会让上一次的 lease 残留进来）。
             db_path=f"data/goal106-live-{os.getpid()}-{unique()}.db",
             agent_runtime=OPENHANDS_RUNTIME,
-            allow_localhost_endpoints=False,
+            # GOAL-20261111-108 R-4：**不再写死 `False`**，改为读与产品同一个环境开关。
+            # 换到局域网中转站后，`192.168.101.9` 被 `endpoint_policy` 判成 private ⇒
+            # 默认拒（§9 姿态，正确）。产品路径的放行口就是
+            # `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1`（`ApiSettings.from_env` 读它，
+            # `assembly._endpoint_url_policy` 把它同时映射到 allow_private）。
+            # 这里必须**跟产品用同一个开关**：写死 `False` 会让「产品能跑、判据不能跑」
+            # —— 那条判据就永远证明不了产品面可用。
+            allow_localhost_endpoints=_allow_local_endpoints(),
             # 真实会话要能建工作区（§9 的 host shell 默认 deny 不变：显式开发开关）。
             workspace_allow_host_shell=True,
             # 实验设计来自**本 run 的计划产物**（GOAL-080 的机制，装配面声明）。
