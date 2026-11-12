@@ -1,5 +1,5 @@
 {
-  "exit_code": 1,
+  "exit_code": 0,
   "fingerprint_after": {
     "files": [
       {
@@ -1864,7 +1864,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-111-panel-verdicts-that-can-be-refuted.md",
-        "sha256": "d56774798aa0c98aa13b206e59252faa1637f816"
+        "sha256": "8f7fd259da273ba972c3760945763d415bf1a288"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -20499,7 +20499,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "b36caaec44bd07c1150316e54825c83da39cf1e6"
+    "head": "420b990883c1cd6b249615c0f61a1827df56cb6b"
   },
   "fingerprint_before": {
     "files": [
@@ -22365,7 +22365,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-111-panel-verdicts-that-can-be-refuted.md",
-        "sha256": "d56774798aa0c98aa13b206e59252faa1637f816"
+        "sha256": "8f7fd259da273ba972c3760945763d415bf1a288"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -41000,11 +41000,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "b36caaec44bd07c1150316e54825c83da39cf1e6"
+    "head": "420b990883c1cd6b249615c0f61a1827df56cb6b"
   },
-  "green": false,
+  "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "b36caaec44bd07c1150316e54825c83da39cf1e6",
-  "terminal_line": "FAILED: 1 check(s): python/tests=1",
+  "ran_at_head": "420b990883c1cd6b249615c0f61a1827df56cb6b",
+  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
