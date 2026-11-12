@@ -43,7 +43,21 @@ AUTHORED = "AUTHORED"
 
 #: `AUTHORED` 是否**默认**放行。`False` = 出厂行为不变（白名单三条）。
 #: 打开它是一次**安全姿态决定**，不是配置调优 —— 因此这里不读环境变量。
+#:
+#: **GOAL-20261111-112 EC-04：这一行逐字不动。** 本轮交付的是「可启用的那张网」：
+#: 放行口是下面那个**具名安全 profile**，而不是把这个常量改成 `True`。
 AUTHORED_ALLOWED_BY_DEFAULT = False
+
+#: **具名安全 profile**：唯一能放行 `AUTHORED` 的显式声明（与序 76 的开关同形态）。
+#:
+#: 语义：`RESEARCHOS_AUTHORED_SAFETY_PROFILE` **恰好等于**这个名字 ⇒ 该进程内可显式
+#: 传 `authored_allowed=True`；任何其它取值（含 `1` / `true`）⇒ **不**放行。
+#: 与 `RESEARCHOS_LIVE_E2E` 同一条纪律：**值必须一眼判**，不做真值解析。
+#:
+#: **它不改变缺省**：即使 profile 在场，`authored_allowed=None` 仍取
+#: `AUTHORED_ALLOWED_BY_DEFAULT`（`False`）。profile 只是让「显式传 True」这件事
+#: 在一个**具名**的运维模式下有意义 —— 调用方仍要显式传。
+AUTHORED_SAFETY_PROFILE = "authored-experiments-v1"
 
 #: 策略约束里本模块认识的三个键（其余键**原样忽略**，不猜语义）。
 SANDBOX_KEY = "sandbox_required"
@@ -82,6 +96,15 @@ class ExecutionRequest:
     sandboxed: bool = False
 
 
+def authored_profile_declared() -> bool:
+    """本进程是否处在**具名**的 `authored` 安全 profile 下（缺省 `False`）。"""
+    import os
+
+    return os.environ.get("RESEARCHOS_AUTHORED_SAFETY_PROFILE", "").strip() == (
+        AUTHORED_SAFETY_PROFILE
+    )
+
+
 def shipped_scripts() -> tuple[str, ...]:
     """出厂脚本闭集（从 `design_script` 取，**不在本模块复制**）。"""
     from packages.application.experiments.design_script import SHIPPED_EXPERIMENT_SCRIPTS
@@ -113,6 +136,14 @@ def authority_for(
                 "model-authored experiment scripts are not enabled: this round builds the "
                 "mechanism, and turning AUTHORED on is a security-posture decision, not a "
                 "configuration tweak"
+            )
+        # GOAL-20261111-112 EC-04：显式放行还不够 —— 必须处在**具名**安全 profile 下。
+        # 两道门是两件事：`authored_allowed` 是调用方的意图，profile 是**运维模式**。
+        if not authored_profile_declared():
+            raise AuthorityError(
+                "model-authored scripts require the named safety profile: set "
+                f"RESEARCHOS_AUTHORED_SAFETY_PROFILE={AUTHORED_SAFETY_PROFILE!r} "
+                "(exact value) for the process that runs them"
             )
         return ExecutionAuthority.AUTHORED
     script = request.script_path.replace("\\", "/")
@@ -147,31 +178,19 @@ def check_constraints(
             f"shipped script {request.script_path!r} carries no digest: without a pin the bytes "
             "that run are not the bytes that were reviewed"
         )
-    constraints = request.constraints or {}
-    if constraints.get(SANDBOX_KEY) is True and not request.sandboxed:
-        raise AuthorityError(
-            f"policy requires a sandbox ({SANDBOX_KEY}) but the execution is not sandboxed"
-        )
-    prefix = constraints.get(PATH_PREFIX_KEY)
-    if isinstance(prefix, str) and prefix:
-        target = request.write_path
-        if target is None:
-            raise AuthorityError(
-                f"policy requires writes under {prefix!r} but the execution declares no write path"
-            )
-        normalized_target = target.replace("\\", "/")
-        if ".." in Path(normalized_target).parts:
-            raise AuthorityError(
-                f"write path {target!r} escapes upward (..), which no prefix permits"
-            )
-        if not normalized_target.startswith(prefix.replace("\\", "/")):
-            raise AuthorityError(f"write path {target!r} is outside the policy prefix {prefix!r}")
-    limit = constraints.get(MAX_SECONDS_KEY)
-    if isinstance(limit, (int, float)) and request.requested_seconds is not None:
-        if request.requested_seconds > float(limit):
-            raise AuthorityError(
-                f"requested {request.requested_seconds}s exceeds the policy limit of {limit}s"
-            )
+    # GOAL-20261111-112 EC-01：三条约束的**判定**来自唯一一张表
+    # （`experiments/constraint_table.py`）——本处只把违反落成 `AuthorityError`。
+    # 工具面与 preflight 调**同一张表**，因此三面对同一条声明的结论不会漂。
+    from packages.application.experiments.constraint_table import violations
+
+    found = violations(
+        request.constraints,
+        sandboxed=request.sandboxed,
+        write_path=request.write_path,
+        requested_seconds=request.requested_seconds,
+    )
+    if found:
+        raise AuthorityError("; ".join(item.describe() for item in found))
     return authority
 
 
@@ -186,6 +205,8 @@ def describe_authority(authority: ExecutionAuthority) -> Mapping[str, Any]:
 __all__ = [
     "AUTHORED",
     "AUTHORED_ALLOWED_BY_DEFAULT",
+    "AUTHORED_SAFETY_PROFILE",
+    "authored_profile_declared",
     "MAX_SECONDS_KEY",
     "PATH_PREFIX_KEY",
     "SANDBOX_KEY",

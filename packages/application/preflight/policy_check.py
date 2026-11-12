@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+# GOAL-20261111-112 EC-01：`experiments.constraint_table` 的三键判定在这里**用到才导入**
+# —— `experiments/__init__` 会拖进 `governed` → 本模块（反向依赖），
+# 模块级导入会成环（实测 ImportError）。函数内导入不改变「同一张表」这条性质：
+# 判据按**源码**断言三处都调它。
 from packages.application.policy.native import PolicyRequest
 from packages.application.ports import PolicyEvaluator, PreflightContext
 from packages.domain.enums import GateType, PolicyDecision
@@ -120,7 +124,22 @@ def _evaluate_requirement(
             f"approval required: {requirement.capability}",
         )
     if result.decision is PolicyDecision.ALLOW_WITH_CONSTRAINTS:
+        # GOAL-20261111-112 EC-03：**核验约束形状**（此前只是 `", ".join(sorted(...))` 复述
+        # ——未知键与类型错都被静默放过）。形状由**同一张表**判（三面同源）。
+        from packages.application.experiments.constraint_table import shape_violations
+
         constraints = ", ".join(sorted(result.constraints))
+        malformed = shape_violations(dict(result.constraints))
+        if malformed:
+            detail = "; ".join(f"{requirement.capability} {item.describe()}" for item in malformed)
+            return (
+                _finding(
+                    PreflightFindingCode.POLICY_CONSTRAINTS_INVALID.value,
+                    f"policy constraints are not usable: {detail}",
+                    f"phase:{requirement.phase_id}",
+                ),
+                f"invalid policy constraints for {requirement.capability}: {detail}",
+            )
         return None, f"policy constraints for {requirement.capability}: {constraints}"
     return None, None
 

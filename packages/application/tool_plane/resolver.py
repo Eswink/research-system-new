@@ -42,6 +42,16 @@ class CapabilityResolution:
     capability: str
     bindings: tuple[ToolBinding, ...]
     findings: tuple[str, ...] = ()
+    #: 本 capability 的**策略约束**（GOAL-20261111-112 EC-02）：`ALLOW_WITH_CONSTRAINTS`
+    #: 声明的那几条从这里**可读**，不再在解析面被丢弃。缺省空映射 ⇒ 无约束，既有行为逐字不变。
+    #: **形状不合法**（未知键 / 类型错）时这里是**原始声明**、且 `findings` 点名 ——
+    #: 解析面不替调用方猜「合法子集」。
+    constraints: Mapping[str, object] = field(default_factory=dict)
+
+    @property
+    def constraint_keys(self) -> tuple[str, ...]:
+        """已声明约束的键（排序；空 = 无约束）。"""
+        return tuple(sorted(self.constraints))
 
     @property
     def provider_ids(self) -> tuple[str, ...]:
@@ -57,6 +67,9 @@ class ResolutionInput:
     policy_decisions: Mapping[str, PolicyDecision] = field(default_factory=dict)
     provider_health: Mapping[str, EndpointHealth] = field(default_factory=dict)
     default_decision: PolicyDecision = PolicyDecision.ALLOW
+    #: capability → 该能力声明的**策略约束**（GOAL-20261111-112 EC-02）。
+    #: 缺省空映射 ⇒ 解析结果 `constraints` 为空、findings 不变（既有行为逐字不变）。
+    capability_constraints: Mapping[str, Mapping[str, object]] = field(default_factory=dict)
 
 
 # default_decision=ALLOW 不再隐式放行（fail-closed）；显式 per-capability
@@ -135,7 +148,15 @@ def resolve_capability(
 
     if decision is PolicyDecision.REQUIRE_APPROVAL:
         findings.append(f"capability {capability} requires approval")
-    return CapabilityResolution(capability, bindings, tuple(findings))
+    # GOAL-20261111-112 EC-02：约束**随解析结果一起走**（此前解析面等价放行、约束丢失）。
+    # 形状由**同一张表**判（`experiments/constraint_table.py`）——三面同源。
+    from packages.application.experiments.constraint_table import shape_violations
+
+    declared = dict(inputs.capability_constraints.get(capability) or {})
+    findings.extend(
+        f"capability {capability} {problem.describe()}" for problem in shape_violations(declared)
+    )
+    return CapabilityResolution(capability, bindings, tuple(findings), declared)
 
 
 def _effective_decision(capability: str, inputs: ResolutionInput) -> PolicyDecision:

@@ -39,6 +39,13 @@ from packages.application.experiments.design_from_plan import ExperimentDesignUn
 #: 设计块里**脚本选择**那个键（与 `arms` 并列，同一个 `experiment_design` 对象里）。
 SCRIPT_KEY = "script"
 
+#: **脚本来源**的声明键（GOAL-20261111-112 EC-04）：闭集 `shipped` / `authored`。
+#: 缺席 = `shipped`（逐字回到今天：白名单选择）。`authored` **不**自动可用 ——
+#: 它要过 `script_authority` 的具名安全 profile（`AUTHORED_SAFETY_PROFILE`）。
+SCRIPT_SOURCE_KEY = "script_source"
+#: 来源闭集（与 `script_authority.ExecutionAuthority` 的取值同形、小写）。
+SCRIPT_SOURCES: tuple[str, ...] = ("shipped", "authored")
+
 #: **出厂脚本白名单**（仓库相对路径 → 它测什么）。计划只能从这里面挑。
 #:
 #: 为什么是**闭集**而不是「仓库里所有 `.py`」：能被计划点名的脚本，就是能被一条模型写的
@@ -54,6 +61,28 @@ SHIPPED_EXPERIMENT_SCRIPTS: tuple[str, ...] = (
 def script_whitelist() -> frozenset[str]:
     """白名单的**只读**投影（判据与拒绝消息共用这一处，不各写一份）。"""
     return frozenset(SHIPPED_EXPERIMENT_SCRIPTS)
+
+
+def declared_script_source(design: object, *, where: str) -> str:
+    """设计块 → **脚本来源**（`shipped` / `authored`）；缺席 ⇒ `shipped`。
+
+    **异常与 `declared_script` 同形**：写了但不在闭集 / 类型不对 ⇒ **点名拒绝**
+    （不回落 `shipped` —— 回落会把「模型说要用自己写的脚本」静默改写成「跑出厂脚本」）。
+    """
+    if not isinstance(design, Mapping):
+        raise ExperimentDesignUnreadableError(
+            f"the experiment design in {where} is not an object "
+            f"(got {type(design).__name__}); no script source can be read from it"
+        )
+    if SCRIPT_SOURCE_KEY not in design:
+        return "shipped"
+    raw = design[SCRIPT_SOURCE_KEY]
+    if not isinstance(raw, str) or raw.strip().lower() not in SCRIPT_SOURCES:
+        raise ExperimentDesignUnreadableError(
+            f"the {SCRIPT_SOURCE_KEY!r} entry in the experiment design of {where} must be one "
+            f"of {list(SCRIPT_SOURCES)} (got {raw!r}); omit the key to keep shipped scripts"
+        )
+    return raw.strip().lower()
 
 
 def declared_script(design: object, *, where: str) -> str | None:
