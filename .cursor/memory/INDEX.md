@@ -15,6 +15,7 @@
 | --- | --- | --- | --- | --- | --- |
 | [MEM-20261104-240](entries/MEM-20261104-240-different-clients-have-disjoint-config-planes.md) | ACTIVE | repository | 0.95 | 2027-05-01 | PLAN-20261104-106 |
 | [MEM-20261112-241](entries/MEM-20261112-241-verify-paths-and-credential-validity.md) | ACTIVE | repository | 0.95 | 2027-05-12 | PLAN-20261111-108 |
+| [MEM-20261112-242](entries/MEM-20261112-242-m0-witness-covers-tracked-files-only.md) | ACTIVE | repository | 0.97 | 2027-05-12 | PLAN-20261112-112 |
 | [MEM-20261022-227](entries/MEM-20261022-227-a-verdict-that-does-not-leave-its-run-is-not-a-driver.md) | ACTIVE | repository | 0.9 | 2027-04-22 | PLAN-20261022-093 |
 | [MEM-20261023-229](entries/MEM-20261023-229-the-ledger-judge-reads-both-directions.md) | ACTIVE | repository | 0.95 | 2027-04-23 | PLAN-20261023-095 |
 | [MEM-20261024-230](entries/MEM-20261024-230-six-phase-chain-edges-cannot-be-written-in-the-protocol.md) | ACTIVE | repository | 0.95 | 2027-04-25 | PLAN-20261024-096 |

@@ -10,7 +10,8 @@ owners:
   - root-agent
 subagent_parallel_limit: 3
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261112-112-authored-enablement.md
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20261112-242-m0-witness-covers-tracked-files-only.md
 ---
 
 # PLAN-20261112-112
@@ -85,7 +86,10 @@ EC-06 的程序完成报告在 `docs/roadmap/ROUNDS_76_80_PROGRAMME_COMPLETION.m
 
 ## 工程记忆
 
-（收口时按实际情况填写，或声明无可复用事实。）
+`MEM-20261112-242`：全量 m0 的见证只覆盖**已跟踪**文件（`git ls-files` + `git hash-object`）
+⇒ 新建的受判文件必须先 `git add` 再跑 m0，否则本地 24 条 `PASS [` 全绿、CI 单条判红
+（判词会逐文件点名「内容变了/新增」）。这是本轮第三次 CI 判红的唯一根因，也是可复用的
+顺序纪律（8.1 的补充：`git add` 在 m0 **之前**，不只是"提交之前"）。
 
 ## 状态历史
 

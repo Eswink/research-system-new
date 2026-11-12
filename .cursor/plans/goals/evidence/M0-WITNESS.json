@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "0c849b955fd16984b464384e713144751cd732fd"
+        "sha256": "fb9a4f590f7cb486ad2c90e1c5d214d0e09103f5"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1387,6 +1387,10 @@
         "sha256": "0c20f9f4eb169b62f8b32de179cb3dc94a0bf99c"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261112-242-m0-witness-covers-tracked-files-only.md",
+        "sha256": "dd8f816d27aeb58c4b66dc8884077714475fdd70"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "95fef0b2cfeb63605acab21cd02848259529a517"
       },
@@ -1868,7 +1872,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-112-experiment-generation-enablement-surface.md",
-        "sha256": "da0e59e2c0e79301bac1e2f2d6e64498c5d2628f"
+        "sha256": "1eed06925b60d91a2e9719caf8e9e4237380c297"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4484,7 +4488,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261112-112-authored-enablement.md",
-        "sha256": "c7af7dd5990e52b9249ce2f490a684e05cedc70b"
+        "sha256": "cd759534f5fdd7b034a0384250066a278662ea3e"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -5932,7 +5936,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261112-112-authored-enablement.md",
-        "sha256": "5630a4a355dc39576639c2b6a255563e411a4207"
+        "sha256": "e782dd0e16b5ab263a8d365815d9044c42a9474f"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -13899,6 +13903,10 @@
         "sha256": "769fdffafc7876b0cc33c18bd960a26a1e15bba4"
       },
       {
+        "path": "docs/roadmap/ROUNDS_76_80_PROGRAMME_COMPLETION.md",
+        "sha256": "4f605c0703d6c4f4af0493a4faf2eec4f029b362"
+      },
+      {
         "path": "docs/roadmap/UNDICI_TRANSITIVE_DEPENDENCY_RESEARCH.md",
         "sha256": "9fd99ff8184e85b468a0fe15c72d2b642d0d4181"
       },
@@ -20539,7 +20547,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "250c35a2d1ada38b846e066f968adaf58b198662"
+    "head": "ab97a4b9fa9e81ec9f1649a1810cd11922e9f1e5"
   },
   "fingerprint_before": {
     "files": [
@@ -20961,7 +20969,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "0c849b955fd16984b464384e713144751cd732fd"
+        "sha256": "fb9a4f590f7cb486ad2c90e1c5d214d0e09103f5"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -21928,6 +21936,10 @@
         "sha256": "0c20f9f4eb169b62f8b32de179cb3dc94a0bf99c"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261112-242-m0-witness-covers-tracked-files-only.md",
+        "sha256": "dd8f816d27aeb58c4b66dc8884077714475fdd70"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
         "sha256": "95fef0b2cfeb63605acab21cd02848259529a517"
       },
@@ -22409,7 +22421,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-112-experiment-generation-enablement-surface.md",
-        "sha256": "da0e59e2c0e79301bac1e2f2d6e64498c5d2628f"
+        "sha256": "1eed06925b60d91a2e9719caf8e9e4237380c297"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -25025,7 +25037,7 @@
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261112-112-authored-enablement.md",
-        "sha256": "c7af7dd5990e52b9249ce2f490a684e05cedc70b"
+        "sha256": "cd759534f5fdd7b034a0384250066a278662ea3e"
       },
       {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
@@ -26473,7 +26485,7 @@
       },
       {
         "path": ".cursor/plans/tasks/PLAN-20261112-112-authored-enablement.md",
-        "sha256": "5630a4a355dc39576639c2b6a255563e411a4207"
+        "sha256": "e782dd0e16b5ab263a8d365815d9044c42a9474f"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -34440,6 +34452,10 @@
         "sha256": "769fdffafc7876b0cc33c18bd960a26a1e15bba4"
       },
       {
+        "path": "docs/roadmap/ROUNDS_76_80_PROGRAMME_COMPLETION.md",
+        "sha256": "4f605c0703d6c4f4af0493a4faf2eec4f029b362"
+      },
+      {
         "path": "docs/roadmap/UNDICI_TRANSITIVE_DEPENDENCY_RESEARCH.md",
         "sha256": "9fd99ff8184e85b468a0fe15c72d2b642d0d4181"
       },
@@ -41080,11 +41096,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "250c35a2d1ada38b846e066f968adaf58b198662"
+    "head": "ab97a4b9fa9e81ec9f1649a1810cd11922e9f1e5"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "250c35a2d1ada38b846e066f968adaf58b198662",
+  "ran_at_head": "ab97a4b9fa9e81ec9f1649a1810cd11922e9f1e5",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

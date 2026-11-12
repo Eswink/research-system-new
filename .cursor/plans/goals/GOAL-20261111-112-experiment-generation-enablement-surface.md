@@ -106,7 +106,8 @@ escalation_triggers:
 child_plans:
   - .cursor/plans/tasks/PLAN-20261112-112-authored-enablement.md
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261112-112-authored-enablement.md
-memory_entries: []
+memory_entries:
+  - .cursor/memory/entries/MEM-20261112-242-m0-witness-covers-tracked-files-only.md
 ---
 
 # GOAL-20261111-112 —— 实验从「选择级」到「生成级」的启用面
@@ -176,6 +177,7 @@ GOAL-107 让三条策略约束（`sandbox_required` / `path_prefix` / `max_secon
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PLAN-20261112-112 | `b109936f` | 表/三面/authored 四判据 **57 passed**；受影响面回归 **235 passed**；ruff/format/mypy 三道绿（mypy 1439 文件） | **M0 `failure`**（[43203482757](https://github.com/Eswink/research-system-new/actions/runs/43203482757)）：九条判负 = 产品面三条 + 记录面六条；Push 3/3 绿 | 三处（`experiments/__init__` 导入成环 ⇒ 函数内导入；`requires_workspace_lease` 被误判非法 ⇒ 纳入闭集只过形状；测试夹具类型面 10 条 mypy） | 应用层仍读环境 ⇒ 下一提交修 | `W-1`/`W-2` 残余、`U-1`/`U-2` 未覆盖 |
 | 2 | PLAN-20261112-112 | `250c35a2` | 环境读取收回运维边界后：mypy **1439 文件**绿、`verify_goal112` 全 PASS、定向套件绿 | **M0 `failure`**（[43211584708](https://github.com/Eswink/research-system-new/actions/runs/43211584708)）：剩七条**全是记录面/规模面**（settings `__init__` 53 行、断言集 60 行、三处旧阶梯锚点、台账空、见证过期）；Push 3/3 绿 | 见 #3 | `W-1`/`W-2` 残余、`U-1`/`U-2` 未覆盖 | 五轮程序完成报告 |
+| 3 | PLAN-20261112-112 | `ab97a4b9` | 规模面两处腾行、三处旧锚点换锚、程序完成报告落地 + 8 条断言；`verify_goal112` **92 PASS / 0 FAIL**；两树复检 **92 判词同 sha256**（`9887da48…`） | **M0 `failure`**（[43228489710](https://github.com/Eswink/research-system-new/actions/runs/43228489710)）：**只剩 1 条** —— 见证过期，因为新报告当时**未跟踪**（`git ls-files` 看不见它）；Push 3/3 绿 | 见证入口只覆盖**已跟踪**文件 ⇒ 新建的受判文件必须先 `git add` 再跑 m0；修法 = 报告已入树后重跑 m0 并提交见证（本行所在的 `.cursor` 提交） | `W-1`/`W-2` 残余、`U-1`/`U-2` 未覆盖 | 程序收口 |
 
 ## 残余与未覆盖范围
 
@@ -224,4 +226,5 @@ GOAL-107 让三条策略约束（`sandbox_required` / `path_prefix` / `max_secon
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
 | `b109936f` | [M0 43203482757](https://github.com/Eswink/research-system-new/actions/runs/43203482757) / [Push 43203483204](https://github.com/Eswink/research-system-new/actions/runs/43203483204) | **M0 `failure`**：`quality-ubuntu-latest` 与 `quality-windows-latest` 红，其余 6 job `success`；Push 3/3 `success` | **九条判负，分两类如实登记**。① **产品面三条**（真缺陷）：应用层读环境（`test_the_application_layer_stays_environment_free` 点名 `packages/application/experiments/script_authority.py`）、开关名新增两处字面量（单读点判据点名 `script_authority.py` 与 `test_authored_profile.py`）、`test_authored_passes_when_explicitly_enabled` 与 `test_path_prefix_requires_a_declared_write_path` 因新门而失配。② **记录面六条**：`W-4` 那轮特有的三处旧锚点（GOAL-110/111 的阶梯夹具 + `verify_goal107` 的「逐字」锚）、收口断言集 `_adversarial_verdicts` 60 行、台账为空、m0 见证过期；①的修法是 `250c35a2`（环境读取收回 `services/api/settings.py`，应用层只收传值），②的修法见下一行与迭代日志 #2 |
-| `250c35a2` | [M0 43211584708](https://github.com/Eswink/research-system-new/actions/runs/43211584708) / [Push 43211584021](https://github.com/Eswink/research-system-new/actions/runs/43211584021) | **M0 `failure`**：同上两个 job 红，其余 6 `success`；Push 3/3 `success` | 修掉①后**剩七条**：`services/api/settings.py` 的 `__init__` 53 行（规模门 50）、断言集 60 行、三处旧阶梯锚点、台账仍空、见证仍过期。**七条全部是记录面/规模面，零产品缺陷**——与 `local-gate-protocol-and-flake-classes` 的「定向套件绿 ≠ 全量绿」同形：本地我只跑了定向套件，规模门与旧锚点只有全量 m0 抓得到；判据**未被收窄**：旧锚点换成新锚点后仍逐行判各自边界（本轮断言集另增六条 `keeps-its-own-anchor`） |
+| `250c35a2` | [M0 43211584708](https://github.com/Eswink/research-system-new/actions/runs/43211584708) / [Push 43211584021](https://github.com/Eswink/research-system-new/actions/runs/43211584021) | **M0 `failure`**：同上两个 job 红，其余 6 `success`；Push 3/3 `success` | 修掉①后**剩七条**：`services/api/settings.py` 的 `__init__` 53 行（规模门 50）、断言集 60 行、三处旧阶梯锚点、台账仍空、见证仍过期。**七条全部是记录面/规模面，零产品缺陷**——本地只跑了定向套件，规模门与旧锚点只有全量 m0 抓得到；判据**未被收窄**：旧锚点换成新锚点后仍逐行判各自边界（本轮断言集另增六条 `keeps-its-own-anchor`） |
+| `ab97a4b9` | [M0 43228489710](https://github.com/Eswink/research-system-new/actions/runs/43228489710) / [Push 43228489714](https://github.com/Eswink/research-system-new/actions/runs/43228489714) | **M0 `failure`**：同上两个 job 红，其余 6 `success`；Push 3/3 `success` | **只剩一条**：`test_m0_witness_matches_the_tree` —— 见证的 `files` 清单里没有 `docs/roadmap/ROUNDS_76_80_PROGRAMME_COMPLETION.md`，因为跑 m0 时它还是**未跟踪**文件，而见证入口按 `git ls-files` 取受判面 ⇒ 本地 24 条 `PASS [` 全绿、CI 判红。**这是可复用形态**（`MEM-20261112-242`）：新建的受判文件必须先 `git add` 再跑 m0。修法 = 报告已入树后重跑 m0 并提交见证 |
