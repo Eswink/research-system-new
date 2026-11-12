@@ -96,13 +96,14 @@ class ExecutionRequest:
     sandboxed: bool = False
 
 
-def authored_profile_declared() -> bool:
-    """本进程是否处在**具名**的 `authored` 安全 profile 下（缺省 `False`）。"""
-    import os
+def profile_is_declared(declared_profile: str | None) -> bool:
+    """**纯谓词**：调用方声明的 profile 是否恰是我们的具名 profile。
 
-    return os.environ.get("RESEARCHOS_AUTHORED_SAFETY_PROFILE", "").strip() == (
-        AUTHORED_SAFETY_PROFILE
-    )
+    **应用层不读环境**（`tests/architecture/python/test_live_switch_is_single_source.py`
+    的既有边界，实测它当场判红过）：环境读取属于**运维边界**
+    （`services/api/settings.py`），本模块只判「给进来的那个值对不对」。
+    """
+    return (declared_profile or "").strip() == AUTHORED_SAFETY_PROFILE
 
 
 def shipped_scripts() -> tuple[str, ...]:
@@ -123,7 +124,10 @@ def digest_of(path: Path) -> str:
 
 
 def authority_for(
-    request: ExecutionRequest, *, authored_allowed: bool | None = None
+    request: ExecutionRequest,
+    *,
+    authored_allowed: bool | None = None,
+    declared_profile: str | None = None,
 ) -> ExecutionAuthority:
     """这次执行属于哪一面；不允许 ⇒ **点名拒绝**。
 
@@ -138,8 +142,9 @@ def authority_for(
                 "configuration tweak"
             )
         # GOAL-20261111-112 EC-04：显式放行还不够 —— 必须处在**具名**安全 profile 下。
-        # 两道门是两件事：`authored_allowed` 是调用方的意图，profile 是**运维模式**。
-        if not authored_profile_declared():
+        # 两道门是两件事：`authored_allowed` 是调用方的意图，profile 是**运维模式**
+        # （由运维边界读环境后作为参数传进来 —— 应用层不读环境）。
+        if not profile_is_declared(declared_profile):
             raise AuthorityError(
                 "model-authored scripts require the named safety profile: set "
                 f"RESEARCHOS_AUTHORED_SAFETY_PROFILE={AUTHORED_SAFETY_PROFILE!r} "
@@ -156,7 +161,10 @@ def authority_for(
 
 
 def check_constraints(
-    request: ExecutionRequest, *, authored_allowed: bool | None = None
+    request: ExecutionRequest,
+    *,
+    authored_allowed: bool | None = None,
+    declared_profile: str | None = None,
 ) -> ExecutionAuthority:
     """权威 + 策略约束**一起**判；任一不成立 ⇒ `AuthorityError`（点名缺哪条）。
 
@@ -171,7 +179,9 @@ def check_constraints(
     **约束缺席 = 不检查那一条**（不发明默认值）：`sandbox_required` 没声明就不要求沙箱，
     这正是「让既有声明生效」而不是「新加一条策略」。
     """
-    authority = authority_for(request, authored_allowed=authored_allowed)
+    authority = authority_for(
+        request, authored_allowed=authored_allowed, declared_profile=declared_profile
+    )
     digest = normalized_digest(request.digest)
     if authority is ExecutionAuthority.SHIPPED and not digest:
         raise AuthorityError(
@@ -206,7 +216,7 @@ __all__ = [
     "AUTHORED",
     "AUTHORED_ALLOWED_BY_DEFAULT",
     "AUTHORED_SAFETY_PROFILE",
-    "authored_profile_declared",
+    "profile_is_declared",
     "MAX_SECONDS_KEY",
     "PATH_PREFIX_KEY",
     "SANDBOX_KEY",

@@ -159,7 +159,10 @@ def _path_violations(prefix: str, write_path: str | None) -> list[ConstraintViol
         return [
             ConstraintViolation(
                 key=PATH_PREFIX_KEY,
-                reason=f"policy requires writes under {prefix!r} but no write path is declared",
+                reason=(
+                    f"policy requires writes under {prefix!r} but the execution "
+                    "declares no write path"
+                ),
             )
         ]
     normalized = write_path.replace("\\", "/")

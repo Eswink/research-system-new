@@ -95,6 +95,14 @@ LITERAL_MENTIONS: dict[str, str] = {
     "tests/e2e/test_direction_to_report_live.py": ("模块 docstring 的操作者口令"),
     # GOAL-20261104-106 EC-01：十一相链真跑（跑法两行：开关 + runtime 各一条）。
     "tests/e2e/test_the_manuscript_chain_runs_live.py": ("模块 docstring 的操作者口令"),
+    # GOAL-20261111-112 EC-04：两处都是**同一条纪律的引用**（「值必须一眼判」），
+    # 不是读取点 —— 应用层已按本判据的要求把 `os.environ` 读移出（见 settings.py）。
+    "packages/application/experiments/script_authority.py": (
+        "注释里引用同一条「值必须一眼判」纪律；本模块**不读环境**"
+    ),
+    "tests/application/experiments/test_authored_profile.py": (
+        "判据 docstring 引用同一条纪律（说明为何逐字相等才算）"
+    ),
 }
 
 #: 带 `requires_live_llm` 的模块清单（**逐条列出**：新加一个就在这儿露头）。

@@ -73,9 +73,21 @@ def test_authored_is_off_by_default() -> None:
 
 
 def test_authored_passes_when_explicitly_enabled() -> None:
-    """显式放行时才过（证明拒绝不是恒真）。"""
+    """显式放行时才过（证明拒绝不是恒真）。
+
+    **GOAL-20261111-112 EC-04**：显式放行现在是**两道门**——`authored_allowed=True`
+    **且**具名安全 profile 在场。本用例补上门、仍然断言「都过时确实放行」；
+    「只过一道就拒」由 `test_authored_profile.py` 双向覆盖。
+    """
+    from packages.application.experiments.script_authority import AUTHORED_SAFETY_PROFILE
+
     assert (
-        authority_for(_request(authored=True), authored_allowed=True) is ExecutionAuthority.AUTHORED
+        authority_for(
+            _request(authored=True),
+            authored_allowed=True,
+            declared_profile=AUTHORED_SAFETY_PROFILE,
+        )
+        is ExecutionAuthority.AUTHORED
     )
 
 

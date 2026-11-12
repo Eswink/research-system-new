@@ -27,9 +27,9 @@ from packages.application.experiments.script_authority import (
     AUTHORED_SAFETY_PROFILE,
     AuthorityError,
     ExecutionRequest,
-    authored_profile_declared,
     authority_for,
     check_constraints,
+    profile_is_declared,
 )
 
 _AUTHORED_REQUEST = ExecutionRequest(
@@ -45,11 +45,10 @@ class TestTheDefaultStaysFalse:
     def test_authored_is_not_allowed_by_default(self) -> None:
         assert AUTHORED_ALLOWED_BY_DEFAULT is False
 
-    def test_the_default_path_refuses_authored(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_the_default_path_refuses_authored(self) -> None:
         """即使 profile 在场，**不显式传** `authored_allowed=True` 仍拒。"""
-        monkeypatch.setenv("RESEARCHOS_AUTHORED_SAFETY_PROFILE", AUTHORED_SAFETY_PROFILE)
         with pytest.raises(AuthorityError, match="not enabled"):
-            authority_for(_AUTHORED_REQUEST)
+            authority_for(_AUTHORED_REQUEST, declared_profile=AUTHORED_SAFETY_PROFILE)
 
     def test_the_profile_name_is_a_stable_literal(self) -> None:
         """profile 名是个**具名常量**（判据与文档引用它；改名要改三处）。"""
@@ -59,32 +58,24 @@ class TestTheDefaultStaysFalse:
 class TestBothGatesAreRequired:
     """两道门：调用方意图 + 运维模式。缺一即拒，且判词点名缺哪一道。"""
 
-    def test_explicit_allow_without_the_profile_is_refused(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.delenv("RESEARCHOS_AUTHORED_SAFETY_PROFILE", raising=False)
-        assert authored_profile_declared() is False
+    def test_explicit_allow_without_the_profile_is_refused(self) -> None:
+        assert profile_is_declared(None) is False
         with pytest.raises(AuthorityError, match="named safety profile"):
             authority_for(_AUTHORED_REQUEST, authored_allowed=True)
 
-    def test_the_profile_without_explicit_allow_is_refused(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.setenv("RESEARCHOS_AUTHORED_SAFETY_PROFILE", AUTHORED_SAFETY_PROFILE)
-        assert authored_profile_declared() is True
+    def test_the_profile_without_explicit_allow_is_refused(self) -> None:
+        assert profile_is_declared(AUTHORED_SAFETY_PROFILE) is True
         with pytest.raises(AuthorityError, match="not enabled"):
             authority_for(_AUTHORED_REQUEST, authored_allowed=None)
 
-    def test_both_gates_together_admit_authored(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("RESEARCHOS_AUTHORED_SAFETY_PROFILE", AUTHORED_SAFETY_PROFILE)
-        authority = authority_for(_AUTHORED_REQUEST, authored_allowed=True)
+    def test_both_gates_together_admit_authored(self) -> None:
+        authority = authority_for(
+            _AUTHORED_REQUEST, authored_allowed=True, declared_profile=AUTHORED_SAFETY_PROFILE
+        )
         assert str(authority) == "AUTHORED"
 
-    def test_the_full_check_also_passes_with_both_gates(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_the_full_check_also_passes_with_both_gates(self) -> None:
         """`check_constraints` 与 `authority_for` 同结论（约束为空 ⇒ 不检查那一条）。"""
-        monkeypatch.setenv("RESEARCHOS_AUTHORED_SAFETY_PROFILE", AUTHORED_SAFETY_PROFILE)
         request = ExecutionRequest(
             script_path=_AUTHORED_REQUEST.script_path,
             digest=_AUTHORED_REQUEST.digest,
@@ -92,16 +83,18 @@ class TestBothGatesAreRequired:
             constraints={"sandbox_required": True},
             sandboxed=True,
         )
-        assert str(check_constraints(request, authored_allowed=True)) == "AUTHORED"
+        admitted = check_constraints(
+            request, authored_allowed=True, declared_profile=AUTHORED_SAFETY_PROFILE
+        )
+        assert str(admitted) == "AUTHORED"
 
 
 @pytest.mark.parametrize("value", ["1", "true", "yes", "on", "AUTHORED-EXPERIMENTS-V1", ""])
-def test_the_profile_value_must_match_exactly(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
+def test_the_profile_value_must_match_exactly(value: str) -> None:
     """**值必须一眼判**：除逐字相等外一律不算（不做真值解析、不做大小写归一）。"""
-    monkeypatch.setenv("RESEARCHOS_AUTHORED_SAFETY_PROFILE", value)
-    assert authored_profile_declared() is False, value
+    assert profile_is_declared(value) is False, value
     with pytest.raises(AuthorityError, match="named safety profile"):
-        authority_for(_AUTHORED_REQUEST, authored_allowed=True)
+        authority_for(_AUTHORED_REQUEST, authored_allowed=True, declared_profile=value)
 
 
 class TestTheScriptSourceDeclaration:

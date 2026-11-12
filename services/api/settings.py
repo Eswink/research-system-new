@@ -70,6 +70,9 @@ class ApiSettings:
         db_path: str = _DEFAULT_DB_PATH,
         endpoint_timeout_seconds: float = 120.0,
         allow_localhost_endpoints: bool = False,
+        #: **运维边界的环境读取**（GOAL-20261111-112 EC-04）：`authored` 实验的具名安全
+        #: profile。**应用层不读环境**（既有边界，判据把守）——它只收这里传下去的值。
+        authored_safety_profile: str | None = None,
         database_url: str | None = None,
         artifact_blob_dir: str | None = None,
         workspace_snapshot_root: str | None = None,
@@ -84,6 +87,7 @@ class ApiSettings:
         self.db_path = db_path
         self.endpoint_timeout_seconds = endpoint_timeout_seconds
         self.allow_localhost_endpoints = allow_localhost_endpoints
+        self.authored_safety_profile = authored_safety_profile
         # PLAN-20260919-107：取值校验归选择面（此处不做静默归一，避免
         # 「配错了但看起来正常」）。
         self.agent_runtime = agent_runtime
@@ -152,6 +156,10 @@ class ApiSettings:
         return cls(
             db_path=os.environ.get("RESEARCHOS_DB_PATH", _DEFAULT_DB_PATH),
             endpoint_timeout_seconds=float(os.environ.get("RESEARCHOS_ENDPOINT_TIMEOUT", "120")),
+            # GOAL-20261111-112 EC-04：**环境读取在运维边界**（本文件），应用层只收值。
+            # 值不在此做真值解析：`authored-experiments-v1` 必须**逐字**相等才放行，
+            # 判断本身由 `experiments.script_authority.profile_is_declared` 做（纯谓词）。
+            authored_safety_profile=os.environ.get("RESEARCHOS_AUTHORED_SAFETY_PROFILE") or None,
             allow_localhost_endpoints=(
                 os.environ.get("RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS", "0").strip().lower()
                 in ("1", "true", "yes", "on")
