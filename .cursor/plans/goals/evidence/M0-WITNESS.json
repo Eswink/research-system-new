@@ -1,5 +1,5 @@
 {
-  "exit_code": 0,
+  "exit_code": 1,
   "fingerprint_after": {
     "files": [
       {
@@ -1388,7 +1388,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "47e745e3e9857960fb2626861bf5b73d0b296a37"
+        "sha256": "9d8d101112d42ed4f9f24316b3bad3f64e83c30e"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1863,8 +1863,12 @@
         "sha256": "75a8bdb3ec54f15082cd68e0b65fa948f1039b6c"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261111-111-panel-verdicts-that-can-be-refuted.md",
+        "sha256": "d56774798aa0c98aa13b206e59252faa1637f816"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "a88263ae8549d2413089b84e39068f9f966bd472"
+        "sha256": "7160359f92e5ac7b132bed0ef683520b074e15b8"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -4471,6 +4475,10 @@
         "sha256": "88d6033d2453e46944e50379bb5456bb1e09b28a"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261112-111-panel-grounding.md",
+        "sha256": "a0a3fc00fe32b454f967f7e2411364143f12cf4c"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5909,6 +5917,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261112-110-conflict-arbitration.md",
         "sha256": "525759666793685f4aa3082ac6fb11c4b80dabdb"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261112-111-panel-grounding.md",
+        "sha256": "96bdf669c4279f9df6596a893b01d0e28421d9d0"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -12644,7 +12656,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "b610538cd9649fa20837e194046c4e2d332e6d3d"
+        "sha256": "776fb9188b967dd11330949517e9cb8ee98d867a"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -14296,11 +14308,15 @@
       },
       {
         "path": "packages/application/deliverable/manuscript_panel.py",
-        "sha256": "40678743c3bd8500dd2b5a91b22cf3961fef795e"
+        "sha256": "fe1d0d47cdb61ef5de0268fb364a8509d73c3221"
       },
       {
         "path": "packages/application/deliverable/manuscript_quality.py",
         "sha256": "a0e35cbda80adccfa5ded3fa43c3bbe9cb1c9f21"
+      },
+      {
+        "path": "packages/application/deliverable/panel_grounding.py",
+        "sha256": "7871c0c80d11329f53f5ac884ac3732ecbf1afb3"
       },
       {
         "path": "packages/application/deliverable/references.py",
@@ -16903,6 +16919,10 @@
         "sha256": "9b4cc0be49ac9df7ed87852f9d8aef4107fdfe95"
       },
       {
+        "path": "tests/application/deliverable/test_panel_grounding.py",
+        "sha256": "2400223195156f18cf6a948795800b4abd2ffe63"
+      },
+      {
         "path": "tests/application/evidence/m12_chain_fixtures.py",
         "sha256": "6b3447a2d472a3a12faa91d2a05044363cdae5b0"
       },
@@ -19188,7 +19208,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "4ef3c0ec6bda9b2c50b1901b182c461ad9014949"
+        "sha256": "00f7619e1916101758d1a1df9088b2adbcfbc09a"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -19233,6 +19253,10 @@
       {
         "path": "tests/tooling/test_goal110_ladder_evidence_scope.py",
         "sha256": "17a093ca736b2be4afdf64e6c8c423e3e4b3e909"
+      },
+      {
+        "path": "tests/tooling/test_goal111_ladder_report_scope.py",
+        "sha256": "1fe814ddf382ee3bb8bdba7714ab2c392d765bd9"
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
@@ -19340,7 +19364,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "3102498249317d049d7e89264264c5bf843a4b64"
+        "sha256": "373e890cc7122a62cb035a435852fe6656c0a966"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -19975,6 +19999,10 @@
         "sha256": "7281fac7dd37689a73a25412b8c8a79f9a02ed9f"
       },
       {
+        "path": "tools/goal111_closeout_assertions.py",
+        "sha256": "f5a4597e4e54e550083941394f685b529fa9e078"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -20455,6 +20483,10 @@
         "sha256": "9ff3d9a9d5ef51942371b095bb8f85b164c4f85f"
       },
       {
+        "path": "tools/verify_goal111_closeout.py",
+        "sha256": "bef76da26eea495d85b07f29e41ede1eb1e81088"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -20467,7 +20499,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "16f27d5561ca3cb6f35dd6e2361d8fc23c4fd47c"
+    "head": "b36caaec44bd07c1150316e54825c83da39cf1e6"
   },
   "fingerprint_before": {
     "files": [
@@ -21857,7 +21889,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "47e745e3e9857960fb2626861bf5b73d0b296a37"
+        "sha256": "9d8d101112d42ed4f9f24316b3bad3f64e83c30e"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22332,8 +22364,12 @@
         "sha256": "75a8bdb3ec54f15082cd68e0b65fa948f1039b6c"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261111-111-panel-verdicts-that-can-be-refuted.md",
+        "sha256": "d56774798aa0c98aa13b206e59252faa1637f816"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "a88263ae8549d2413089b84e39068f9f966bd472"
+        "sha256": "7160359f92e5ac7b132bed0ef683520b074e15b8"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -24940,6 +24976,10 @@
         "sha256": "88d6033d2453e46944e50379bb5456bb1e09b28a"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261112-111-panel-grounding.md",
+        "sha256": "a0a3fc00fe32b454f967f7e2411364143f12cf4c"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26378,6 +26418,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261112-110-conflict-arbitration.md",
         "sha256": "525759666793685f4aa3082ac6fb11c4b80dabdb"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261112-111-panel-grounding.md",
+        "sha256": "96bdf669c4279f9df6596a893b01d0e28421d9d0"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -33113,7 +33157,7 @@
       },
       {
         "path": "docs/architecture/MANUSCRIPT_QUALITY.md",
-        "sha256": "b610538cd9649fa20837e194046c4e2d332e6d3d"
+        "sha256": "776fb9188b967dd11330949517e9cb8ee98d867a"
       },
       {
         "path": "docs/architecture/MODEL_COMPATIBILITY.md",
@@ -34765,11 +34809,15 @@
       },
       {
         "path": "packages/application/deliverable/manuscript_panel.py",
-        "sha256": "40678743c3bd8500dd2b5a91b22cf3961fef795e"
+        "sha256": "fe1d0d47cdb61ef5de0268fb364a8509d73c3221"
       },
       {
         "path": "packages/application/deliverable/manuscript_quality.py",
         "sha256": "a0e35cbda80adccfa5ded3fa43c3bbe9cb1c9f21"
+      },
+      {
+        "path": "packages/application/deliverable/panel_grounding.py",
+        "sha256": "7871c0c80d11329f53f5ac884ac3732ecbf1afb3"
       },
       {
         "path": "packages/application/deliverable/references.py",
@@ -37372,6 +37420,10 @@
         "sha256": "9b4cc0be49ac9df7ed87852f9d8aef4107fdfe95"
       },
       {
+        "path": "tests/application/deliverable/test_panel_grounding.py",
+        "sha256": "2400223195156f18cf6a948795800b4abd2ffe63"
+      },
+      {
         "path": "tests/application/evidence/m12_chain_fixtures.py",
         "sha256": "6b3447a2d472a3a12faa91d2a05044363cdae5b0"
       },
@@ -39657,7 +39709,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "4ef3c0ec6bda9b2c50b1901b182c461ad9014949"
+        "sha256": "00f7619e1916101758d1a1df9088b2adbcfbc09a"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -39702,6 +39754,10 @@
       {
         "path": "tests/tooling/test_goal110_ladder_evidence_scope.py",
         "sha256": "17a093ca736b2be4afdf64e6c8c423e3e4b3e909"
+      },
+      {
+        "path": "tests/tooling/test_goal111_ladder_report_scope.py",
+        "sha256": "1fe814ddf382ee3bb8bdba7714ab2c392d765bd9"
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
@@ -39809,7 +39865,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "3102498249317d049d7e89264264c5bf843a4b64"
+        "sha256": "373e890cc7122a62cb035a435852fe6656c0a966"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -40444,6 +40500,10 @@
         "sha256": "7281fac7dd37689a73a25412b8c8a79f9a02ed9f"
       },
       {
+        "path": "tools/goal111_closeout_assertions.py",
+        "sha256": "f5a4597e4e54e550083941394f685b529fa9e078"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -40924,6 +40984,10 @@
         "sha256": "9ff3d9a9d5ef51942371b095bb8f85b164c4f85f"
       },
       {
+        "path": "tools/verify_goal111_closeout.py",
+        "sha256": "bef76da26eea495d85b07f29e41ede1eb1e81088"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -40936,11 +41000,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "16f27d5561ca3cb6f35dd6e2361d8fc23c4fd47c"
+    "head": "b36caaec44bd07c1150316e54825c83da39cf1e6"
   },
-  "green": true,
+  "green": false,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "16f27d5561ca3cb6f35dd6e2361d8fc23c4fd47c",
-  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
+  "ran_at_head": "b36caaec44bd07c1150316e54825c83da39cf1e6",
+  "terminal_line": "FAILED: 1 check(s): python/tests=1",
   "tree_changed_during_the_run": false
 }

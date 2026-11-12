@@ -56,6 +56,9 @@ VERDICTS: tuple[str, ...] = ("SUPPORTED", "REFUTED", "AMBIGUOUS")
 #: 设施失败的点名值（**不是**一个判词态）。
 PANEL_UNAVAILABLE = "PANEL_UNAVAILABLE"
 
+#: `REFUTED` 因引用不成立而降级时，判词里点名的前缀（读面可 grep、判据可断言）。
+UNGROUNDED_MARK = "UNGROUNDED_REFUTED:"
+
 _VERDICT_BY_TOKEN: Mapping[str, str] = {
     "SUPPORTED": "SUPPORTED",
     "SUPPORTS": "SUPPORTED",
@@ -165,6 +168,32 @@ def manuscript_excerpts(sections: Mapping[str, str], *, limit: int = 4000) -> Ma
         "argument_holds": joined[:limit],
         "method_appropriate": (methods or joined)[:limit],
     }
+
+
+def ground_verdict(verdict: PanelVerdict, manuscript_text: str) -> PanelVerdict:
+    """`REFUTED` 的**引用核验**（GOAL-20261111-111 EC-02）：指不到正文 ⇒ 降级并点名。
+
+    **只约束 `REFUTED`**：`SUPPORTED` / `AMBIGUOUS` / 设施失败**原样返回**——它们不指句子
+    （「支持」说的是整段成立，「歧义」说的是判不出来）。把约束铺到全部三态会把
+    「模型说支持」也变成必须引句子，那是**收紧射程**而不是可核验化。
+
+    降级后的 `verdict` 是 `AMBIGUOUS`（三态之一，不新造第四态），`rationale` 保留原文并
+    **追加**点名 —— 读者既看得到模型说了什么，也看得到它指不到正文。
+    """
+    from packages.application.deliverable.panel_grounding import grounded_in
+
+    if verdict.verdict != "REFUTED" or verdict.is_facility_failure:
+        return verdict
+    result = grounded_in(verdict.rationale, manuscript_text)
+    if result.grounded:
+        return verdict
+    reason = "; ".join(result.missing) or result.outcome
+    return PanelVerdict(
+        rubric_id=verdict.rubric_id,
+        verdict="AMBIGUOUS",
+        rationale=f"{UNGROUNDED_MARK} {reason} (model said: {verdict.rationale})",
+        reviewer_model=verdict.reviewer_model,
+    )
 
 
 def review_manuscript(

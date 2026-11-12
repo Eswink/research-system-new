@@ -180,3 +180,5 @@ uv run --frozen --no-sync python -B -m pytest \
 
 **第 1/2/3 项的出口已经落地，但本口径仍然不判**（GOAL-20261107-107）：`deliverable/manuscript_panel.py` 把这三项交给**独立模型**，判词落 `ReviewFinding`（`review_type = manuscript_panel`）并带 `reviewer_model` 归因 —— 这正是上面候选 ② 说的形态。三条边界逐条可判：判词是 **advisory**（不产生 `Decision`、不参与验收门）；网关失败落 `PANEL_UNAVAILABLE` 而**不**折算成任何一态；`NOT_JUDGED` **五项逐字不动** —— 确定性模块仍然不判这三项，面板是**另一个判者**。**读这一句时最容易犯的错**：把「有第三方判词」读成「叙述质量已判」。面板说的是「某个模型认为它可以/不可以」，不是「论证成立」。
 
+**判词现在可核验（GOAL-20261111-111），但射程仍不充分**：`REFUTED` 的 `rationale` 必须**落在正文的字节上**——点名 `S<n>`（且在句数范围内）或引用一段正文真实子串；指不到就**降级** `AMBIGUOUS` 并点名缺什么（`deliverable/panel_grounding.py`）。这让判词本身**可被反驳**：读者能核对它指的是哪一句、那句话在不在。**它仍然不是「论证成立」**：核验通过的判词只说明「某个模型认为 X 句有问题，且那句话确实在正文里」。`NOT_JUDGED` 五项与上面的判定表**一字未动**；引用充分性的阈值仍全 `None`（不在这里拍板）。
+
