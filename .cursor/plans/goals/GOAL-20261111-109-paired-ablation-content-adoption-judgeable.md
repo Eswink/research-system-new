@@ -237,5 +237,5 @@ GOAL-082 EC-04 的阻塞论证是**混淆论证**：`duplicate_pairs` 既在参�
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `f99440cb` | 与 `c1c85da3` **同一次 push**（无独立 run） | 该 push 的 M0 run 覆盖两笔提交；**本轮不冒领 run id** | **序 77 收口记录**：`verify_goal109_closeout` + 断言集（70 判词 / 0 FAIL）、宪章记账、全量 m0 见证。**本行由下一笔 `.cursor` 提交补写** |
-| `c1c85da3` | 与收口提交（HEAD）**同一次 push**，无独立 run | 该 run 跑在收口树（含本行所指提交的全部内容）；run id 由下一笔 `.cursor` 提交回填 | 机制半场：四件交付 + 六个判据文件。同一次 push 的多个提交只有一个 M0 run ⇒ 本行不冒领（不点名 run） |
+| `f99440cb` | [M0 43103640039](https://github.com/Eswink/research-system-new/actions/runs/43103640039) / [Push 43103638112](https://github.com/Eswink/research-system-new/actions/runs/43103638112) | **M0 `success`（8/8 job）；Push 3/3 `success`** | **本轮唯一的全绿读数**：该 push 的 tip 是本笔记录提交，run 跑在含 `c1c85da3` 与本提交的树上。**收口审计更正**：首推时本行原写「与 `c1c85da3` 同一次 push（无独立 run）」——**归属写反了**（无独立 run 的是被判覆盖的那一笔，不是 tip）；按 API `head_sha` 逐条核对后把 run id 绑到它**实际发生**的提交 |
+| `c1c85da3` | 与 `f99440cb` **同一次 push**，无独立 run | 该 push 的 M0 run `43103640039` 覆盖本提交的全部内容；**本行不冒领 run id** | 机制半场：四件交付 + 六个判据文件。同一次 push 的多个提交只有一个 M0 run ⇒ 只有 tip 那行点名 run |

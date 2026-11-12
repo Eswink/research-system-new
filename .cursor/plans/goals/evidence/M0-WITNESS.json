@@ -1860,15 +1860,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-109-paired-ablation-content-adoption-judgeable.md",
-        "sha256": "7307ddd987c0b38b9c7f5cb7e11b3e9847b76141"
+        "sha256": "8a15f18719d13932a7074ba344755981fd78b0bd"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-110-evidence-conflict-arbitration-closure.md",
-        "sha256": "75a8bdb3ec54f15082cd68e0b65fa948f1039b6c"
+        "sha256": "fc836df902245c7f48bc9bfb646274e35e4ed843"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-111-panel-verdicts-that-can-be-refuted.md",
-        "sha256": "8f7fd259da273ba972c3760945763d415bf1a288"
+        "sha256": "7e4a628a656eac78cf0f65b2316a408f1539d60b"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-112-experiment-generation-enablement-surface.md",
@@ -20547,7 +20547,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "69e60322fbfc1b161959a9bc7f47c02f671700e6"
+    "head": "d229ded03e66ec968a1502315240077b8e82f0ed"
   },
   "fingerprint_before": {
     "files": [
@@ -22409,15 +22409,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-109-paired-ablation-content-adoption-judgeable.md",
-        "sha256": "7307ddd987c0b38b9c7f5cb7e11b3e9847b76141"
+        "sha256": "8a15f18719d13932a7074ba344755981fd78b0bd"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-110-evidence-conflict-arbitration-closure.md",
-        "sha256": "75a8bdb3ec54f15082cd68e0b65fa948f1039b6c"
+        "sha256": "fc836df902245c7f48bc9bfb646274e35e4ed843"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-111-panel-verdicts-that-can-be-refuted.md",
-        "sha256": "8f7fd259da273ba972c3760945763d415bf1a288"
+        "sha256": "7e4a628a656eac78cf0f65b2316a408f1539d60b"
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261111-112-experiment-generation-enablement-surface.md",
@@ -41096,11 +41096,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "69e60322fbfc1b161959a9bc7f47c02f671700e6"
+    "head": "d229ded03e66ec968a1502315240077b8e82f0ed"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "69e60322fbfc1b161959a9bc7f47c02f671700e6",
+  "ran_at_head": "d229ded03e66ec968a1502315240077b8e82f0ed",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

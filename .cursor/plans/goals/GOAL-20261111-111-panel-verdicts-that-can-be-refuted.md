@@ -162,7 +162,7 @@ overstates what the measurements show」这句话时**无法核对**它指的是
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261112-111 | `420b9908` | 引用面判据 19 + 质量/面板 36 + 阶梯射程 5；收口验证器 **69 PASS / 0 FAIL**；ruff/format/mypy 三道绿 | 与收口提交同一次 push（无独立 run；不冒领） | 两处（引用子串命中未计数 ⇒ 真引用被判 NOT_GROUNDED；切句同源判据按变量名匹配 ⇒ 改按正则字面量） | `W-1`/`W-2` 残余、`U-1`/`U-2` 未覆盖 | 序 80（实验生成级） |
+| 1 | PLAN-20261112-111 | `420b9908` | 引用面判据 19 + 质量/面板 36 + 阶梯射程 5；收口验证器 **69 PASS / 0 FAIL**；ruff/format/mypy 三道绿 | **M0 `failure`**（[43182577898](https://github.com/Eswink/research-system-new/actions/runs/43182577898)）：空台账 ⇒ 两个 `quality-*` job 红；**全绿读数在收口提交 `10c42634`**（[43191511423](https://github.com/Eswink/research-system-new/actions/runs/43191511423) 8/8，见台账末段） | 两处（引用子串命中未计数 ⇒ 真引用被判 NOT_GROUNDED；切句同源判据按变量名匹配 ⇒ 改按正则字面量） | `W-1`/`W-2` 残余、`U-1`/`U-2` 未覆盖 | 序 80（实验生成级） |
 
 ## 残余与未覆盖范围
 
@@ -210,3 +210,10 @@ overstates what the measurements show」这句话时**无法核对**它指的是
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
 | `420b9908` | [M0 43182577898](https://github.com/Eswink/research-system-new/actions/runs/43182577898) / [Push 43182577838](https://github.com/Eswink/research-system-new/actions/runs/43182577838) | **M0 `failure`**：`quality-ubuntu-latest` 与 `quality-windows-latest` 红；其余 6 job `success`。Push 全 success (3/3) | **判红如实登记，根因是本台账为空**（`test_goal_ledger_covers_every_commit`：CI 台账里一个提交都没有 ⇒ 判据失去对象）。**不是产品缺陷**：本地 m0 见证同一条也红（终态行 `FAILED: 1 check(s): python/tests=1`），且本地其余 tooling 判据绿。**这是序 78 同一形态的第二次**——首推携带空台账必红；修法 = 补本行 + 补 cycle 行的 `commits` 格，重跑本地 m0 并推送下一笔提交 |
+
+**收口提交 `10c42634` 的全绿读数**（该提交只改 `.cursor/`、主题**不带** `goal111` ⇒ **不入本链台账**，
+故写在这里而不是 `提交` 列——链判据会把不属本链的哈希判成「台账点名了不属于本链的哈希」）：
+
+- M0 [43191511423](https://github.com/Eswink/research-system-new/actions/runs/43191511423) **8/8 job `success`**
+  （含 `quality-windows-latest`）；Push [43191510609](https://github.com/Eswink/research-system-new/actions/runs/43191510609) 3/3 `success`。
+- 该 run 跑在补完本台账与本行 cycle `commits` 格的树上 ⇒ **序 79 的 CI 八 job 全绿成立**。
