@@ -57,8 +57,12 @@ memory_entries: []
 **23 passed**（默认仍 False + 两道门 + 6 种非逐字 profile 值 + `script_source` 闭集）；
 `test_resolver_carries_constraints.py` **4 passed**；`test_policy_check_reads_constraints.py`
 **7 passed**。受影响面回归 **235 passed**（preflight + experiments + tool_plane + policy view）。
-收口验证器 **66 PASS / 0 FAIL**。静态：`ruff check` 全产品根绿、`ruff format --check`
-1498 文件绿、`mypy` **1439 文件**绿。
+收口验证器 **92 PASS / 0 FAIL**（首推 66；CI 判红后的补强见 `RECHECK-20261112-112`）。
+静态：`ruff check` 全产品根绿、`ruff format --check` 1498 文件绿、`mypy` **1439 文件**绿。
+
+EC-06 的程序完成报告在 `docs/roadmap/ROUNDS_76_80_PROGRAMME_COMPLETION.md`：五轮一览
+（序 / GOAL / 轴 / 靶子 / EC 数 / CI 读数）、逐轮交付与证据形态、阶梯推进表、
+跨轮残余汇总（`W-1`/`W-2`/`U-1`/`U-2`/`R-1`/`R-2`）与五条方法论收获。
 
 ## 影响报告
 

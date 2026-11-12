@@ -54,10 +54,17 @@ UNCOVERED_MARKERS: tuple[str, ...] = ("`U-1`", "`U-2`", "`U-3`")
 #: 声称边界（不得宣称的事）。
 CLAIM_BOUNDARIES: tuple[str, ...] = ("`R-1`", "`R-2`", "`R-3`")
 
-#: 两条阶梯行的 `下一级` **必须逐字保持**（本轮是「机制」，不是「已达成」）。
-LADDER_NEXT_LEVELS: tuple[tuple[str, str], ...] = (
-    ("| 报告 |", "叙述质量与事实一致性可判"),
-    ("| 实验 |", "脚本也从计划里选"),
+#: 两条阶梯行的 `下一级` **必须仍是本轮（或其后合法推进）认可的那一形态**
+#: （本轮是「机制」，不是「已达成」）。
+#:
+#: 「实验」行有两个可接受形态：本轮原文「脚本也从计划里选」，以及序 80
+#: （GOAL-20261111-112）改写后的「三条约束在全部执行面生效」。后者**同样**保留
+#: 「生成级未启用」（列出 `AUTHORED_ALLOWED_BY_DEFAULT` 仍 `False`、只交付可启用的网），
+#: 所以本轮的判词「不许声称已达成」在两形态下都成立；把它钉死成旧原文会让一次**合法**
+#: 的阶梯推进把历史验证器判红（`test_verifier_main_files_report_no_negative` 实测到了）。
+LADDER_NEXT_LEVELS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("| 报告 |", ("叙述质量与事实一致性可判",)),
+    ("| 实验 |", ("脚本也从计划里选", "三条约束在全部执行面生效")),
 )
 
 
@@ -163,10 +170,10 @@ def _program_verdicts(root: Path) -> list[Any]:
 
 
 def _ladder_verdicts(root: Path) -> list[Any]:
-    """阶梯两行：收录本 GOAL，且 `下一级` **逐字未改**。"""
+    """阶梯两行：收录本 GOAL，且 `下一级` 仍是认可形态之一（不冒认「已达成」）。"""
     charter = TOOLBOX.text(root, ".cursor/plans/goals/MAINLINE.md")
     verdicts: list[Any] = []
-    for prefix, next_level in LADDER_NEXT_LEVELS:
+    for prefix, accepted_levels in LADDER_NEXT_LEVELS:
         rows = [line for line in charter.splitlines() if line.startswith(prefix)]
         joined = " ".join(rows)
         verdicts.append(
@@ -186,8 +193,8 @@ def _ladder_verdicts(root: Path) -> list[Any]:
         verdicts.append(
             TOOLBOX.verdict(
                 f"ladder-next-level-verbatim-{prefix.strip('| ')}",
-                next_level in joined,
-                f"`下一级` 必须逐字保持「{next_level}」—— 本轮交付的是机制，不是已达成",
+                any(level in joined for level in accepted_levels),
+                f"`下一级` 必须是 {list(accepted_levels)} 之一 —— 本轮交付的是机制，不是已达成",
             )
         )
     return verdicts

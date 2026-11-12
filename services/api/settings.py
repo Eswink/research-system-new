@@ -70,8 +70,7 @@ class ApiSettings:
         db_path: str = _DEFAULT_DB_PATH,
         endpoint_timeout_seconds: float = 120.0,
         allow_localhost_endpoints: bool = False,
-        #: **运维边界的环境读取**（GOAL-20261111-112 EC-04）：`authored` 实验的具名安全
-        #: profile。**应用层不读环境**（既有边界，判据把守）——它只收这里传下去的值。
+        #: GOAL-112 EC-04：`authored` 实验的具名安全 profile（应用层不读环境，只收这里传的值）。
         authored_safety_profile: str | None = None,
         database_url: str | None = None,
         artifact_blob_dir: str | None = None,
@@ -98,9 +97,8 @@ class ApiSettings:
         # `design_from_plan`）。取值校验归 `experiment_support._arms_for`（那里是
         # 唯一解释点，此处不复制一份判定）。
         self.experiment_design_source = experiment_design_source
-        # GOAL-097 EC-02：任务租约 TTL（秒；缺省 300 与既有装配逐字一致）。同步执行路径
-        # 在会话**开始前**只心跳一次，真实会话常超 300 秒 ⇒ 租约过期 ⇒ `no matching lease`
-        # （既有执行语义，本轮不改；组合根可按会话预算调大）。
+        # GOAL-097 EC-02：任务租约 TTL（秒；缺省 300 与既有装配逐字一致）。同步路径在会话前
+        # 只心跳一次 ⇒ 真实会话常超 300 秒而租约过期（组合根可按会话预算调大）。
         self.workflow_lease_ttl_seconds = _lease_ttl(workflow_lease_ttl_seconds)
         # M14: PostgreSQL DSN (optional) — explicit construct or env
         self.database_url = database_url
@@ -110,8 +108,7 @@ class ApiSettings:
         self.artifact_blob_dir = artifact_blob_dir
         if artifact_blob_dir is not None and not artifact_blob_dir.strip():
             raise ValueError("artifact_blob_dir must not be empty string")
-        # PLAN-058: workspace 快照根（含 `<root>/.snapshots/<digest hex>/` 的目录）。
-        # None → 控制面不提供快照枚举面（诚实 503），不猜默认路径。
+        # PLAN-058: workspace 快照根（None → 控制面不提供快照枚举面：诚实 503，不猜默认路径）。
         self.workspace_snapshot_root = workspace_snapshot_root
         if workspace_snapshot_root is not None and not workspace_snapshot_root.strip():
             raise ValueError("workspace_snapshot_root must not be empty string")
