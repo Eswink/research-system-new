@@ -3712,6 +3712,119 @@
         "title": "MemoryConflictResolutionDto",
         "type": "object"
       },
+      "MemoryConflictResolveDto": {
+        "additionalProperties": false,
+        "description": "一次**仲裁消解**的请求体（GOAL-20261111-110 EC-02）。\n\n**全部字段可选**——空体（或不带 `strategy`）⇒ 走缺省仲裁：`REQUIRE_HUMAN`\n（§9 同姿态：自动化必须**显式**声明）。声明自动策略时 `min_confidence` 必填\n（无凭据的「谁对谁错」开不出来）；`SOURCE_TRUST_WINS` 时 `trust_labels` 给\nid → `TrustLabel` 名。`strategy=\"REQUIRE_HUMAN\"` + `resolved_by` =\n**人来裁决**的落账路径（`resolved_by` 逐字入账）。",
+        "properties": {
+          "min_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Confidence"
+          },
+          "resolved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved By"
+          },
+          "strategy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy"
+          },
+          "trust_labels": {
+            "additionalProperties": false,
+            "title": "Trust Labels",
+            "type": "object"
+          }
+        },
+        "title": "MemoryConflictResolveDto",
+        "type": "object"
+      },
+      "MemoryConflictResolveViewDto": {
+        "additionalProperties": false,
+        "description": "消解路由的响应：判词 + （若落账）更新后的记录。",
+        "properties": {
+          "record": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MemoryRecordDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolution_recorded": {
+            "title": "Resolution Recorded",
+            "type": "boolean"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/MemoryConflictVerdictDto"
+          }
+        },
+        "required": [
+          "verdict",
+          "resolution_recorded"
+        ],
+        "title": "MemoryConflictResolveViewDto",
+        "type": "object"
+      },
+      "MemoryConflictVerdictDto": {
+        "additionalProperties": false,
+        "description": "仲裁结果的读面（**可判依据**逐字给出，不是「某个模型认为」）。",
+        "properties": {
+          "basis": {
+            "title": "Basis",
+            "type": "string"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing",
+            "type": "array"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "winner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winner Id"
+          }
+        },
+        "required": [
+          "outcome",
+          "basis"
+        ],
+        "title": "MemoryConflictVerdictDto",
+        "type": "object"
+      },
       "MemoryFilteredListViewDto": {
         "additionalProperties": false,
         "description": "按某个维度筛过的清单（在缺省形态上**追加**键：筛了什么与**筛掉了多少条**）。\n\n`filtered_out` 与 `dispositions` 同一披露形态：调用方**不解析数组**就知道这次读\n有没有发生过滤。**不静默丢**：筛掉的条数是必报项。\n\nGOAL-20261013-067 EC-03：本形态**扩到两个维度**（`scope` / `proposed_by`）——\n`scope` 仍必报（序 17 的既有语义**逐字保持**），`proposed_by` **只在这一维被筛时**出现\n（作者维的**专用形态**见 `MemoryAuthoredListViewDto`，两者**互斥**：一次只筛一维）。",
@@ -10318,6 +10431,75 @@
           }
         },
         "summary": "Remove Memory",
+        "tags": [
+          "memory"
+        ]
+      }
+    },
+    "/memory/{memory_id}/conflicts/{other_id}/resolve": {
+      "post": {
+        "description": "**消解一条冲突**：仲裁 → 可判依据 → （依据成立时）落账。\n\n缺省（无请求体 / 无 `strategy`）⇒ `REQUIRE_HUMAN` 判词返回 200，**不**落账。\n声明自动策略且依据齐备 ⇒ 经 `lifecycle.resolve_memory_conflict` 落账\n（`resolved_by=\"arbitration:<strategy>\"`）。声明 `REQUIRE_HUMAN` 且带 `resolved_by`\n⇒ **人来裁决**落账（`resolved_by` 逐字入账）。",
+        "operationId": "resolve_memory_conflict_route_memory__memory_id__conflicts__other_id__resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "memory_id",
+            "required": true,
+            "schema": {
+              "title": "Memory Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "other_id",
+            "required": true,
+            "schema": {
+              "title": "Other Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MemoryConflictResolveDto"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryConflictResolveViewDto"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Memory Conflict Route",
         "tags": [
           "memory"
         ]

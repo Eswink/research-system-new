@@ -62,7 +62,10 @@ _READ_ONLY = frozenset({"GET", "HEAD"})
 #: 2026-10-19（GOAL-20261019-089 EC-02）：`PUT /projects/{project_id}/direction`
 #: （方向字段的专用写面）⇒ 63 → 64。**纯同步**：方法分类（保护面的定义）与断言强度
 #: 均未动；新端点自动落在枚举面内，全覆盖用例当场覆盖它（本文件不需要登记新路径）。
-_MEASURED_MUTATING_COUNT = 64
+#: 2026-11-12（GOAL-20261111-110 EC-02）：`POST /memory/{memory_id}/conflicts/{other_id}/resolve`
+#: （证据矛盾的人工/仲裁消解面）⇒ 64 → 65。**纯同步**：方法分类（保护面的定义）与断言强度
+#: 均未动；新端点自动落在枚举面内，全覆盖用例当场覆盖它（本文件不需要登记新路径）。
+_MEASURED_MUTATING_COUNT = 65
 
 
 def _placeholder_path(path: str) -> str:

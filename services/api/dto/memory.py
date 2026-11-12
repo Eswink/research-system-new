@@ -152,3 +152,36 @@ class MemoryValidityViewDto(BaseModel):
     at: str
     records: list[MemoryValidityDto] = Field(default_factory=list)
     scope_note: str
+
+
+class MemoryConflictResolveDto(StrictRequestDto):
+    """一次**仲裁消解**的请求体（GOAL-20261111-110 EC-02）。
+
+    **全部字段可选**——空体（或不带 `strategy`）⇒ 走缺省仲裁：`REQUIRE_HUMAN`
+    （§9 同姿态：自动化必须**显式**声明）。声明自动策略时 `min_confidence` 必填
+    （无凭据的「谁对谁错」开不出来）；`SOURCE_TRUST_WINS` 时 `trust_labels` 给
+    id → `TrustLabel` 名。`strategy="REQUIRE_HUMAN"` + `resolved_by` =
+    **人来裁决**的落账路径（`resolved_by` 逐字入账）。
+    """
+
+    strategy: str | None = None
+    min_confidence: float | None = None
+    trust_labels: dict[str, str] = Field(default_factory=dict)
+    resolved_by: str | None = None
+
+
+class MemoryConflictVerdictDto(BaseModel):
+    """仲裁结果的读面（**可判依据**逐字给出，不是「某个模型认为」）。"""
+
+    outcome: str
+    winner_id: str | None = None
+    basis: str
+    missing: list[str] = Field(default_factory=list)
+
+
+class MemoryConflictResolveViewDto(BaseModel):
+    """消解路由的响应：判词 + （若落账）更新后的记录。"""
+
+    verdict: MemoryConflictVerdictDto
+    resolution_recorded: bool
+    record: MemoryRecordDto | None = None

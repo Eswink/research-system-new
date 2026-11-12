@@ -160,6 +160,7 @@ EXIT_SURFACES: tuple[ExitSurface, ...] = (
             "services/api/routers/lineage.py",
             "services/api/routers/llm_endpoints.py",
             "services/api/routers/memory.py",
+            "services/api/routers/memory_conflicts.py",
             "services/api/routers/models.py",
             "services/api/routers/notifications.py",
             "services/api/routers/operations.py",

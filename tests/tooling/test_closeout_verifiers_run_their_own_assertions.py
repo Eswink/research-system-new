@@ -158,6 +158,9 @@ _VERIFIERS: tuple[str, ...] = (
     # 它判**配对消融四件交付**（可比键 / 两臂 / 读数 / 报告与门）与**阶梯试点射程**
     # （「计划」行带新 bar；其余三格不得被越级推广）。
     "tools/verify_goal109_closeout.py",
+    # GOAL-20261111-110 EC-05：收口验证器（断言集 `goal110_closeout_assertions.py`）。
+    # 它判**仲裁闭集 / 消解路由 / 判据形态 / 阶梯射程**（缺省 REQUIRE_HUMAN 在断言集里重放）。
+    "tools/verify_goal110_closeout.py",
 )
 #: 断言**内联**的旧一代验证器（逐条登记 + 理由非空；与 `_VERIFIERS` 的分区判据同形）。
 LEGACY_INLINE: tuple[tuple[str, str], ...] = (

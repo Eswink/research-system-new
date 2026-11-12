@@ -1,5 +1,5 @@
 {
-  "exit_code": 0,
+  "exit_code": 1,
   "fingerprint_after": {
     "files": [
       {
@@ -1388,7 +1388,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "cc6ce1d0c6b6ec905c287ea455972ababeddf930"
+        "sha256": "47e745e3e9857960fb2626861bf5b73d0b296a37"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1859,8 +1859,12 @@
         "sha256": "9e5eca27b40f40a3fbf12a8ca0c9785f90b8b7d7"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261111-110-evidence-conflict-arbitration-closure.md",
+        "sha256": "20f94e988070a08824ca749fca005d801dbdbf1e"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "eabcb556bf37a1807fc965acd47539341ce921c5"
+        "sha256": "a88263ae8549d2413089b84e39068f9f966bd472"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -4463,6 +4467,10 @@
         "sha256": "2e2ab4154c41373af1efbcadf75e93739a10303e"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261112-110-conflict-arbitration.md",
+        "sha256": "88d6033d2453e46944e50379bb5456bb1e09b28a"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5897,6 +5905,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261111-109-paired-ablation.md",
         "sha256": "8209e1679f5b3e12a759370b48c73d173bc9fa60"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261112-110-conflict-arbitration.md",
+        "sha256": "525759666793685f4aa3082ac6fb11c4b80dabdb"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -12580,7 +12592,7 @@
       },
       {
         "path": "docs/api/openapi.m13.json",
-        "sha256": "bdbc153ab8463834fa79a50f1f143bba78c84719"
+        "sha256": "0e64b8915ffc699a2992f33ed6511fca3b50c660"
       },
       {
         "path": "docs/architecture/AGENT_BACKENDS.md",
@@ -12780,7 +12792,7 @@
       },
       {
         "path": "docs/frontend/UNCONSUMED.md",
-        "sha256": "9f6fae0b1a1bddee2f47c2870cc17a5d01fbfe91"
+        "sha256": "a23d478069d81a8659c035d542d65ea47fbd023c"
       },
       {
         "path": "docs/future/OPTIONAL_EXTERNAL_AGENT_BACKENDS.md",
@@ -14519,6 +14531,10 @@
         "sha256": "5b1037f7b84a84e098945cb83f15bdda156527e8"
       },
       {
+        "path": "packages/application/memory/arbitration.py",
+        "sha256": "a19d1bab444ed95998ba523490af0d6a3acbb6eb"
+      },
+      {
         "path": "packages/application/memory/conflict_sweep.py",
         "sha256": "6905744f277b5806f57ce592ada31e7d414d26ac"
       },
@@ -15600,7 +15616,7 @@
       },
       {
         "path": "services/api/app.py",
-        "sha256": "f1d8b93763180e85605c5ce6176c652f085327d7"
+        "sha256": "527809f6d92b85011185439c2a9ea7e6a5a70320"
       },
       {
         "path": "services/api/approvals.py",
@@ -15680,7 +15696,7 @@
       },
       {
         "path": "services/api/dto/memory.py",
-        "sha256": "7d671460554f8316a8d8d2d21d972ec9b58f7de5"
+        "sha256": "33aad9c7440347b52b59a36daa448ada62ef2dbf"
       },
       {
         "path": "services/api/dto/models.py",
@@ -15921,6 +15937,10 @@
       {
         "path": "services/api/routers/memory.py",
         "sha256": "c22219d63b1a2523d74078818626841ca581a5a3"
+      },
+      {
+        "path": "services/api/routers/memory_conflicts.py",
+        "sha256": "fb075facc7a970eb17a779943ea786dc483dd31d"
       },
       {
         "path": "services/api/routers/models.py",
@@ -16627,6 +16647,10 @@
         "sha256": "4d0148c3b0ca3e9eef5460bf3b65d3b36ead8f49"
       },
       {
+        "path": "tests/api/test_memory_conflict_resolve_route.py",
+        "sha256": "5d25a92866a92501effb664955c03ecb45c9f3dc"
+      },
+      {
         "path": "tests/api/test_memory_resolutions_on_the_http_face.py",
         "sha256": "5d5928c36bf4685720bef1b37cd74643ada83021"
       },
@@ -16852,7 +16876,7 @@
       },
       {
         "path": "tests/api/test_write_face_cannot_be_bypassed.py",
-        "sha256": "da6ac75f519039fd90a9ff8ff0f3bf3774dec7b7"
+        "sha256": "906921190aeb36892137f8ecf232463991a67a7e"
       },
       {
         "path": "tests/api/test_write_face_query_params_are_refused.py",
@@ -16965,6 +16989,10 @@
       {
         "path": "tests/application/m12_deliverable_fixtures.py",
         "sha256": "a80ae1e93bd08a2d8ec9706735fd962d8082f283"
+      },
+      {
+        "path": "tests/application/memory/test_arbitration.py",
+        "sha256": "d257ee6d73171f9e6fd0537e6089c649904c5221"
       },
       {
         "path": "tests/application/memory/test_conflict_resolution_lifecycle.py",
@@ -18952,7 +18980,7 @@
       },
       {
         "path": "tests/observability/test_privacy_exit_census.py",
-        "sha256": "c363c5716640623f4a45269de7fb3fed8ba004cd"
+        "sha256": "d96c21829f70b5e0a8f12584f1fb42fbf41198a0"
       },
       {
         "path": "tests/observability/test_privacy_positive_controls.py",
@@ -19160,7 +19188,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "f2c72e77a49df9ee9ab59dd0a92cd07f53a1201e"
+        "sha256": "4ef3c0ec6bda9b2c50b1901b182c461ad9014949"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -19201,6 +19229,10 @@
       {
         "path": "tests/tooling/test_goal109_ladder_pilot_scope.py",
         "sha256": "552909afd30e658e78b8eff8afd4717575a90a8f"
+      },
+      {
+        "path": "tests/tooling/test_goal110_ladder_evidence_scope.py",
+        "sha256": "17a093ca736b2be4afdf64e6c8c423e3e4b3e909"
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
@@ -19308,7 +19340,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "19cad07aa2a395ce56b4cd9273d4d32b3ff11a1d"
+        "sha256": "3102498249317d049d7e89264264c5bf843a4b64"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -19939,6 +19971,10 @@
         "sha256": "1d2bd06474bd850ae5eb4bee948f121151f6381a"
       },
       {
+        "path": "tools/goal110_closeout_assertions.py",
+        "sha256": "7281fac7dd37689a73a25412b8c8a79f9a02ed9f"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -20415,6 +20451,10 @@
         "sha256": "9acaa7382c539253ac698ed7d09d66e8216252c9"
       },
       {
+        "path": "tools/verify_goal110_closeout.py",
+        "sha256": "9ff3d9a9d5ef51942371b095bb8f85b164c4f85f"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -20427,7 +20467,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "c1c85da3df18a5f4d597bfa4d09870ec9ba9fa0f"
+    "head": "f99440cb82476cc84587ce391d85f36f99de54ae"
   },
   "fingerprint_before": {
     "files": [
@@ -21817,7 +21857,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "cc6ce1d0c6b6ec905c287ea455972ababeddf930"
+        "sha256": "47e745e3e9857960fb2626861bf5b73d0b296a37"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22288,8 +22328,12 @@
         "sha256": "9e5eca27b40f40a3fbf12a8ca0c9785f90b8b7d7"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261111-110-evidence-conflict-arbitration-closure.md",
+        "sha256": "20f94e988070a08824ca749fca005d801dbdbf1e"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "eabcb556bf37a1807fc965acd47539341ce921c5"
+        "sha256": "a88263ae8549d2413089b84e39068f9f966bd472"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -24892,6 +24936,10 @@
         "sha256": "2e2ab4154c41373af1efbcadf75e93739a10303e"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261112-110-conflict-arbitration.md",
+        "sha256": "88d6033d2453e46944e50379bb5456bb1e09b28a"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26326,6 +26374,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261111-109-paired-ablation.md",
         "sha256": "8209e1679f5b3e12a759370b48c73d173bc9fa60"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261112-110-conflict-arbitration.md",
+        "sha256": "525759666793685f4aa3082ac6fb11c4b80dabdb"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -33009,7 +33061,7 @@
       },
       {
         "path": "docs/api/openapi.m13.json",
-        "sha256": "bdbc153ab8463834fa79a50f1f143bba78c84719"
+        "sha256": "0e64b8915ffc699a2992f33ed6511fca3b50c660"
       },
       {
         "path": "docs/architecture/AGENT_BACKENDS.md",
@@ -33209,7 +33261,7 @@
       },
       {
         "path": "docs/frontend/UNCONSUMED.md",
-        "sha256": "9f6fae0b1a1bddee2f47c2870cc17a5d01fbfe91"
+        "sha256": "a23d478069d81a8659c035d542d65ea47fbd023c"
       },
       {
         "path": "docs/future/OPTIONAL_EXTERNAL_AGENT_BACKENDS.md",
@@ -34948,6 +35000,10 @@
         "sha256": "5b1037f7b84a84e098945cb83f15bdda156527e8"
       },
       {
+        "path": "packages/application/memory/arbitration.py",
+        "sha256": "a19d1bab444ed95998ba523490af0d6a3acbb6eb"
+      },
+      {
         "path": "packages/application/memory/conflict_sweep.py",
         "sha256": "6905744f277b5806f57ce592ada31e7d414d26ac"
       },
@@ -36029,7 +36085,7 @@
       },
       {
         "path": "services/api/app.py",
-        "sha256": "f1d8b93763180e85605c5ce6176c652f085327d7"
+        "sha256": "527809f6d92b85011185439c2a9ea7e6a5a70320"
       },
       {
         "path": "services/api/approvals.py",
@@ -36109,7 +36165,7 @@
       },
       {
         "path": "services/api/dto/memory.py",
-        "sha256": "7d671460554f8316a8d8d2d21d972ec9b58f7de5"
+        "sha256": "33aad9c7440347b52b59a36daa448ada62ef2dbf"
       },
       {
         "path": "services/api/dto/models.py",
@@ -36350,6 +36406,10 @@
       {
         "path": "services/api/routers/memory.py",
         "sha256": "c22219d63b1a2523d74078818626841ca581a5a3"
+      },
+      {
+        "path": "services/api/routers/memory_conflicts.py",
+        "sha256": "fb075facc7a970eb17a779943ea786dc483dd31d"
       },
       {
         "path": "services/api/routers/models.py",
@@ -37056,6 +37116,10 @@
         "sha256": "4d0148c3b0ca3e9eef5460bf3b65d3b36ead8f49"
       },
       {
+        "path": "tests/api/test_memory_conflict_resolve_route.py",
+        "sha256": "5d25a92866a92501effb664955c03ecb45c9f3dc"
+      },
+      {
         "path": "tests/api/test_memory_resolutions_on_the_http_face.py",
         "sha256": "5d5928c36bf4685720bef1b37cd74643ada83021"
       },
@@ -37281,7 +37345,7 @@
       },
       {
         "path": "tests/api/test_write_face_cannot_be_bypassed.py",
-        "sha256": "da6ac75f519039fd90a9ff8ff0f3bf3774dec7b7"
+        "sha256": "906921190aeb36892137f8ecf232463991a67a7e"
       },
       {
         "path": "tests/api/test_write_face_query_params_are_refused.py",
@@ -37394,6 +37458,10 @@
       {
         "path": "tests/application/m12_deliverable_fixtures.py",
         "sha256": "a80ae1e93bd08a2d8ec9706735fd962d8082f283"
+      },
+      {
+        "path": "tests/application/memory/test_arbitration.py",
+        "sha256": "d257ee6d73171f9e6fd0537e6089c649904c5221"
       },
       {
         "path": "tests/application/memory/test_conflict_resolution_lifecycle.py",
@@ -39381,7 +39449,7 @@
       },
       {
         "path": "tests/observability/test_privacy_exit_census.py",
-        "sha256": "c363c5716640623f4a45269de7fb3fed8ba004cd"
+        "sha256": "d96c21829f70b5e0a8f12584f1fb42fbf41198a0"
       },
       {
         "path": "tests/observability/test_privacy_positive_controls.py",
@@ -39589,7 +39657,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "f2c72e77a49df9ee9ab59dd0a92cd07f53a1201e"
+        "sha256": "4ef3c0ec6bda9b2c50b1901b182c461ad9014949"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -39630,6 +39698,10 @@
       {
         "path": "tests/tooling/test_goal109_ladder_pilot_scope.py",
         "sha256": "552909afd30e658e78b8eff8afd4717575a90a8f"
+      },
+      {
+        "path": "tests/tooling/test_goal110_ladder_evidence_scope.py",
+        "sha256": "17a093ca736b2be4afdf64e6c8c423e3e4b3e909"
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
@@ -39737,7 +39809,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "19cad07aa2a395ce56b4cd9273d4d32b3ff11a1d"
+        "sha256": "3102498249317d049d7e89264264c5bf843a4b64"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -40368,6 +40440,10 @@
         "sha256": "1d2bd06474bd850ae5eb4bee948f121151f6381a"
       },
       {
+        "path": "tools/goal110_closeout_assertions.py",
+        "sha256": "7281fac7dd37689a73a25412b8c8a79f9a02ed9f"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -40844,6 +40920,10 @@
         "sha256": "9acaa7382c539253ac698ed7d09d66e8216252c9"
       },
       {
+        "path": "tools/verify_goal110_closeout.py",
+        "sha256": "9ff3d9a9d5ef51942371b095bb8f85b164c4f85f"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -40856,11 +40936,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "c1c85da3df18a5f4d597bfa4d09870ec9ba9fa0f"
+    "head": "f99440cb82476cc84587ce391d85f36f99de54ae"
   },
-  "green": true,
+  "green": false,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "c1c85da3df18a5f4d597bfa4d09870ec9ba9fa0f",
-  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
+  "ran_at_head": "f99440cb82476cc84587ce391d85f36f99de54ae",
+  "terminal_line": "FAILED: 1 check(s): python/tests=1",
   "tree_changed_during_the_run": false
 }

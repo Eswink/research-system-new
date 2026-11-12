@@ -33,6 +33,7 @@ from services.api.routers import (
     lineage,
     llm_endpoints,
     memory,
+    memory_conflicts,
     models,
     notifications,
     operations,
@@ -371,6 +372,7 @@ def _register_routers(app: FastAPI) -> None:
     app.include_router(protocol_drafts.router)
     app.include_router(artifacts.router)
     app.include_router(memory.router)
+    app.include_router(memory_conflicts.router)
     app.include_router(notifications.router)
     app.include_router(tool_providers.router)
     app.include_router(tool_registrations.router)
