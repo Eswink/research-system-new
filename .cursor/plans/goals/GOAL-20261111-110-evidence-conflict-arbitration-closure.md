@@ -150,7 +150,7 @@ memory_entries: []
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261112-110 | 见台账 | 仲裁判据 14 passed + 路由判据 10 passed（共 24）；收口验证器 **73 PASS / 0 FAIL**；OpenAPI 快照已重生成；ruff/format/mypy 三道绿 | 与收口提交同一次 push（无独立 run；不冒领） | 四处（`Timestamp` 是包装类不可直接比大小；路由方向判定须先于仲裁；快照重生成写成 CRLF 需归一到 LF；`memory.py` 撞 450 行硬上限 ⇒ 消解路由单列 `memory_conflicts.py`） | `W-1`/`W-2` 残余、`U-1`/`U-2` 未覆盖 | 序 79（叙述强口径） |
+| 1 | PLAN-20261112-110 | `16f27d55` | 仲裁判据 14 passed + 路由判据 10 passed（共 24）；收口验证器 **73 PASS / 0 FAIL**；OpenAPI 快照已重生成；ruff/format/mypy 三道绿 | 与收口提交同一次 push（无独立 run；不冒领） | 四处（`Timestamp` 是包装类不可直接比大小；路由方向判定须先于仲裁；快照重生成写成 CRLF 需归一到 LF；`memory.py` 撞 450 行硬上限 ⇒ 消解路由单列 `memory_conflicts.py`） | `W-1`/`W-2` 残余、`U-1`/`U-2` 未覆盖 | 序 79（叙述强口径） |
 
 ## 残余与未覆盖范围
 
@@ -195,3 +195,4 @@ memory_entries: []
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `16f27d55` | [M0 43165303489](https://github.com/Eswink/research-system-new/actions/runs/43165303489) / [Push 43165303284](https://github.com/Eswink/research-system-new/actions/runs/43165303284) | **M0 `failure`**：`quality-ubuntu-latest` 与 `quality-windows-latest` 红；其余 6 job `success`。Push 全 success (3/3) | **判红如实登记，根因是本台账为空**（`test_goal_ledger_covers_every_commit`：CI 台账里一个提交都没有 ⇒ 判据失去对象）。**不是产品缺陷**：本地 m0 见证同一条也红（终态行 `FAILED: 1 check(s): python/tests=1`），且本地其余 22 条 tooling 判据绿。修法 = 补本行 + 补 cycle 行的 `commits` 格，然后重跑本地 m0 并推送下一笔提交。 |
