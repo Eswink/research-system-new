@@ -214,7 +214,13 @@ def main() -> None:
     payload = {
         "experiment_run_id": os.environ.get("EXPERIMENT_RUN_ID", "M12-REFERENCE-RUN"),
         "status": "SUCCEEDED",
-        "artifact_refs": ["experiment_result.json"],
+        # GOAL-20261114-113 live-run finding：白名单脚本被计划选中时必须满足合约的
+        # `ARTIFACT_EXISTS(metrics)`（`experiment_execution` 的验收判据）——否则 run
+        # 在验收门被点名拒绝。本脚本的科学指标此前只写在 result payload 的 `metrics`
+        # 键里，没有独立的 `metrics` 制品；现在与 `exact_match_index_benchmark.py`
+        # 同形：把同一份摘要指标写进工作区的 `metrics` 文件并列入 artifact_refs。
+        # result payload 的键与字节形态不变（仅此列表多一项）。
+        "artifact_refs": ["experiment_result.json", "metrics"],
         "metrics": {
             "baseline_accuracy": results["baseline"]["metrics"]["accuracy"],
             "candidate_accuracy": results["candidate"]["metrics"]["accuracy"],
@@ -231,6 +237,12 @@ def main() -> None:
     # M12 reference experiment depends on these exact bytes.
     Path("experiment_result.json").write_text(
         json.dumps(payload, ensure_ascii=False, sort_keys=True), encoding="utf-8"
+    )
+    # GOAL-20261114-113：独立 `metrics` 制品（合约 `ARTIFACT_EXISTS(metrics)` 判的就是它）
+    # —— 与 result payload 的 `metrics` 键同源同值，只是落成工作区文件供收集面入库。
+    Path("metrics").write_text(
+        json.dumps(payload["metrics"], ensure_ascii=False, indent=2, sort_keys=True),
+        encoding="utf-8",
     )
     print("baseline_accuracy=", results["baseline"]["metrics"]["accuracy"])
     print("candidate_accuracy=", results["candidate"]["metrics"]["accuracy"])

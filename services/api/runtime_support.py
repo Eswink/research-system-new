@@ -171,13 +171,14 @@ def session_llm_factory(
     return build
 
 
-def _openhands_runtime(
+def _openhands_runtime(  # noqa: PLR0913 - composition root 装配参数
     settings: ApiSettings,
     *,
     credentials: CredentialResolver | None,
     policy_evaluator: PolicyEvaluator | None,
     budget_ledger: Any | None,
     register_session_tools: Any | None = None,
+    telemetry: Any | None = None,
 ) -> AgentRuntime:
     """真实 adapter 装配（只构造，不出网）。
 
@@ -209,6 +210,8 @@ def _openhands_runtime(
         # 缺省 None ⇒ 会话装配回落到空操作：未声明绑定的协议逐字保持既有语义
         # （provider id 直接交给 SDK ⇒ 未注册即点名失败）。
         register_tools=register_session_tools,
+        # GOAL-20261114-113 EC-07：会话终态只读读数落槽（None ⇒ 不采样）。
+        telemetry=telemetry,
     )
     return OpenHandsRuntimeAdapter(deps)
 
@@ -252,6 +255,7 @@ def build_agent_runtime(  # noqa: PLR0913 - keyword-only composition inputs（�
     policy_evaluator: PolicyEvaluator | None = None,
     budget_ledger: Any | None = None,
     register_session_tools: Any | None = None,
+    telemetry: Any | None = None,
 ) -> AgentRuntime:
     """按选择结果装配 AgentRuntime（两个组合根的唯一装配入口）。
 
@@ -271,6 +275,7 @@ def build_agent_runtime(  # noqa: PLR0913 - keyword-only composition inputs（�
         policy_evaluator=policy_evaluator,
         budget_ledger=budget_ledger,
         register_session_tools=register_session_tools,
+        telemetry=telemetry,
     )
 
 

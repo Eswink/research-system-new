@@ -87,17 +87,25 @@ def _write_report(workspace: Path, measurements: list[dict[str, object]]) -> Non
 
 def _write_result(workspace: Path, measurements: list[dict[str, object]]) -> None:
     run_id = os.environ.get("EXPERIMENT_RUN_ID", "")
+    metrics = {
+        "worst_case_comparisons": max(int(item["comparisons"]) for item in measurements),
+        "corpus_size": max(int(item["size"]) for item in measurements),
+    }
     payload = {
         "experiment_run_id": run_id,
         "status": "SUCCEEDED",
-        "artifact_refs": [REPORT_NAME],
-        "metrics": {
-            "worst_case_comparisons": max(int(item["comparisons"]) for item in measurements),
-            "corpus_size": max(int(item["size"]) for item in measurements),
-        },
+        # GOAL-20261114-113 live-run finding：白名单脚本被计划选中时必须满足合约的
+        # `ARTIFACT_EXISTS(metrics)`——与 `exact_match_index_benchmark.py` 同形，把
+        # 同一份摘要指标写成独立的 `metrics` 制品（此前只写在 result payload 的
+        # `metrics` 键里，被本脚本命中即被验收门点名拒绝）。
+        "artifact_refs": [REPORT_NAME, "metrics"],
+        "metrics": metrics,
     }
     (workspace / RESULT_NAME).write_text(
         json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8"
+    )
+    (workspace / "metrics").write_text(
+        json.dumps(metrics, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8"
     )
 
 

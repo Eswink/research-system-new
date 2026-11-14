@@ -17,6 +17,8 @@ from packages.domain.enums import (
     ComparisonOperator,
     FailureAction,
     FailureCategory,
+    MemoryTier,
+    MemoryType,
     TaskKind,
 )
 from packages.domain.failure_policy import FailurePolicyView, failure_policy_view
@@ -167,6 +169,35 @@ class ReportAssemblySpec:
 
 
 @dataclass(frozen=True, slots=True)
+class MemoryExportSpec:
+    """契约声明：本任务的产出**可晋升进治理记忆档**（GOAL-20261114-113 EC-02）。
+
+    与 `experiment` / `report` **不同类**：那两个是**排他执行体**槽位（「这件工作由谁
+    执行」），本字段是**授权声明**（「本任务的产出可进长期记忆」）—— 不是执行体，
+    **不参与**两者的排他校验，可与其中任一同场声明。
+
+    缺省 `None` ⇒ **不晋升**（既有合约的行为逐字不变 —— 「没声明就没这条通道」，
+    不是「拒绝」）。声明在场也**不放宽**记忆门（`gate.py` 的 `_CURATOR_TIERS` 与
+    curator 判定逐字保留）：编排层读到声明后以 `curator_approved=True` **代表合约**
+    提交，授权来源就是本声明。
+
+    `confidence` 用 **`Decimal`**（不是 float）：本声明随 `TaskContract` 进入
+    CompiledRunPlan 与 RunManifest，canonical 序列化（`domain.serialization`）
+    **拒绝 float** —— GOAL-113 实测 `float is not allowed in canonical serialization`
+    让整条链的 manifest digest 判红；`Decimal` 是既有 canonical 词表的一员
+    （`budget` 同型）。
+    """
+
+    tier: MemoryTier = MemoryTier.PROJECT
+    kind: MemoryType = MemoryType.FACT
+    confidence: Decimal = Decimal("0.8")
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.confidence <= 1.0:
+            raise ValueError("confidence must be in [0, 1]")
+
+
+@dataclass(frozen=True, slots=True)
 class TaskContract:
     id: str
     version: str
@@ -189,6 +220,11 @@ class TaskContract:
     #: 「谁执行」不可判（派发方只能猜一个）—— `__post_init__` 点名拒绝。
     #: 缺省 `None` ⇒ 会话语义（既有行为逐字不变）。
     report: ReportAssemblySpec | None = None
+    #: GOAL-20261114-113 EC-02：非空 ⇒ 本任务的产出可晋升进治理记忆档
+    #: （`MemoryExportSpec`）。这是**授权声明**而非执行体：不参与 `experiment` /
+    #: `report` 的排他校验；声明只给编排层「以 `curator_approved=True` 代表合约提交」
+    #: 的授权，记忆门本身不放宽。缺省 `None` ⇒ 不晋升（既有行为逐字不变）。
+    memory_export: MemoryExportSpec | None = None
 
     def failure_policy_view(self) -> FailurePolicyView:
         """这份契约声明的失败策略**实际被消费**的部分（GOAL-004 cycle 3 = EC-03）。

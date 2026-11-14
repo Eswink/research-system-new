@@ -83,6 +83,7 @@ from services.api.config_store_parts import config_store_parts
 from services.api.demo import _default_events, seed_declared_inputs
 from services.api.executor_wiring import sqlite_executor_seams
 from services.api.idempotency import IdempotencyStore
+from services.api.memory_gate_support import sqlite_memory_gate
 from services.api.prior_knowledge_support import prior_knowledge_builder
 from services.api.project_direction_support import project_direction_builder
 from services.api.retrieval_context_support import retrieval_context_builder
@@ -119,8 +120,7 @@ class ApiDeps:
     run_contexts: dict[str, RunContext] = field(default_factory=dict)
     artifacts: ArtifactStore | None = field(default=None, repr=False)
     agent_store: AgentStore | None = field(default=None, repr=False)
-    # WP-B（PLAN-040）：用户自定义 Role/TeamTemplate 覆盖（SQLite 配置面；未配置 ⇒ 无 overrides、
-    # custom POST 诚实 503）。
+    # WP-B（PLAN-040）：Role/TeamTemplate 覆盖（未配置 ⇒ 无 overrides、custom POST 诚实 503）。
     catalog_overrides: CatalogOverrideStore | None = field(default=None, repr=False)
     project_settings_store: ProjectSettingsStore | None = field(default=None, repr=False)
     # WP-A（PLAN-041）：项目注册表（单用户；SQLite 配置面，两组成同侧）。
@@ -308,7 +308,7 @@ def _sqlite_orchestration(
     """编排服务装配：runtime 经选择面（EC-01），其余 Port 显式注入。
 
     PLAN-107 / GOAL-029：runtime 经 `build_agent_runtime(...)`；GOAL-097：三道缝由
-    `sqlite_executor_seams` 给。"""
+    `sqlite_executor_seams` 给。GOAL-113 EC-07：会话终态读数落同一 sink。"""
     runtime = build_agent_runtime(
         faces.settings,
         selection=faces.selection,
@@ -316,6 +316,7 @@ def _sqlite_orchestration(
         policy_evaluator=faces.policy_evaluator,
         budget_ledger=ports.budget,
         register_session_tools=sqlite_session_tools(faces, ports),
+        telemetry=telemetry,
     )
     return RunOrchestrationService(
         OrchestrationDependencies(
@@ -328,6 +329,7 @@ def _sqlite_orchestration(
             review_findings=ports.review_findings,
             **sqlite_executor_seams(faces, ports, dict(ports.tool_providers)),
             prior_conclusion=prior_conclusion_reader(ports.runs_store, ports.review_findings),
+            memory_gate=sqlite_memory_gate(faces, ports),  # EC-01：晋升 gate（同一 store 实例）
             retrieval_context=retrieval_context_builder(
                 artifacts=ports.artifacts, ledger=ports.ledger
             ),

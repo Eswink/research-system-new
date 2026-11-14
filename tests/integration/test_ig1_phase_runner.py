@@ -37,6 +37,7 @@ from packages.domain.enums import (
     AcceptanceCriterionType,
     ActivationPolicy,
     ArtifactState,
+    MemoryTier,
     ModelBindingMode,
     RoleCategory,
 )
@@ -48,6 +49,7 @@ from packages.domain.run_state import ResearchRunState
 from packages.domain.tasks import (
     AcceptanceCriterion,
     ExperimentExecutionSpec,
+    MemoryExportSpec,
     ResearchTask,
     TaskContract,
 )
@@ -83,6 +85,10 @@ def _contract() -> TaskContract:
             image="research-os-sandbox:m9-test",
             command="python run.py",
         ),
+        # GOAL-20261114-113 EC-03：晋升现在**只在合约显式声明** `memory_export` 时发生
+        # （缺省 `None` ⇒ 不晋升）。本用例驱动的是「实验产出可晋升」⇒ 声明必须在场；
+        # 缺声明的反证在 tests/application/run_orchestration/。
+        memory_export=MemoryExportSpec(),
         acceptance_criteria=[
             AcceptanceCriterion(
                 type=AcceptanceCriterionType.ARTIFACT_EXISTS,
@@ -227,5 +233,14 @@ def test_phase_runner_experiment_promotes_claim_and_memory(tmp_path: Path) -> No
     assert claims
     assert all(claim.status is ClaimStatus.VERIFIED for claim in claims)
     assert memory_store.query()
+    # GOAL-20261114-113 EC-04①：真实运行链写出的 PROJECT 档记录，provenance 指向
+    # 本 run 的 evidence；授权来自合约 `memory_export`（声明在 `_contract()` 里）。
+    committed = memory_store.query()[0]
+    assert committed.tier is MemoryTier.PROJECT, committed
+    assert committed.scope == "project", committed
+    assert committed.provenance.startswith(str(_RUN_ID.value)), (
+        "provenance 指向本 run 的 evidence 来源",
+        committed,
+    )
     artifact = next(a for a in artifacts.list_refs() if a.id == f"{_RUN_ID.value}:samples.json")
     assert artifact.state in (ArtifactState.VERIFIED, ArtifactState.ACTIVE)

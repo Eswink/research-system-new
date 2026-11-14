@@ -86,6 +86,9 @@ class AdapterDependencies:
     build_llm_for_fork: Any = None  # fork model_override 时构建新 LLM（缺省回退 build_llm）
     budget_ledger: Any = None
     usage_reporter: Any = None
+    # GOAL-20261114-113 EC-07：会话终态的**只读**读数落槽（TelemetrySink Protocol；
+    # None ⇒ 不采样，既有语义逐字不变）。不是审计面、不承载内容。
+    telemetry: Any = None
     persistence_dir: str | None = None
     callbacks: list[Any] | None = None
 

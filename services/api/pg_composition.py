@@ -22,6 +22,7 @@ from packages.application.run_orchestration.service import (
 from services.api.assembly import _endpoint_url_policy, _load_pricing, policy_bindings
 from services.api.composition import ApiDeps
 from services.api.demo import seed_declared_inputs
+from services.api.memory_gate_support import pg_memory_gate
 from services.api.prior_knowledge_support import prior_knowledge_builder
 from services.api.retrieval_context_support import retrieval_context_builder
 from services.api.review_material_support import review_material_builder
@@ -240,6 +241,7 @@ def _pg_runtime(c: dict[str, Any], config: PgAssemblyConfig, inputs: _PgRuntimeI
             # GOAL-20261009-042 EC-02：`memory.read` 的来源（与 ApiDeps 同一实例）。
             c["memory"],
         ),
+        telemetry=config.telemetry,  # GOAL-113 EC-07：会话终态只读读数落槽
     )
 
 
@@ -271,6 +273,7 @@ def _build_pg_orchestration(
             **pg_executor_seams(c, inputs, config, providers),
             # GOAL-20261008-038 EC-04：前序结论读取器（与 SQLite 根同侧，同一实现）。
             prior_conclusion=prior_conclusion_reader(c["runs_store"], c["review_findings"]),
+            memory_gate=pg_memory_gate(c, inputs),  # EC-01：晋升 gate（同一 store 实例）
             # GOAL-20261014-078 EC-01：检索内容 → 会话上下文（与 SQLite 根同侧）。
             retrieval_context=retrieval_context_builder(
                 artifacts=c["artifacts"], ledger=c["ledger"]

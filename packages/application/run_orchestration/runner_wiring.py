@@ -91,6 +91,8 @@ def runner_deps(  # noqa: PLR0913 - 装配面：Port 聚合 + 现场面（齐了
         # GOAL-20261022-093：上一轮评审结论（缺省 None ⇒ 提示词逐字不变）。
         review_outcome=deps.review_outcome,
         output_schema_validator=deps.output_schema_validator,
+        # GOAL-20261114-113 EC-01：记忆晋升装配面（None ⇒ 不晋升；晋升还须合约声明）。
+        memory_gate=deps.memory_gate,
         human_gated=pending_human_gates(deps.approvals, context.plan, run_id),
         on_pause=paused.append,
         on_observation=None if collector is None else collector.observe,

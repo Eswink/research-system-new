@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from openhands.sdk.agent.agent import Agent as OpenHandsAgent
+from openhands.sdk.context.condenser.llm_summarizing_condenser import LLMSummarizingCondenser
 from openhands.sdk.conversation.conversation import Conversation
 from openhands.sdk.event.conversation_error import ConversationErrorEvent
 from openhands.sdk.tool.spec import Tool
@@ -25,6 +26,7 @@ from adapters.openhands.usage_mapping import (
     observed_model_names,
     publish_usage,
 )
+from packages.application.observability.attributes import MetricKind, MetricName, MetricSample
 from packages.application.ports.agent_runtime import (
     AgentSessionSpec,
     ForkSpec,
@@ -49,6 +51,7 @@ class SessionBuilder:
         self._build_agent = deps.build_agent
         self._budget_ledger = deps.budget_ledger
         self._usage_reporter = deps.usage_reporter
+        self._telemetry = deps.telemetry
         self._persistence_dir = deps.persistence_dir
         self._callbacks = deps.callbacks
         self._policy_context_ids: set[str] = set()
@@ -125,6 +128,7 @@ class SessionBuilder:
             return PolicyEnforcingAgent(
                 llm=llm,
                 tools=[Tool(name=name) for name in session_tools],
+                condenser=_context_guardrail(llm),
                 policy_context_id=context_id,
                 policy_actor=spec.agent.id,
                 policy_scope=session_id,
@@ -135,6 +139,7 @@ class SessionBuilder:
             return PolicyEnforcingAgent(
                 llm=llm,
                 tools=tools,
+                condenser=_context_guardrail(llm),
                 policy_context_id=context_id,
                 policy_actor=spec.agent.id,
                 policy_scope=session_id,
@@ -194,6 +199,7 @@ class SessionBuilder:
 
     def record_usage(self, entry: _SessionEntry, on_failure: Any) -> None:
         """run() 终态后把 SDK usage 归一化写入 BudgetLedger（signal 语义）。"""
+        self._record_context_readings(entry, on_failure)
         if self._budget_ledger is None and self._usage_reporter is None:
             return
         try:
@@ -211,6 +217,38 @@ class SessionBuilder:
             if self._usage_reporter is not None:
                 self._usage_reporter(entries)
         except Exception:  # noqa: BLE001  记账失败不阻断 run 结果
+            on_failure(entry.session_id)
+
+    def _record_context_readings(self, entry: _SessionEntry, on_failure: Any) -> None:
+        """会话终态的**只读**上下文读数（GOAL-20261114-113 EC-07）。
+
+        两个采样（**只读**，不设阈值、不改 condenser 行为）：view event 数与
+        prompt token 累计 —— 回答「有没有会话接近护栏的 `max_size=80`」用生产
+        读数而不是估算。sink 缺省 None ⇒ 不采样（既有语义逐字不变）；采样失败
+        不阻断 run 结果（与记账同一条 fail-open 纪律）。
+        """
+        if self._telemetry is None:
+            return
+        try:
+            self._telemetry.record_metric(
+                MetricSample(
+                    name=MetricName.SESSION_VIEW_EVENTS,
+                    kind=MetricKind.COUNTER,
+                    value=len(entry.conversation.state.view),
+                )
+            )
+            self._telemetry.record_metric(
+                MetricSample(
+                    name=MetricName.SESSION_PROMPT_TOKENS_TOTAL,
+                    kind=MetricKind.COUNTER,
+                    value=sum(
+                        token.prompt_tokens
+                        for metrics in entry.conversation.state.stats.usage_to_metrics.values()
+                        for token in metrics.token_usages
+                    ),
+                )
+            )
+        except Exception:  # noqa: BLE001  观测失败不阻断 run 结果
             on_failure(entry.session_id)
 
     def observed_model_identifiers(self, entry: _SessionEntry) -> tuple[str, ...]:
@@ -232,6 +270,29 @@ class SessionBuilder:
             if isinstance(event, ConversationErrorEvent):
                 last_error = event
         return last_error
+
+
+def _context_guardrail(llm: Any) -> LLMSummarizingCondenser:
+    """上下文压缩**护栏**（GOAL-20261114-113 EC-06）：默认永不触发，装上只为兜底。
+
+    三个参数逐条有实测（GOAL-113 建档读数），改任何一个都要先回 GOAL 记录：
+
+    1. **复用 agent 的同一个 `llm` 对象**：`usage_id`/`Metrics` 与会话共享 ⇒ 不产生
+       第二条 observed model name ⇒ `runtime_fingerprint._single()` 仍单值、
+       `REPEATABLE_CONFIGURATION` 不受影响。换一个摘要模型会让指纹静默掉成
+       `NOT_VERIFIED`（无红判据的破坏面，最尖锐的一条）。
+    2. **`keep_first=4` 是承重的**：SDK 的 hard context reset 从 `summary_offset=0`
+       起**摘要包括用户消息在内的一切** ⇒ 合约的 fenced-JSON 应答指令会丢。
+       `keep_first>=2` 是唯一护栏（首条是 user 消息本身）。
+    3. **不设 `max_tokens`**（类默认 `None`）：不设 token 阈值 ⇒ 不触发 HARD 路径
+       ⇒ 不走 hard context reset。`max_message_chars` 在 openhands-sdk==1.42.0 是
+       **死字段**（全包 6 处声明、零读取），不设。
+
+    实测当前 shape（11 份真实包络 `message_count` 2×9 / 1×2 ≈ 5–12 个 view event）
+    距 `max_size=80` 差一个数量级 ⇒ 本护栏**不改变当前行为**；EC-07 的
+    `research_os.session.view_events` 读数回答「有没有会话真的接近它」。
+    """
+    return LLMSummarizingCondenser(llm=llm, max_size=80, keep_first=4)
 
 
 __all__ = ["SessionBuilder"]

@@ -56,7 +56,8 @@
     },
     "idempotency_scope": {"type": "string", "minLength": 1},
     "experiment": {"$ref": "#/$defs/experimentExecution"},
-    "report": {"$ref": "#/$defs/reportAssembly"}
+    "report": {"$ref": "#/$defs/reportAssembly"},
+    "memory_export": {"$ref": "#/$defs/memoryExport"}
   },
   "$defs": {
     "experimentExecution": {
@@ -76,6 +77,16 @@
       "additionalProperties": false,
       "properties": {
         "timeout_seconds": {"type": "integer", "minimum": 1}
+      }
+    },
+    "memoryExport": {
+      "description": "GOAL-20261114-113 EC-02: this task's results may be promoted into the governed memory archive. Absent = no promotion (existing contracts unchanged verbatim). This is an authorization declaration, not an executor slot: it does not take part in the experiment/report exclusivity rule, and it does not widen the memory gate itself — the orchestration layer submits with curator approval sourced from this declaration.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tier": {"enum": ["SESSION", "RUN", "PROJECT", "ORGANIZATION"]},
+        "kind": {"enum": ["FACT", "DECISION", "NEGATIVE_RESULT", "LESSON", "PROCEDURE", "PREFERENCE", "OPEN_QUESTION"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1}
       }
     },
     "acceptanceCriterion": {

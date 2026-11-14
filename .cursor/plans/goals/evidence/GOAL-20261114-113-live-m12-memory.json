@@ -1,0 +1,29 @@
+{
+  "goal": "GOAL-20261114-113",
+  "captured_at": "2026-11-15",
+  "test": "tests/e2e/test_the_manuscript_chain_runs_live.py::test_the_eleven_phase_chain_runs_live",
+  "interface": "assemble() product root, no seams patched",
+  "env": "RESEARCHOS_AGENT_RUNTIME=openhands RESEARCHOS_LIVE_E2E=1 RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1 (逐命令传；凭据只在 gitignored .env)",
+  "run_id": "8ba73c2a-63b5-4322-aaea-4a8067877a51",
+  "run_state": "SUCCEEDED",
+  "db": "data/goal106-live-30024-d38cdc0d1b21.db (该 run 自己的库)",
+  "m12_memory_count": 1,
+  "m12_memory_row": {
+    "id": "memory:claim:16f1e63f-9e33-4d96-b078-3a82db5faaaf:result",
+    "tier": "PROJECT",
+    "scope": "project",
+    "kind": "FACT",
+    "confidence": 0.8,
+    "provenance": "16f1e63f-9e33-4d96-b078-3a82db5faaaf:manuscript_narrative",
+    "content": "Claim claim:16f1e63f-9e33-4d96-b078-3a82db5faaaf:result: Task 16f1e63f-9e33-4d96-b078-3a82db5faaaf produced manuscript_narrative"
+  },
+  "provenance_points_at_this_run_evidence": true,
+  "next_run_prior_knowledge_reads_it": {
+    "entries": 1,
+    "rendered_line_match": true,
+    "expected_line": "- memory:claim:16f1e63f-9e33-4d96-b078-3a82db5faaaf:result: Claim claim:16f1e63f-9e33-4d96-b078-3a82db5faaaf:result: Task 16f1e63f-9e33-4d96-b078-3a82db5faaaf produced manuscript_narrative (source: 16f1e63f-9e33-4d96-b078-3a82db5faaaf:manuscript_narrative)"
+  },
+  "artifact_count": 46,
+  "second_test_note": "同文件第二个判据（goal105 readings）在同一次 pytest 会话里因中转站配额 429 失败（'您的使用量已超出频率限制，将在 2026-11-16 00:28:18 UTC+8 重置'，建议重试 39766s）——基础设施限流，不是本轮代码路径（该 run 在第一次模型调用即 429，6 个事件、1 个任务、无相位推进）。EC-05 的取证以第一个 SUCCEEDED run 为准。",
+  "measurement_note": "EC-07 的两个只读读数（view_events / prompt_tokens_total）经组合根注入的 sink 采样（装配判据钉住机制）；本机默认 sink 为 fail-open 形态，逐会话读数的导出面由部署观测决定——判据不依赖具体 sink 实现。"
+}

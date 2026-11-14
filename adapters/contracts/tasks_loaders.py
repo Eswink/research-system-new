@@ -13,11 +13,18 @@ from adapters.contracts.base import (
     validate_instance,
 )
 from packages.domain.core import ID, Digest, Timestamp
-from packages.domain.enums import AcceptanceCriterionType, ComparisonOperator, FailureCategory
+from packages.domain.enums import (
+    AcceptanceCriterionType,
+    ComparisonOperator,
+    FailureCategory,
+    MemoryTier,
+    MemoryType,
+)
 from packages.domain.tasks import (
     AcceptanceCriterion,
     ExperimentExecutionSpec,
     HandoffBundle,
+    MemoryExportSpec,
     ReportAssemblySpec,
     RetryPolicy,
     TaskContract,
@@ -110,6 +117,7 @@ def load_task_contracts(relative_path: str) -> dict[str, TaskContract]:
             idempotency_scope=raw.get("idempotency_scope", "task"),
             experiment=_load_experiment(raw.get("experiment")),
             report=_load_report(raw.get("report")),
+            memory_export=_load_memory_export(raw.get("memory_export")),
         )
     return collection
 
@@ -152,6 +160,28 @@ def _load_report(raw: object) -> ReportAssemblySpec | None:
         timeout_seconds=(
             int(raw["timeout_seconds"]) if raw.get("timeout_seconds") is not None else None
         )
+    )
+
+
+def _load_memory_export(raw: object) -> MemoryExportSpec | None:
+    """GOAL-20261114-113 EC-02：`memory_export` **授权声明**（缺省 `None` = 不晋升）。
+
+    与 `_load_experiment` 同一条纪律：只接受 schema 已限定的键（schema 里
+    `additionalProperties: false`；这里再挡一次 —— schema 校验与构造之间不许有
+    静默透传的窗口）。这不是执行体槽位：不参与 `experiment` / `report` 排他校验。
+    """
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ContractLoadError(f"memory_export must be a mapping, got {raw!r}")
+    unknown = sorted(set(raw) - {"tier", "kind", "confidence"})
+    if unknown:
+        raise ContractLoadError(f"unsupported memory_export keys: {', '.join(unknown)}")
+    return MemoryExportSpec(
+        tier=MemoryTier(str(raw.get("tier", "PROJECT"))),
+        kind=MemoryType(str(raw.get("kind", "FACT"))),
+        # Decimal（canonical 序列化拒绝 float；声明随合约进 manifest digest）。
+        confidence=Decimal(str(raw.get("confidence", "0.8"))),
     )
 
 

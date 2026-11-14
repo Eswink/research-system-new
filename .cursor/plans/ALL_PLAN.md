@@ -11,6 +11,7 @@
 | [x] | [PLAN-20261112-110](tasks/PLAN-20261112-110-conflict-arbitration.md) | DONE |
 | [x] | [PLAN-20261112-111](tasks/PLAN-20261112-111-panel-grounding.md) | DONE |
 | [x] | [PLAN-20261112-112](tasks/PLAN-20261112-112-authored-enablement.md) | DONE |
+| [x] | [PLAN-20261114-113](tasks/PLAN-20261114-113-memory-last-mile.md) | DONE |
 | [ ] | [PLAN-20261107-107](tasks/PLAN-20261107-107-four-targets.md) | IN_PROGRESS |
 | [ ] | [PLAN-20261104-107](tasks/PLAN-20261104-107-manuscript-chain-live.md) | IN_PROGRESS |
 | [x] | [PLAN-20261103-105](tasks/PLAN-20261103-105-citation-readings-and-review-driven-revision.md) | DONE |

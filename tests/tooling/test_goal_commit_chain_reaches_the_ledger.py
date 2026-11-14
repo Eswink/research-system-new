@@ -116,6 +116,13 @@ _UNTAGGED_EXEMPT: tuple[tuple[str, str], ...] = (
         "48b67fa2",
         "用户 2026-11-05 授权豁免：该提交主题未点名 GOAL，而修复它需重写历史（fix_policy 禁止）",
     ),
+    (
+        "1cfb74aa",
+        "GOAL-113 复检登记：2026-11-14 已推上 origin/main（push 后判据才咬它）——上一轮"
+        "归档收尾（两表回 3 行惯例，用户 2026-11-14 拍板）连带改了 `tools/verify_goal107_"
+        "closeout.py`（归档咬「只读活跃面」断言的修法）而主题未点名 GOAL；修复需重写历史"
+        "（fix_policy 禁止）。内容归属：GOAL-107 复检资产的伴随修正。",
+    ),
 )
 
 

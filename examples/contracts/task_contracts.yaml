@@ -1038,6 +1038,12 @@ task_contracts:
       max_attempts: 2
       retryable_categories: [MODEL_RELAY_UNAVAILABLE, MODEL_RATE_LIMIT, MODEL_TIMEOUT]
       backoff_seconds: 30
+    # GOAL-20261114-113 EC-05：**记忆导出授权**（本仓第一份带声明的合约；其余 33 份
+    # 刻意不带 —— 缺省 `None` ⇒ 不晋升，既有行为逐字不变）。PROJECT 档仍要过门链的
+    # curator 门：编排层读到本声明后以 `curator_approved=True` **代表合约**提交
+    # （授权来源就是本声明；`gate.py` 的 `_CURATOR_TIERS` 与 curator 判定逐字未动）。
+    memory_export:
+      tier: PROJECT
 
   # GOAL-20261029-100 EC-02：**投稿决策**的交付物契约（`editorial` 相）。
   #

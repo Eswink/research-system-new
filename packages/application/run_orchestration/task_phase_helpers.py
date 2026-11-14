@@ -23,10 +23,7 @@ from packages.application.run_orchestration.experiment_gate_inputs import (
     recorded_policy_decision,
     reported_tests,
 )
-from packages.application.run_orchestration.memory_promotion import (
-    MemoryPromotionContext,
-    promote_memory_from_registration,
-)
+from packages.application.run_orchestration.memory_promotion import promote_memory
 from packages.application.run_orchestration.outcomes import TaskOutcome
 from packages.application.run_orchestration.result_handler import (
     RegistrationDeps,
@@ -167,20 +164,6 @@ def evaluate_gate_experiment(
         structured_output=structured_output,
     )
     return evaluate_gate(deps, tctx, registration, session_result, experiment=outcome)
-
-
-def promote_memory(
-    deps: Any,
-    registration: ResultRegistration,
-    *,
-    kind: MemoryType = MemoryType.FACT,
-) -> None:
-    if deps.memory_gate is None:
-        return
-    promote_memory_from_registration(
-        MemoryPromotionContext(memory_gate=deps.memory_gate, kind=kind),
-        registration,
-    )
 
 
 def register_or_fail(
@@ -432,7 +415,7 @@ def finish_task_step(  # noqa: PLR0913
             registration,
             gate,
         )
-    promote_memory(deps, registration, kind=kind)
+    promote_memory(deps, registration, kind=kind, memory_export=tctx.contract.memory_export)
     record_task_usage(deps.budget, task)
     return PhaseStep(
         handoff=build_handoff(

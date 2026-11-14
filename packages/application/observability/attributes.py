@@ -225,6 +225,11 @@ class MetricName(StrEnum):
     GPU_UNAVAILABLE_TOTAL = "research_os.gpu_execution.unavailable_total"
     # G14 experiment queue dispatcher (one sample per dispatch attempt)
     EXPERIMENT_QUEUE_DISPATCH_TOTAL = "research_os.experiment_queue.dispatch_total"
+    # GOAL-20261114-113 EC-07: 会话上下文读数（**只读**测量，逐会话终态采样一次）。
+    # 回答「有没有会话接近 condenser 的 max_size」用生产读数而不是估算；
+    # 值是计数，不含任何 prompt/响应内容（AGENTS.md §10 同一行）。
+    SESSION_VIEW_EVENTS = "research_os.session.view_events"
+    SESSION_PROMPT_TOKENS_TOTAL = "research_os.session.prompt_tokens_total"
 
 
 @dataclass(frozen=True, slots=True)

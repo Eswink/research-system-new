@@ -86,6 +86,12 @@ class OrchestrationDependencies:
     # None（缺省）= 装配不提供前序面 ⇒ 声明了 `cross_run_consumption` 的合约按 fail-closed
     # 点名「没有前序结论」（**不**当作判过）。
     prior_conclusion: Any | None = None
+    # GOAL-20261114-113 EC-01：**记忆晋升**的装配面（`MemoryGateDeps`；注解取 Any 与
+    # `capabilities` 同理 —— 本模块不因此导入 memory.gate）。
+    # None（缺省）⇒ `promote_memory` 直接 return，不晋升（既有语义逐字不变）；
+    # 注入 = 本装配声明「写面 gate 全链（schema/provenance/contradiction/policy/curator/
+    # sanitize/commit）由该实例承担」—— 晋升本身仍只发生在合约显式声明 `memory_export` 时。
+    memory_gate: Any | None = None
     default_actor: str = "system:orchestration"
 
     def fact_stores(self) -> dict[str, Any]:
