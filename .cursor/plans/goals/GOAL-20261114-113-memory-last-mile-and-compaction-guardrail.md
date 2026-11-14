@@ -8,6 +8,10 @@ updated_at: 2026-11-15
 owners:
   - root-agent
 latest_recheck: .cursor/plans/rechecks/RECHECK-20261115-113-memory-last-mile.md
+budget:
+  max_cycles: 40
+  per_cycle_minutes: 180
+  no_progress_stop_cycles: 2
 authorization:
   source: user-request
   ref: >-

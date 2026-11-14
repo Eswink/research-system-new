@@ -73,6 +73,7 @@ EXIT_SURFACES: tuple[ExitSurface, ...] = (
         observation="真实 OTLP sink 注入后 `/v1/metrics` 的原始 bytes 与解码属性",
         reason="",
         producers=(
+            "adapters/openhands/session_builder.py",
             "adapters/otel/failsafe.py",
             "adapters/sqlite/workflow_ops.py",
             "packages/application/evaluation/runner.py",

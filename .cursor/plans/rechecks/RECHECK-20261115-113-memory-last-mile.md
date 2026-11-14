@@ -44,7 +44,7 @@ GOAL-20261114-113 的十条 EC 逐条取证。**两路以上**（`verify_paths` 
 第一版 `MemoryExportSpec.confidence: float = 0.8`。声明随 `TaskContract` 进
 CompiledRunPlan 与 RunManifest ⇒ `manifest.digest()` 走 canonical 序列化 ⇒
 `ValueError: float is not allowed in canonical serialization`（`domain/serialization.py:37`）
-⇒ **十一相链整链判红**（离线 product-path 9 条全红、live 两次 FAILED 全相 PENDING、
+⇒ **十一相链整链判红**（离线 product-path 9 条全红、live 两次 FAILED 全相未启动、
 run 无任何事件）。修法：`confidence: Decimal = Decimal("0.8")`（`Decimal` 是既有
 canonical 词表的一员，`budget` 同型）；loader 用 `Decimal(str(...))` 换算；晋升边界
 `float(memory_export.confidence)` 显式换算（门链提案面 `MemoryWriteProposal.confidence`
