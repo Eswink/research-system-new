@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "fb9a4f590f7cb486ad2c90e1c5d214d0e09103f5"
+        "sha256": "c4ad71b4d59bc9cda0e41ce5ec002cfbfdfb3b94"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1391,8 +1391,12 @@
         "sha256": "dd8f816d27aeb58c4b66dc8884077714475fdd70"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261115-243-canonical-rejects-float-in-manifest-bound-objects.md",
+        "sha256": "324be36ab14bd09b70cb4c1064dcc63cb5b0a7a9"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "95fef0b2cfeb63605acab21cd02848259529a517"
+        "sha256": "15c79a211c4d8d95cbf0f0d4692576ed0add2e00"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1875,8 +1879,12 @@
         "sha256": "fed826afb76cd26c11fb637446930dbdb0e4bcee"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261114-113-memory-last-mile-and-compaction-guardrail.md",
+        "sha256": "f2118afbf20cb6e0147d7121268c89de87ba5317"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "7074256fe22ecd903ed35a89581b5bb6e0c1c246"
+        "sha256": "c99f0bf7acd037318e422e471eac8ee40c06a2f4"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -2133,6 +2141,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-13-revisions-73-75-76-77.md",
         "sha256": "f5c3749835dba1cd47d58414448f14066d53d6c0"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-15-progress-110-only.md",
+        "sha256": "62ba576b26324eb2a16c1f8f8c3c271d1237bd95"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-15-revisions-78-only.md",
+        "sha256": "2b7ae8f86f02846cf63e51528b470b4dce81e2db"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -2977,6 +2993,14 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261111-108-live-run4-both-tests.json",
         "sha256": "6166aa91a575cddbeabb1657b2d71a73dd853f39"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261114-113-live-m12-memory.json",
+        "sha256": "f2a3e2aaa29dc07843cf9c2f8dc1f4011dc6a9f3"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261114-113-next-round-charter.md",
+        "sha256": "6939e7f1ded6329fde608b9d47cf18254b0ec9ee"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -4499,6 +4523,10 @@
         "sha256": "cd759534f5fdd7b034a0384250066a278662ea3e"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261115-113-memory-last-mile.md",
+        "sha256": "f7f1cb898c409e40d1713ea7018046952bf5172b"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5947,6 +5975,10 @@
         "sha256": "e782dd0e16b5ab263a8d365815d9044c42a9474f"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261114-113-memory-last-mile.md",
+        "sha256": "890db29319e9971154821439ce26492832ba026e"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -6300,7 +6332,7 @@
       },
       {
         "path": "adapters/contracts/tasks_loaders.py",
-        "sha256": "870d704f883ca4351f699ad16e24122ac701d38c"
+        "sha256": "e1c56d5d5b2eb4d16dfda1ba31eb472f590b06b6"
       },
       {
         "path": "adapters/execution/__init__.py",
@@ -6500,7 +6532,7 @@
       },
       {
         "path": "adapters/openhands/session_builder.py",
-        "sha256": "18cbf6c81dffacce1a20c277321cc0c2ddacb986"
+        "sha256": "9ff69cfcd2bd5a83a54dde29d5c5d098108df9df"
       },
       {
         "path": "adapters/openhands/session_tool_invocation.py",
@@ -6512,7 +6544,7 @@
       },
       {
         "path": "adapters/openhands/session_types.py",
-        "sha256": "03b1b84d33c475e711ca90f295324b1338467e6e"
+        "sha256": "088633d788cb33ae4af647acc239cb54fbf08003"
       },
       {
         "path": "adapters/openhands/tool_mapping.py",
@@ -12648,7 +12680,7 @@
       },
       {
         "path": "docs/architecture/CONTEXT_ENGINE.md",
-        "sha256": "2d52b3f5440ccdd9de265ac45304f2393766e1ec"
+        "sha256": "892ad95c31bb5c42e077e59452dd7d9bfe29daef"
       },
       {
         "path": "docs/architecture/DATA_LIFECYCLE.md",
@@ -14068,7 +14100,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "aa8bf52cda7e62a2086b9f2072eb4954350d5196"
+        "sha256": "e72255863d7a7e2a41ed2ba623a5d766d6fb5e4c"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -14108,7 +14140,7 @@
       },
       {
         "path": "examples/experiments/m12_reference_classification.py",
-        "sha256": "e842ce172880182e15e6106dacb7cc26fb696af0"
+        "sha256": "d453385f983fb533594a330ca016a69a65a3c364"
       },
       {
         "path": "examples/experiments/m17_gpu_research.py",
@@ -14116,7 +14148,7 @@
       },
       {
         "path": "examples/experiments/sort_analysis_baseline.py",
-        "sha256": "a392ff75125b8a1a55c633bf0606268e9f165b44"
+        "sha256": "76c42586e47644882ba14803d5b2098765222d90"
       },
       {
         "path": "examples/inputs/console-demo-corpus-v1.json",
@@ -14668,7 +14700,7 @@
       },
       {
         "path": "packages/application/observability/attributes.py",
-        "sha256": "b88c87310975257dd873a0790d3b486c4fa55456"
+        "sha256": "8af829dca2abd330bae0dedd86c2111f29fc5d41"
       },
       {
         "path": "packages/application/observability/scope.py",
@@ -15008,7 +15040,7 @@
       },
       {
         "path": "packages/application/run_orchestration/dependencies.py",
-        "sha256": "c31eadb4b0cb211ff625b8a40f072d027faf4a50"
+        "sha256": "b5103d7e9d7cfa52b712a1f8d98b2e078f00321a"
       },
       {
         "path": "packages/application/run_orchestration/evaluation_gate.py",
@@ -15052,7 +15084,7 @@
       },
       {
         "path": "packages/application/run_orchestration/memory_promotion.py",
-        "sha256": "2b5ff58d1ad0c4dda2a4fde2bcf159e9e01c034a"
+        "sha256": "8a3f1f46f64803bca1427701f1bf93824a021b12"
       },
       {
         "path": "packages/application/run_orchestration/novelty_claim.py",
@@ -15208,7 +15240,7 @@
       },
       {
         "path": "packages/application/run_orchestration/runner_wiring.py",
-        "sha256": "8f3b49c77fb5b19eabf17fd324b87ac8e4bf46de"
+        "sha256": "1eecb05cf4cd321418ec0909eac648ac8f5cc60f"
       },
       {
         "path": "packages/application/run_orchestration/runtime_fingerprint.py",
@@ -15256,7 +15288,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
-        "sha256": "f8f325786e998fdfc03f3904f14351278b51bef4"
+        "sha256": "79dfcc43eba86a044ead36e01b2701f9f7ccd9cb"
       },
       {
         "path": "packages/application/run_orchestration/usage_recording.py",
@@ -15488,7 +15520,7 @@
       },
       {
         "path": "packages/domain/tasks.py",
-        "sha256": "d3819b54649d22f0d020a6680210ed2f8b1487ad"
+        "sha256": "74f30c5cc085fa003e3e8d129811f9ec2ae696d8"
       },
       {
         "path": "packages/domain/team_plan.py",
@@ -15632,7 +15664,7 @@
       },
       {
         "path": "schemas/task-contract.schema.json",
-        "sha256": "509285f6856bbbdeae8ba9a7487df10b0ce49bec"
+        "sha256": "76424025da377d4dba03dc654e6fb1c9b80765d6"
       },
       {
         "path": "schemas/team-template.schema.json",
@@ -15684,7 +15716,7 @@
       },
       {
         "path": "services/api/composition.py",
-        "sha256": "298ca6b1717a46bbcdd37a5ee5cfc3dd3ab1b943"
+        "sha256": "277192f0cbe910f023529e3e3618190e3f6b41f9"
       },
       {
         "path": "services/api/config_store_parts.py",
@@ -15871,6 +15903,10 @@
         "sha256": "bccc72988841643b5847f813519beeb26194d8c3"
       },
       {
+        "path": "services/api/memory_gate_support.py",
+        "sha256": "b7b94c26f299e575346e6daef8407009237d97f8"
+      },
+      {
         "path": "services/api/memory_query_guard.py",
         "sha256": "c426026449bc6797124d67deca802d85207ea619"
       },
@@ -15884,7 +15920,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "4d716e46232ea4da76d43a0a14dd0fb37628cdb2"
+        "sha256": "c6b14c7a84114ff4c2d7469e0d25339d64cd27cc"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -16108,7 +16144,7 @@
       },
       {
         "path": "services/api/runtime_support.py",
-        "sha256": "30adc6bc2bd54196f376b6fcf3b6eb7a3c48a8f5"
+        "sha256": "165c2be913a29b8106a4d44bb3886582ad7d428c"
       },
       {
         "path": "services/api/schedule_support.py",
@@ -16333,6 +16369,10 @@
       {
         "path": "tests/adapters/openhands/test_policy_enforcement.py",
         "sha256": "f396b32700675cd77e81785b3acba433847015dc"
+      },
+      {
+        "path": "tests/adapters/openhands/test_session_guardrail_and_readings.py",
+        "sha256": "6b9a34241695778742ec71ce884857928c0d8a62"
       },
       {
         "path": "tests/adapters/openhands/test_session_tool_reaches_executor.py",
@@ -17281,6 +17321,10 @@
       {
         "path": "tests/application/run_orchestration/test_gate_nudge_on_the_run_path.py",
         "sha256": "8f5547343a980f0b053818325f530d1c759f8097"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_memory_export_declaration.py",
+        "sha256": "d6922925c6e31c70432b73c7d5767f5d8aa7f56c"
       },
       {
         "path": "tests/application/run_orchestration/test_memory_gate_on_the_run_chain.py",
@@ -18912,7 +18956,7 @@
       },
       {
         "path": "tests/integration/test_ig1_phase_runner.py",
-        "sha256": "f53c5dad84454844fb3b10668fc4eb5ecbaf0923"
+        "sha256": "6f2b01574b78d985e274052f9cda2dc52b785dd1"
       },
       {
         "path": "tests/integration/test_ig1_retry_idempotency.py",
@@ -19048,7 +19092,7 @@
       },
       {
         "path": "tests/observability/test_privacy_exit_census.py",
-        "sha256": "d96c21829f70b5e0a8f12584f1fb42fbf41198a0"
+        "sha256": "7ee74c9cef3c7ec379d8a6b7a13aa665ea6106c5"
       },
       {
         "path": "tests/observability/test_privacy_positive_controls.py",
@@ -19256,7 +19300,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "f1cfd0f0bb69c29269c03f0e291476f4d9ccca44"
+        "sha256": "ab41f189cebc13bac8532e122a26e414199ed8f7"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -19308,7 +19352,7 @@
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
-        "sha256": "dbe1fbeca0248f7517cd92036639e10cddfc499b"
+        "sha256": "3e1773c849ccf0b833b7d3566f7b64095243f40d"
       },
       {
         "path": "tests/tooling/test_goal_ledger_covers_every_commit.py",
@@ -19412,7 +19456,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "958edc6f5e10a65f2de38b769eafd228b19f4f9f"
+        "sha256": "9d8525963fde69aa6e37e3c090edbc2cbcd0a144"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -20055,6 +20099,10 @@
         "sha256": "ada0150df9073b4217fc15d36c3562de58446886"
       },
       {
+        "path": "tools/goal113_closeout_assertions.py",
+        "sha256": "be2f24e94aa932da914dba5b880bc4011a4ad506"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -20543,6 +20591,10 @@
         "sha256": "7a886254e12260bd29f46ff95ba3e7207f6ffbbc"
       },
       {
+        "path": "tools/verify_goal113_closeout.py",
+        "sha256": "8fa34e2d91fb3d8130f545e260d61709f816af3f"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -20555,7 +20607,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "a71149a081c0febc81888f0a5c10f3c8d24a833e"
+    "head": "308e890f15a6c14fe1ea38c20cca0af9b48655db"
   },
   "fingerprint_before": {
     "files": [
@@ -20977,7 +21029,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "fb9a4f590f7cb486ad2c90e1c5d214d0e09103f5"
+        "sha256": "c4ad71b4d59bc9cda0e41ce5ec002cfbfdfb3b94"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -21948,8 +22000,12 @@
         "sha256": "dd8f816d27aeb58c4b66dc8884077714475fdd70"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261115-243-canonical-rejects-float-in-manifest-bound-objects.md",
+        "sha256": "324be36ab14bd09b70cb4c1064dcc63cb5b0a7a9"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "95fef0b2cfeb63605acab21cd02848259529a517"
+        "sha256": "15c79a211c4d8d95cbf0f0d4692576ed0add2e00"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22432,8 +22488,12 @@
         "sha256": "fed826afb76cd26c11fb637446930dbdb0e4bcee"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261114-113-memory-last-mile-and-compaction-guardrail.md",
+        "sha256": "f2118afbf20cb6e0147d7121268c89de87ba5317"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "7074256fe22ecd903ed35a89581b5bb6e0c1c246"
+        "sha256": "c99f0bf7acd037318e422e471eac8ee40c06a2f4"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -22690,6 +22750,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-13-revisions-73-75-76-77.md",
         "sha256": "f5c3749835dba1cd47d58414448f14066d53d6c0"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-15-progress-110-only.md",
+        "sha256": "62ba576b26324eb2a16c1f8f8c3c271d1237bd95"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-15-revisions-78-only.md",
+        "sha256": "2b7ae8f86f02846cf63e51528b470b4dce81e2db"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -23534,6 +23602,14 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261111-108-live-run4-both-tests.json",
         "sha256": "6166aa91a575cddbeabb1657b2d71a73dd853f39"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261114-113-live-m12-memory.json",
+        "sha256": "f2a3e2aaa29dc07843cf9c2f8dc1f4011dc6a9f3"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261114-113-next-round-charter.md",
+        "sha256": "6939e7f1ded6329fde608b9d47cf18254b0ec9ee"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -25056,6 +25132,10 @@
         "sha256": "cd759534f5fdd7b034a0384250066a278662ea3e"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261115-113-memory-last-mile.md",
+        "sha256": "f7f1cb898c409e40d1713ea7018046952bf5172b"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26504,6 +26584,10 @@
         "sha256": "e782dd0e16b5ab263a8d365815d9044c42a9474f"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261114-113-memory-last-mile.md",
+        "sha256": "890db29319e9971154821439ce26492832ba026e"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -26857,7 +26941,7 @@
       },
       {
         "path": "adapters/contracts/tasks_loaders.py",
-        "sha256": "870d704f883ca4351f699ad16e24122ac701d38c"
+        "sha256": "e1c56d5d5b2eb4d16dfda1ba31eb472f590b06b6"
       },
       {
         "path": "adapters/execution/__init__.py",
@@ -27057,7 +27141,7 @@
       },
       {
         "path": "adapters/openhands/session_builder.py",
-        "sha256": "18cbf6c81dffacce1a20c277321cc0c2ddacb986"
+        "sha256": "9ff69cfcd2bd5a83a54dde29d5c5d098108df9df"
       },
       {
         "path": "adapters/openhands/session_tool_invocation.py",
@@ -27069,7 +27153,7 @@
       },
       {
         "path": "adapters/openhands/session_types.py",
-        "sha256": "03b1b84d33c475e711ca90f295324b1338467e6e"
+        "sha256": "088633d788cb33ae4af647acc239cb54fbf08003"
       },
       {
         "path": "adapters/openhands/tool_mapping.py",
@@ -33205,7 +33289,7 @@
       },
       {
         "path": "docs/architecture/CONTEXT_ENGINE.md",
-        "sha256": "2d52b3f5440ccdd9de265ac45304f2393766e1ec"
+        "sha256": "892ad95c31bb5c42e077e59452dd7d9bfe29daef"
       },
       {
         "path": "docs/architecture/DATA_LIFECYCLE.md",
@@ -34625,7 +34709,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "aa8bf52cda7e62a2086b9f2072eb4954350d5196"
+        "sha256": "e72255863d7a7e2a41ed2ba623a5d766d6fb5e4c"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -34665,7 +34749,7 @@
       },
       {
         "path": "examples/experiments/m12_reference_classification.py",
-        "sha256": "e842ce172880182e15e6106dacb7cc26fb696af0"
+        "sha256": "d453385f983fb533594a330ca016a69a65a3c364"
       },
       {
         "path": "examples/experiments/m17_gpu_research.py",
@@ -34673,7 +34757,7 @@
       },
       {
         "path": "examples/experiments/sort_analysis_baseline.py",
-        "sha256": "a392ff75125b8a1a55c633bf0606268e9f165b44"
+        "sha256": "76c42586e47644882ba14803d5b2098765222d90"
       },
       {
         "path": "examples/inputs/console-demo-corpus-v1.json",
@@ -35225,7 +35309,7 @@
       },
       {
         "path": "packages/application/observability/attributes.py",
-        "sha256": "b88c87310975257dd873a0790d3b486c4fa55456"
+        "sha256": "8af829dca2abd330bae0dedd86c2111f29fc5d41"
       },
       {
         "path": "packages/application/observability/scope.py",
@@ -35565,7 +35649,7 @@
       },
       {
         "path": "packages/application/run_orchestration/dependencies.py",
-        "sha256": "c31eadb4b0cb211ff625b8a40f072d027faf4a50"
+        "sha256": "b5103d7e9d7cfa52b712a1f8d98b2e078f00321a"
       },
       {
         "path": "packages/application/run_orchestration/evaluation_gate.py",
@@ -35609,7 +35693,7 @@
       },
       {
         "path": "packages/application/run_orchestration/memory_promotion.py",
-        "sha256": "2b5ff58d1ad0c4dda2a4fde2bcf159e9e01c034a"
+        "sha256": "8a3f1f46f64803bca1427701f1bf93824a021b12"
       },
       {
         "path": "packages/application/run_orchestration/novelty_claim.py",
@@ -35765,7 +35849,7 @@
       },
       {
         "path": "packages/application/run_orchestration/runner_wiring.py",
-        "sha256": "8f3b49c77fb5b19eabf17fd324b87ac8e4bf46de"
+        "sha256": "1eecb05cf4cd321418ec0909eac648ac8f5cc60f"
       },
       {
         "path": "packages/application/run_orchestration/runtime_fingerprint.py",
@@ -35813,7 +35897,7 @@
       },
       {
         "path": "packages/application/run_orchestration/task_phase_helpers.py",
-        "sha256": "f8f325786e998fdfc03f3904f14351278b51bef4"
+        "sha256": "79dfcc43eba86a044ead36e01b2701f9f7ccd9cb"
       },
       {
         "path": "packages/application/run_orchestration/usage_recording.py",
@@ -36045,7 +36129,7 @@
       },
       {
         "path": "packages/domain/tasks.py",
-        "sha256": "d3819b54649d22f0d020a6680210ed2f8b1487ad"
+        "sha256": "74f30c5cc085fa003e3e8d129811f9ec2ae696d8"
       },
       {
         "path": "packages/domain/team_plan.py",
@@ -36189,7 +36273,7 @@
       },
       {
         "path": "schemas/task-contract.schema.json",
-        "sha256": "509285f6856bbbdeae8ba9a7487df10b0ce49bec"
+        "sha256": "76424025da377d4dba03dc654e6fb1c9b80765d6"
       },
       {
         "path": "schemas/team-template.schema.json",
@@ -36241,7 +36325,7 @@
       },
       {
         "path": "services/api/composition.py",
-        "sha256": "298ca6b1717a46bbcdd37a5ee5cfc3dd3ab1b943"
+        "sha256": "277192f0cbe910f023529e3e3618190e3f6b41f9"
       },
       {
         "path": "services/api/config_store_parts.py",
@@ -36428,6 +36512,10 @@
         "sha256": "bccc72988841643b5847f813519beeb26194d8c3"
       },
       {
+        "path": "services/api/memory_gate_support.py",
+        "sha256": "b7b94c26f299e575346e6daef8407009237d97f8"
+      },
+      {
         "path": "services/api/memory_query_guard.py",
         "sha256": "c426026449bc6797124d67deca802d85207ea619"
       },
@@ -36441,7 +36529,7 @@
       },
       {
         "path": "services/api/pg_composition.py",
-        "sha256": "4d716e46232ea4da76d43a0a14dd0fb37628cdb2"
+        "sha256": "c6b14c7a84114ff4c2d7469e0d25339d64cd27cc"
       },
       {
         "path": "services/api/preflight_support.py",
@@ -36665,7 +36753,7 @@
       },
       {
         "path": "services/api/runtime_support.py",
-        "sha256": "30adc6bc2bd54196f376b6fcf3b6eb7a3c48a8f5"
+        "sha256": "165c2be913a29b8106a4d44bb3886582ad7d428c"
       },
       {
         "path": "services/api/schedule_support.py",
@@ -36890,6 +36978,10 @@
       {
         "path": "tests/adapters/openhands/test_policy_enforcement.py",
         "sha256": "f396b32700675cd77e81785b3acba433847015dc"
+      },
+      {
+        "path": "tests/adapters/openhands/test_session_guardrail_and_readings.py",
+        "sha256": "6b9a34241695778742ec71ce884857928c0d8a62"
       },
       {
         "path": "tests/adapters/openhands/test_session_tool_reaches_executor.py",
@@ -37838,6 +37930,10 @@
       {
         "path": "tests/application/run_orchestration/test_gate_nudge_on_the_run_path.py",
         "sha256": "8f5547343a980f0b053818325f530d1c759f8097"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_memory_export_declaration.py",
+        "sha256": "d6922925c6e31c70432b73c7d5767f5d8aa7f56c"
       },
       {
         "path": "tests/application/run_orchestration/test_memory_gate_on_the_run_chain.py",
@@ -39469,7 +39565,7 @@
       },
       {
         "path": "tests/integration/test_ig1_phase_runner.py",
-        "sha256": "f53c5dad84454844fb3b10668fc4eb5ecbaf0923"
+        "sha256": "6f2b01574b78d985e274052f9cda2dc52b785dd1"
       },
       {
         "path": "tests/integration/test_ig1_retry_idempotency.py",
@@ -39605,7 +39701,7 @@
       },
       {
         "path": "tests/observability/test_privacy_exit_census.py",
-        "sha256": "d96c21829f70b5e0a8f12584f1fb42fbf41198a0"
+        "sha256": "7ee74c9cef3c7ec379d8a6b7a13aa665ea6106c5"
       },
       {
         "path": "tests/observability/test_privacy_positive_controls.py",
@@ -39813,7 +39909,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "f1cfd0f0bb69c29269c03f0e291476f4d9ccca44"
+        "sha256": "ab41f189cebc13bac8532e122a26e414199ed8f7"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -39865,7 +39961,7 @@
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
-        "sha256": "dbe1fbeca0248f7517cd92036639e10cddfc499b"
+        "sha256": "3e1773c849ccf0b833b7d3566f7b64095243f40d"
       },
       {
         "path": "tests/tooling/test_goal_ledger_covers_every_commit.py",
@@ -39969,7 +40065,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "958edc6f5e10a65f2de38b769eafd228b19f4f9f"
+        "sha256": "9d8525963fde69aa6e37e3c090edbc2cbcd0a144"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -40612,6 +40708,10 @@
         "sha256": "ada0150df9073b4217fc15d36c3562de58446886"
       },
       {
+        "path": "tools/goal113_closeout_assertions.py",
+        "sha256": "be2f24e94aa932da914dba5b880bc4011a4ad506"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -41100,6 +41200,10 @@
         "sha256": "7a886254e12260bd29f46ff95ba3e7207f6ffbbc"
       },
       {
+        "path": "tools/verify_goal113_closeout.py",
+        "sha256": "8fa34e2d91fb3d8130f545e260d61709f816af3f"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -41112,11 +41216,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "a71149a081c0febc81888f0a5c10f3c8d24a833e"
+    "head": "308e890f15a6c14fe1ea38c20cca0af9b48655db"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "a71149a081c0febc81888f0a5c10f3c8d24a833e",
+  "ran_at_head": "308e890f15a6c14fe1ea38c20cca0af9b48655db",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

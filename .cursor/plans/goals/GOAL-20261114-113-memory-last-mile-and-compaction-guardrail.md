@@ -203,7 +203,7 @@ m0 witness + 两树复检）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261114-113-memory-last-mile | PENDING（tip 债：随收口 chore 提交回填） | 定向套件全绿 + 静态门全绿 + 离线十一相 9/9 + live 十一相 SUCCEEDED（run `8ba73c2a`，`m12_memory`=1 且下一轮可读） | PENDING | 2（F-1 float→Decimal：canonical 序列化拒绝 float，实测整链判红；F-2 白名单脚本补 `metrics` 制品：live 计划选中 `m12_reference_classification.py` 时被 `ARTIFACT_EXISTS(metrics)` 点名拒绝——GOAL-066 起可达的既有缺口） | W-1（condenser span output 出口无人看守）；`memory.read` 声明面仍未进任何协议；同会话第二判据因中转站配额 429 失败（2026-11-16 00:28 UTC+8 重置，基础设施） | 下一轮 charter 由本文件读出 |
+| 1 | PLAN-20261114-113-memory-last-mile | `864652a8`、`308e890f` | 定向套件全绿 + 静态门全绿 + 离线十一相 9/9 + live 十一相 SUCCEEDED（run `8ba73c2a`，`m12_memory`=1 且下一轮可读） | CI 两轮（见 CI 台账）：census 真缺陷已修；台账/见证两格随收口 chore 提交收敛；6/8 job 两轮均 success | 3（F-1 float→Decimal；F-2 白名单脚本补 `metrics` 制品；census 分类新 metric 发射点） | W-1（condenser span output 出口无人看守）；`memory.read` 声明面仍未进任何协议；同会话第二判据因中转站配额 429 失败（2026-11-16 00:28 UTC+8 重置，基础设施） | 下一轮 charter 由本文件读出 |
 
 ## 状态历史
 
@@ -221,3 +221,9 @@ m0 witness + 两树复检）。
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
+| `864652a8` | [M0 43630276350](https://github.com/Eswink/research-system-new/actions/runs/43630276350) / [Push 43630275852](https://github.com/Eswink/research-system-new/actions/runs/43630275852) | **M0 `failure`**（quality-ubuntu / quality-windows）：① `privacy_exit_census`——新的两只读 metric 发射点未分类（真缺陷，本轮修：归入受判 `otlp-metrics-wire` 面）；② 台账空 + 见证过期（tip 债，随收口 chore 提交收敛）。其余 6 job success | 主提交（代码 + 记录 + 判据） |
+| `308e890f` | [M0 43632846583](https://github.com/Eswink/research-system-new/actions/runs/43632846583) / [Push 43632846374](https://github.com/Eswink/research-system-new/actions/runs/43632846374) | **M0 `failure`**（quality-ubuntu / quality-windows）： census 已修 ✔，只剩台账空 + 见证过期两格（tip 债，本提交收敛）。其余 6 job success | census 分类 + 记录面补全（MEM-243 / PLAN 章节 / GOAL budget / RECHECK 措辞） |
+
+本轮 tip（收口 chore 提交，`.cursor`-only、不带 `goal113` 主题 ⇒ 不进本链台账）：
+台账两行已回填、本地全量 m0 witness 在**回填后的树**上重跑（终态行 + 见证 JSON 同提交）。
+tip 的 CI 读数由下一轮 prep 按惯例登记（见 GOAL-112 台账尾的同形先例）。
