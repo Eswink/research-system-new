@@ -201,9 +201,22 @@ def _ladder_verdicts(root: Path) -> list[Any]:
 
 
 def _progress_verdicts(root: Path) -> list[Any]:
-    """进展记录：收录本 GOAL + 指向本轮复检 + 插在最上面。"""
+    """进展记录：收录本 GOAL + 指向本轮复检 + 插在最上面。
+
+    **`progress-row-is-newest-when-inserted` 在归档轮的正确读法**（序 81 实测的假负）：
+    这条断言问的是「**当初插入时**它是否在表的最上面」。归档会把本 GOAL 的行搬进
+    `archive/MAINLINE-*-progress-*.md`，而归档遵守「保持活跃面原序」⇒ 那一行**上方出现
+    更早的行是归档的正常结果**，不说明当初插错位置。
+
+    所以分两种来源判：
+    - 行仍在**活跃面** ⇒ 逐字沿用原判法（它上方的日期都不得更早）；
+    - 行已在**归档** ⇒ 判「归档文件内部保持活跃面原序」（日期非递增）。这一面同时证明
+      「搬运是原样搬的」（活版面正是新在上），也就是这条断言真正守的东西。
+    """
     progress_rows = TOOLBOX.progress_rows(root, LADDER_GOAL)
     progress = TOOLBOX.progress_context(root, LADDER_GOAL)
+    sources = TOOLBOX.progress_sources(root, LADDER_GOAL)
+    archived = bool(sources) and all(".cursor/plans/goals/archive/" in s for s in sources)
     return [
         TOOLBOX.verdict(
             "progress-records-this-goal",
@@ -217,14 +230,40 @@ def _progress_verdicts(root: Path) -> list[Any]:
         ),
         TOOLBOX.verdict(
             "progress-row-is-newest-when-inserted",
-            bool(progress_rows) and _rows_above_are_not_older(progress),
-            "进展记录必须插在**最上面**（判据取 progress[0]）",
+            bool(progress_rows)
+            and (
+                _rows_are_in_active_face_order(progress)
+                if archived
+                else _rows_above_are_not_older(progress)
+            ),
+            "进展记录必须插在**最上面**（活跃面判「上方无更早」；归档判「保持原序」）",
         ),
     ]
 
 
 def _rows_above_are_not_older(progress: str) -> bool:
-    """本 GOAL 的行**上方**没有更早的行（= 插入时它就在最上面）。"""
+    """**活跃面**：本 GOAL 的行**上方**没有更早的行（= 插入时它就在最上面）。"""
+    rows = _dated_rows(progress)
+    for index, (date, goal) in enumerate(rows):
+        if goal != LADDER_GOAL:
+            continue
+        return all(other_date >= date for other_date, _goal in rows[:index])
+    return False
+
+
+def _rows_are_in_active_face_order(progress: str) -> bool:
+    """**归档面**：文件内的数据行保持活跃面的原序（日期**非递增**）。
+
+    归档是「原样搬运」，而活跃面是新在上 ⇒ 归档文件里也必须是新在上。这一条同时是
+    「搬运没有重排」的机械证明。
+    """
+    rows = _dated_rows(progress)
+    dates = [date for date, _goal in rows]
+    return bool(dates) and all(a >= b for a, b in zip(dates, dates[1:], strict=False))
+
+
+def _dated_rows(progress: str) -> list[tuple[str, str]]:
+    """正文里的 `(日期, GOAL)` 数据行（按出现序）。"""
     rows: list[tuple[str, str]] = []
     for line in progress.splitlines():
         if not line.startswith("| "):
@@ -232,11 +271,7 @@ def _rows_above_are_not_older(progress: str) -> bool:
         cells = [cell.strip() for cell in line.strip("|").split("|")]
         if len(cells) >= 2 and cells[0].startswith("2026-"):
             rows.append((cells[0], cells[1]))
-    for index, (date, goal) in enumerate(rows):
-        if goal != LADDER_GOAL:
-            continue
-        return all(other_date >= date for other_date, _goal in rows[:index])
-    return False
+    return rows
 
 
 def _revision_rows(text: str) -> list[str]:
