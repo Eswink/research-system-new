@@ -24,7 +24,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Any, cast
 
@@ -32,6 +31,10 @@ import pytest
 import yaml
 
 from adapters.contracts.models_loaders import load_llm_endpoints, load_models
+from tests.e2e.live_switch_support import (
+    live_e2e_switch_enabled,
+    live_run_switch_off_reason,
+)
 
 _ROOT = Path(__file__).resolve().parents[2]
 _MODELS = "examples/config/models.yaml"
@@ -183,11 +186,8 @@ class TestTheLiveCatalogStillAgrees:
     """
 
     def test_the_live_catalog_still_agrees(self) -> None:
-        if not _live_switch_on():
-            pytest.skip(
-                "live catalog check skipped: set RESEARCHOS_LIVE_E2E=1 to compare the "
-                "frozen fixture with the live /models response"
-            )
+        if not live_e2e_switch_enabled():
+            pytest.skip(live_run_switch_off_reason())
         import httpx
 
         response = httpx.get("https://opencode.ai/inference/go/v1/models", timeout=60.0)
@@ -198,10 +198,6 @@ class TestTheLiveCatalogStillAgrees:
             "零价集合与夹具读数不同：夹具已陈旧，用 tools/refresh_free_model_catalog.py 刷新"
             f"（live={sorted(live)} recorded={sorted(recorded)}）"
         )
-
-
-def _live_switch_on() -> bool:
-    return os.environ.get("RESEARCHOS_LIVE_E2E", "") in {"1", "true", "yes", "on"}
 
 
 def test_the_loader_points_at_the_file_this_judge_reads() -> None:

@@ -87,7 +87,6 @@ CASE_FLOORS: tuple[tuple[str, int], ...] = (
 TEST_DEFINITION = re.compile(r"(?m)^\s*def test_")
 
 
-
 def _load_model_independence() -> Any:
     """按路径加载 `tools/goal098_model_independence.py`（`tools/` 不是包）。
 
@@ -107,6 +106,7 @@ def _load_model_independence() -> Any:
 
 
 _model_independence = _load_model_independence()
+
 
 def _text(root: Path, relative: str) -> str:
     path = root / relative

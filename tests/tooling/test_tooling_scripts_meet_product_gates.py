@@ -204,6 +204,10 @@ IN_SCOPE: tuple[str, ...] = (
     "tools/goal095_closeout_assertions.py",
     "tools/verify_goal095_closeout.py",
     "tools/goal098_closeout_assertions.py",  # GOAL-098 EC-05（纯收紧）
+    # GOAL-20261119-115 cycle 1：从断言集里分出的**模型独立性**判据（450 行硬门下的落点）。
+    # 它被 `goal098_closeout_assertions.py` 按路径加载并调用，所以必须同在这张清单里
+    # —— 否则「纳入射程」这件事会在拆分时被静默跳过（本判据正是为此存在）。
+    "tools/goal098_model_independence.py",
     "tools/verify_goal098_closeout.py",
     "tools/goal099_closeout_assertions.py",  # GOAL-099 EC-05（纯收紧）
     "tools/verify_goal099_closeout.py",

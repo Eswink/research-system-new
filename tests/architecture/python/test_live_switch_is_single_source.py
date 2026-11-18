@@ -143,6 +143,10 @@ LIVE_MODULES: tuple[str, ...] = (
     "tests/e2e/test_the_manuscript_chain_runs_live.py",
     # GOAL-20261117-114 EC-07：真实 k=3 两臂配对消融（六次真实 run 的读数采集）。
     "tests/e2e/test_paired_ablation_on_the_plan_live.py",
+    # GOAL-20261119-115 EC-01：离线夹具与**当下**的 `/go/v1/models` 零价集合是否仍一致。
+    # 它带 marker 只因**要出网**（不是"要跑 run"）；开门逻辑与其它 live 模块同一条：
+    # 调 `live_e2e_switch_enabled()`，关着就 skip 并点名缺的开关。
+    "tests/loaders/test_free_model_only_policy.py",
 )
 
 #: 模块级或函数级 mark 都算（`pytestmark = ...` 或标注装饰器形态）。
