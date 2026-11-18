@@ -336,7 +336,25 @@ EC 表见 frontmatter `exit_criteria`。
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
 | （建档提交） | 待回填 | 待回填 | GOAL-115 建档 + PLAN-115 + PRD 差距分析 + MAINLINE 序 83 + 归档 |
-| `aad730b3`…`28b2e65c`（7 个提交） | 待回填 | 待回填 | cycle 1：换站 + 会话头缝 + 两判据 + PRD 判据 + 两轮门修复。**每个提交都会被 push 前的 m0 与 push 后的 CI 覆盖**；本地读数见下 |
+| `aad730b3`…`d6dff1e8`（9 个提交，push 为一个批次） | [`44380740088`](https://github.com/Eswink/research-system-new/actions/runs/44380740088) | **success（8/8 job）** | cycle 1：换站 + 会话头缝 + 两判据 + PRD 判据 + 两轮门修复 + m0 见证刷新 |
+
+**CI 八 job 结论（run `44380740088`，head `d6dff1e8`，全部 `completed / success`）**：
+
+| job | 结论 |
+| --- | --- |
+| `quality-ubuntu-latest` | success（23/23 m0） |
+| `quality-windows-latest` | success（23/23 m0） |
+| `observability-overhead-ubuntu-latest` | success |
+| `observability-overhead-windows-latest` | success |
+| `eval-gate` | success |
+| `container-quality` | success |
+| `collector-quality` | success |
+| `console-frontend` | success |
+
+**如实登记**：九个提交是**一次 push**（批次推送），所以 CI 只覆盖了**末态树**
+（`d6dff1e8`）。中间提交（`aad730b3`…`9aaea0d1`）**没有各自的 CI run** ——
+它们的正确性只由「末态树包含它们且末态绿」间接保证，加上 push 前本地 m0 在同一末态
+上的 23/23。不把它们写成"逐提交全绿"。
 
 **本地门读数（2026-11-20，head `28b2e65c`，全部实跑）**：
 
