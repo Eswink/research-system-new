@@ -152,7 +152,7 @@ class OpenAIChatGateway:
                     endpoint,
                     credential,
                     telemetry=self._telemetry,
-                    headers=request_headers(endpoint.protocol, credential),
+                    headers=request_headers(endpoint.protocol, credential, endpoint.extra_headers),
                 )
             except CircuitOpenRelayError:
                 op.set_outcome(

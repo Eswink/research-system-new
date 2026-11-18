@@ -26,6 +26,32 @@ from packages.domain.enums import (
 # 协议合法取值的唯一来源（域枚举 LLMProtocol）；执行侧选路必须与本集合同源。
 _LEGAL_PROTOCOLS = frozenset(protocol.value for protocol in LLMProtocol)
 
+#: `LLMEndpoint.extra_headers` **禁止**出现的头名（小写比较）。
+#: 这三条是**协议层按 `credential_ref` 构造**的鉴权头；让配置能覆盖它们，
+#: 「凭据只从 credential resolver 来」这条边界就被一个 YAML 字段绕过去了。
+_FORBIDDEN_EXTRA_HEADERS = frozenset({"authorization", "x-api-key", "anthropic-version"})
+
+#: 头名允许的字符集（RFC 7230 token 的保守子集）：防头注入靠**拒绝**，不靠转义。
+_HEADER_NAME_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+
+
+def _validate_extra_headers(headers: tuple[tuple[str, str], ...]) -> None:
+    """静态请求头的形状校验：名字合法、值无控制字符、不遮挡鉴权头。
+
+    **为什么不静默过滤**：被丢掉的配置看起来和"没配"一模一样，而这里的每一个头都
+    是中转站路由所必需的 —— 静默丢弃会把一个 400 变成"配置明明写了却不生效"。
+    """
+    for name, value in headers:
+        if not name or any(ch not in _HEADER_NAME_CHARS for ch in name):
+            raise ValueError(f"extra_headers name must be a token (letters/digits/-/_): {name!r}")
+        if name.lower() in _FORBIDDEN_EXTRA_HEADERS:
+            raise ValueError(
+                "extra_headers must not carry credential headers "
+                f"({name!r}); those come from credential_ref"
+            )
+        if any(ch in value for ch in "\r\n\x00"):
+            raise ValueError(f"extra_headers value for {name!r} must not contain control chars")
+
 
 @dataclass(frozen=True, slots=True)
 class EndpointDiscoveryConfig:
@@ -49,6 +75,14 @@ class LLMEndpoint:
     api_style: str = "chat_completions"
     discovery: EndpointDiscoveryConfig | None = None
     circuit_breaker: CircuitBreakerConfig | None = None
+    #: GOAL-20261119-115 cycle 1：**非凭据**的静态请求头（`(name, value)` 元组，确定性序）。
+    #: 存在理由只有一个：中转站可能要求一个路由头（opencode `/inference/go` 要求
+    #: `x-opencode-session`，缺它 ⇒ 400 `MissingSessionID`，鉴权通过也拒）。把它放进
+    #: 域对象而不是藏在环境变量里，是为了让「发什么头」是**可读的配置事实**。
+    #: **不得承载凭据**：`authorization` / `x-api-key` / `anthropic-version` 由协议层
+    #: 按 `credential_ref` 构造，在这里点名拒绝（否则「凭据只在 credential_ref」这条
+    #: 边界会被一个配置字段绕过去）。
+    extra_headers: tuple[tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
         if not self.id:
@@ -67,6 +101,7 @@ class LLMEndpoint:
             raise ValueError("max_retries must be in [0, 10]")
         if self.concurrency_limit < 1:
             raise ValueError("concurrency_limit must be >= 1")
+        _validate_extra_headers(self.extra_headers)
 
 
 @dataclass(frozen=True, slots=True)

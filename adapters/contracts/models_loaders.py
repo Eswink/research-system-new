@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from adapters.contracts.base import load_flat_collection, load_yaml, mapping_under
 from packages.domain.circuit_breaker import CircuitBreakerConfig
 from packages.domain.enums import (
@@ -26,6 +28,19 @@ def _intensity(value: object) -> ThinkingIntensity | None:
     return ThinkingIntensity(str(value))
 
 
+def _extra_headers(raw: object) -> tuple[tuple[str, str], ...]:
+    """`extra_headers` 的声明形态 `[{name, value}]` → 确定性元组。
+
+    **顺序即声明序**（不排序）：同名头的相对顺序由配置决定，排序会把「后者覆盖前者」
+    的意图悄悄改掉。形状错误由 schema 拒绝（`additionalProperties: false`），这里只做
+    域对象的形状转换。
+    """
+    if not raw:
+        return ()
+    items = cast(list[dict[str, object]], raw)
+    return tuple((str(item["name"]), str(item["value"])) for item in items)
+
+
 def load_llm_endpoints(relative_path: str) -> dict[str, LLMEndpoint]:
     collection: dict[str, LLMEndpoint] = {}
     for key, raw in load_flat_collection(
@@ -44,6 +59,7 @@ def load_llm_endpoints(relative_path: str) -> dict[str, LLMEndpoint]:
             max_retries=raw.get("max_retries", 3),
             concurrency_limit=raw.get("concurrency_limit", 4),
             api_style=raw.get("api_style", "chat_completions"),
+            extra_headers=_extra_headers(raw.get("extra_headers")),
             discovery=EndpointDiscoveryConfig(
                 enabled=bool(discovery_raw.get("enabled", False)),
                 allow_models=tuple(str(item) for item in (discovery_raw.get("allow_models") or [])),

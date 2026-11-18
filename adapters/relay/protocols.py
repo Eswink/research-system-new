@@ -54,16 +54,48 @@ def select_wire_shape(protocol: str, api_style: str) -> WireShape:
     return WireShape.CHAT_COMPLETIONS
 
 
-def request_headers(protocol: str, credential: SecretValue) -> dict[str, str]:
-    """按协议构造鉴权头（未知协议同样 fail-closed）。"""
+def request_headers(
+    protocol: str,
+    credential: SecretValue,
+    extra_headers: tuple[tuple[str, str], ...] = (),
+) -> dict[str, str]:
+    """按协议构造鉴权头（未知协议同样 fail-closed）。
+
+    `extra_headers` 是**非凭据**的静态头（如中转站要求的路由/会话头），在鉴权头之后
+    **追加**；与鉴权头同名时**点名拒绝**（静默覆盖会让「凭据只从 credential_ref 来」
+    变成假象）。域对象已在构造期拒过一遍，这里是第二道 —— 两条腿都经过本函数，
+    而域校验只保证「存进去的值合法」，不保证「调用方没在运行期另塞一份」。
+    """
     known = _known_protocol(protocol)
     if known is LLMProtocol.ANTHROPIC:
-        return {
+        headers = {
             "x-api-key": credential.value,
             "anthropic-version": ANTHROPIC_VERSION,
             "Accept": _DEFAULT_ACCEPT,
         }
-    return {"Authorization": f"Bearer {credential.value}", "Accept": _DEFAULT_ACCEPT}
+    else:
+        headers = {"Authorization": f"Bearer {credential.value}", "Accept": _DEFAULT_ACCEPT}
+    return {**headers, **_checked_extra_headers(extra_headers, headers)}
 
 
-__all__ = ["ANTHROPIC_VERSION", "WireShape", "request_headers", "select_wire_shape"]
+def _checked_extra_headers(
+    extra_headers: tuple[tuple[str, str], ...],
+    base: dict[str, str],
+) -> dict[str, str]:
+    """静态头的第二道校验：不得与鉴权头重名（大小写不敏感）。"""
+    taken = {name.lower() for name in base}
+    for name, _value in extra_headers:
+        if name.lower() in taken:
+            raise RelayHTTPError(
+                FailureCategory.MODEL_INCOMPATIBLE,
+                f"extra_headers must not override a credential header: {name!r}",
+            )
+    return dict(extra_headers)
+
+
+__all__ = [
+    "ANTHROPIC_VERSION",
+    "WireShape",
+    "request_headers",
+    "select_wire_shape",
+]

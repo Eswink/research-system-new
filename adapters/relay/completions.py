@@ -52,6 +52,17 @@ def complete_any(
     return _complete_chat(client, endpoint, credential, request, telemetry)
 
 
+def _headers(endpoint: LLMEndpoint, credential: SecretValue) -> dict[str, str]:
+    """本端点的请求头（协议鉴权头 + 端点的静态头）。
+
+    **GOAL-20261119-115 cycle 1**：chat / responses 两条腿此前**不传** `headers=`，
+    走的是 transport 的默认头 —— 于是端点上声明的静态头只有 Anthropic 腿会发出去。
+    统一走这里之后，四条腿发的是同一组头；无 `extra_headers` 时结果与
+    `_default_headers` **逐字节相同**（`Authorization` + `Accept`），既有形态不变。
+    """
+    return request_headers(endpoint.protocol, credential, endpoint.extra_headers)
+
+
 def _complete_anthropic(
     client: httpx.Client,
     endpoint: LLMEndpoint,
@@ -77,7 +88,7 @@ def _complete_anthropic(
         credential,
         json_body=messages_body(request),
         telemetry=telemetry,
-        headers=request_headers(endpoint.protocol, credential),
+        headers=_headers(endpoint, credential),
     )
     payload = decode_json(response, "messages")
     return messages_result(payload, safe_headers=safe_headers_from(response))
@@ -98,6 +109,7 @@ def _complete_chat(
         credential,
         json_body=completion_body(request, stream=False),
         telemetry=telemetry,
+        headers=_headers(endpoint, credential),
     )
     payload = decode_json(response, "chat completion")
     return chat_result(payload, safe_headers=safe_headers_from(response))
@@ -118,6 +130,7 @@ def _complete_responses(
         credential,
         json_body=responses_body(request, stream=False),
         telemetry=telemetry,
+        headers=_headers(endpoint, credential),
     )
     payload = decode_json(response, "responses")
     return responses_result(payload, safe_headers=select_safe_headers(response.headers.items()))
@@ -138,6 +151,7 @@ def _complete_stream_responses(
         credential,
         json_body=responses_body(request, stream=True),
         telemetry=telemetry,
+        headers=_headers(endpoint, credential),
     )
     try:
         return consume_responses_stream(response)
@@ -168,6 +182,7 @@ def _complete_stream(
         credential,
         json_body=completion_body(request, stream=True),
         telemetry=telemetry,
+        headers=_headers(endpoint, credential),
     )
     try:
         return consume_stream_response(response)

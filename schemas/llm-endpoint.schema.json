@@ -60,6 +60,27 @@
       ],
       "default": "chat_completions"
     },
+    "extra_headers": {
+      "type": "array",
+      "description": "Static non-credential request headers (e.g. a relay session/routing header). Credential headers are refused by the domain.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "value"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "discovery": {
       "type": "object",
       "additionalProperties": false,

@@ -55,7 +55,10 @@ def build_llm(
       覆盖 SDK 默认 300s/5 次（对齐 Research OS 配置面）；
     - max_output_tokens 由调用方（M3 配置）显式设置，避免 SDK 默认
       cap 16384 与预算冲突（R-09）；
-    - model 经 resolve_runtime_model_name 变换（仅本模块）。
+    - model 经 resolve_runtime_model_name 变换（仅本模块）；
+    - `extra_headers` 透传给 SDK：中转站要求的路由头（opencode `/inference/go` 的
+      `x-opencode-session`）**不发给它就无法发起请求**（实测 400 `MissingSessionID`，
+      鉴权通过也拒）。缺省空 ⇒ 与改动前逐字节相同的 `LLM` 构造。
     """
     return LLM(
         model=resolve_runtime_model_name(
@@ -66,6 +69,7 @@ def build_llm(
         timeout=endpoint.request_timeout_seconds,
         num_retries=endpoint.max_retries,
         max_output_tokens=max_output_tokens,
+        extra_headers=dict(endpoint.extra_headers),
     )
 
 

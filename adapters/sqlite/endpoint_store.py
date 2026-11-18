@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from adapters.sqlite.base import SqliteAdapterBase
 from adapters.sqlite.db import connect, now_iso
@@ -109,6 +109,10 @@ def _encode(endpoint: LLMEndpoint) -> dict[str, Any]:
         "concurrency_limit": endpoint.concurrency_limit,
         "api_style": endpoint.api_style,
     }
+    if endpoint.extra_headers:
+        record["extra_headers"] = [
+            {"name": name, "value": value} for name, value in endpoint.extra_headers
+        ]
     if endpoint.discovery is not None:
         record["discovery"] = {
             "enabled": endpoint.discovery.enabled,
@@ -137,9 +141,18 @@ def _decode(record: dict[str, Any]) -> LLMEndpoint:
         max_retries=record.get("max_retries", 3),
         concurrency_limit=record.get("concurrency_limit", 4),
         api_style=record.get("api_style", "chat_completions"),
+        extra_headers=_decode_extra_headers(record.get("extra_headers")),
         discovery=_decode_discovery(discovery) if discovery else None,
         circuit_breaker=_decode_circuit(circuit) if circuit else None,
     )
+
+
+def _decode_extra_headers(raw: object) -> tuple[tuple[str, str], ...]:
+    """`extra_headers` 往返：缺省（旧记录）⇒ 空元组，逐字节兼容既有 endpoint JSON。"""
+    if not raw:
+        return ()
+    items = cast("list[dict[str, Any]]", raw)
+    return tuple((str(item["name"]), str(item["value"])) for item in items)
 
 
 def _decode_discovery(raw: dict[str, Any]) -> EndpointDiscoveryConfig:
