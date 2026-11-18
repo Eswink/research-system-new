@@ -420,7 +420,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "c4ad71b4d59bc9cda0e41ce5ec002cfbfdfb3b94"
+        "sha256": "be6f0d99e5120857723e92b60b8fd4ada49fc97f"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -1395,8 +1395,12 @@
         "sha256": "324be36ab14bd09b70cb4c1064dcc63cb5b0a7a9"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261118-244-three-silent-faces-found-by-real-runs.md",
+        "sha256": "dca89b5f26193a429815353953a0b466edaeccd8"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "15c79a211c4d8d95cbf0f0d4692576ed0add2e00"
+        "sha256": "542f1f72cf76fa10b0e6ce7bf22b6711b4324023"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1880,11 +1884,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261114-113-memory-last-mile-and-compaction-guardrail.md",
-        "sha256": "f2118afbf20cb6e0147d7121268c89de87ba5317"
+        "sha256": "ae34a0016870e46f1a4da10c2489650c12cb56a9"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261117-114-paired-ablation-from-mechanism-to-reading.md",
+        "sha256": "f0a640b17036d1616c26380a1b01d62208013bcd"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "c99f0bf7acd037318e422e471eac8ee40c06a2f4"
+        "sha256": "7749477891ae178512aafc3d7c07a3a480d93725"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -2149,6 +2157,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-15-revisions-78-only.md",
         "sha256": "2b7ae8f86f02846cf63e51528b470b4dce81e2db"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-18-progress-111-only.md",
+        "sha256": "f0ac28f83d7b276754a7026e1c874589c426b2fa"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-18-revisions-79-only.md",
+        "sha256": "10d4d018670d2a9f6dda231c193eb3a1e8782ea1"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -3001,6 +3017,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261114-113-next-round-charter.md",
         "sha256": "6939e7f1ded6329fde608b9d47cf18254b0ec9ee"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261117-114-ablation-k3.json",
+        "sha256": "bae55ccb956699098e06801337c2efc071e66276"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -4527,6 +4547,10 @@
         "sha256": "f7f1cb898c409e40d1713ea7018046952bf5172b"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261118-114-paired-ablation-readings.md",
+        "sha256": "205f3ae13daa7074c561c9464c6a02fdb57ef07b"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -5977,6 +6001,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261114-113-memory-last-mile.md",
         "sha256": "890db29319e9971154821439ce26492832ba026e"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261117-114-paired-ablation-readings.md",
+        "sha256": "d09890e721f8c2f7ad14cb166d461f1e87459e63"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -14163,6 +14191,10 @@
         "sha256": "aaf1fd6baed7c811a2c59a45e9dee1a032f638ea"
       },
       {
+        "path": "examples/protocols/ablation_plan_probe_v1.yaml",
+        "sha256": "719aee31c1cf19e64c91d936dd15c198e5b87773"
+      },
+      {
         "path": "examples/protocols/ai_ml_research_v0_4_0.yaml",
         "sha256": "bbcdb5b2430c2cbcf654b40e1178be95f7bb25d9"
       },
@@ -15003,6 +15035,10 @@
         "sha256": "02dfd44d71bbd2ce8d144068491c70ca743c8d67"
       },
       {
+        "path": "packages/application/run_orchestration/ablation_observations.py",
+        "sha256": "603906ee3769b5ca46ce528ec3d6ec7593153dfe"
+      },
+      {
         "path": "packages/application/run_orchestration/acceptance_observation.py",
         "sha256": "af3147a72a70b2958fec56923344150875dad45a"
       },
@@ -15020,7 +15056,7 @@
       },
       {
         "path": "packages/application/run_orchestration/comparison_digest.py",
-        "sha256": "16b1565f5ae72582ac135a9e0b0ce434e42b821f"
+        "sha256": "3e37a2c201ef4203b4d64bcc2fc749aa8aac4aaa"
       },
       {
         "path": "packages/application/run_orchestration/context.py",
@@ -15048,7 +15084,7 @@
       },
       {
         "path": "packages/application/run_orchestration/eventing.py",
-        "sha256": "ea9307cfb71fbaf572f299683966a51717e96d17"
+        "sha256": "f2e3a93b06cc8e49f91bd76391212bef1b73e810"
       },
       {
         "path": "packages/application/run_orchestration/experiment_gate_inputs.py",
@@ -15188,7 +15224,7 @@
       },
       {
         "path": "packages/application/run_orchestration/retrieval_context.py",
-        "sha256": "19308e68048b083c73f92d99a0ef0f11005554c4"
+        "sha256": "905e6cbefc92f2e94f251144b8da5674834f150b"
       },
       {
         "path": "packages/application/run_orchestration/retrieval_prompt.py",
@@ -17263,6 +17299,10 @@
         "sha256": "7e43bd814d746fa556f8bf6e4f2c37446c264362"
       },
       {
+        "path": "tests/application/run_orchestration/test_ablation_observations.py",
+        "sha256": "8aab0720ed56fd741fe702d75161c2f8ffb0110e"
+      },
+      {
         "path": "tests/application/run_orchestration/test_ablation_pair.py",
         "sha256": "a7764ea13242a9972dbd22e4f5367a2ae2c61623"
       },
@@ -17276,7 +17316,7 @@
       },
       {
         "path": "tests/application/run_orchestration/test_comparison_digest.py",
-        "sha256": "ba56b6442335850031f53c4b232d8698f751b831"
+        "sha256": "2d92e18cd9b0250a3ae6c70f8e456fe11d23b3d9"
       },
       {
         "path": "tests/application/run_orchestration/test_compensation_boundary.py",
@@ -17316,7 +17356,7 @@
       },
       {
         "path": "tests/application/run_orchestration/test_frozen_payload_semantic_digest.py",
-        "sha256": "c3094544248547f3b4c35055675da2df5d436ed2"
+        "sha256": "67eaa605a861583b0687483420fe272eee679e0d"
       },
       {
         "path": "tests/application/run_orchestration/test_gate_nudge_on_the_run_path.py",
@@ -17896,7 +17936,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "2b661c9158a67b31680f1dd02d5ad21e65699182"
+        "sha256": "d23ea2abf13924fca34bd63929bc30669875f39f"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -18065,6 +18105,10 @@
       {
         "path": "tests/contracts/registry.py",
         "sha256": "755ac0f51fa64427b65bf0a15296ab19c4cc32ae"
+      },
+      {
+        "path": "tests/contracts/test_ablation_plan_probe_protocol.py",
+        "sha256": "260e7bb535633909f114d3520d989ffa5050e710"
       },
       {
         "path": "tests/contracts/test_agent_runtime_contract.py",
@@ -18479,6 +18523,10 @@
         "sha256": "1ac828d97e205d2746633f4da8ae05cbc37187b4"
       },
       {
+        "path": "tests/e2e/paired_ablation_live_support.py",
+        "sha256": "59ee3f97abd4920a05087d41d4e79ac0e489155f"
+      },
+      {
         "path": "tests/e2e/program_advance_support.py",
         "sha256": "ca47ccb16e23cf9bdf29cd25129b47edcd81c23c"
       },
@@ -18677,6 +18725,14 @@
       {
         "path": "tests/e2e/test_orchestration_convergence.py",
         "sha256": "52c37e28ce2f4f647f6f26bc70965da5ce91f699"
+      },
+      {
+        "path": "tests/e2e/test_paired_ablation_offline_arms.py",
+        "sha256": "0b1590b50a7b671f034fc85d9bb69de15314bb8f"
+      },
+      {
+        "path": "tests/e2e/test_paired_ablation_on_the_plan_live.py",
+        "sha256": "c3c91a35f98e223041401410cb25387b8f814153"
       },
       {
         "path": "tests/e2e/test_pg_crash_restart.py",
@@ -19300,7 +19356,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "ab41f189cebc13bac8532e122a26e414199ed8f7"
+        "sha256": "65aa658317d67137893754f65a568b4f2dc54296"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -19455,8 +19511,12 @@
         "sha256": "5c74a859bf06099ca69e65a9be0b3b810f3905f2"
       },
       {
+        "path": "tests/tooling/test_the_latest_terminal_goal_is_charter_readable.py",
+        "sha256": "6fb151c3d46e8f98183c4f0ded4bbe13e65c8561"
+      },
+      {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "9d8525963fde69aa6e37e3c090edbc2cbcd0a144"
+        "sha256": "d60864ef8d8f082c6728fe832dd2c5174c2df87a"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -20103,6 +20163,10 @@
         "sha256": "be2f24e94aa932da914dba5b880bc4011a4ad506"
       },
       {
+        "path": "tools/goal114_closeout_assertions.py",
+        "sha256": "f77f7f7fa91fdb452d21de5d0f0b253702ed6066"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -20595,6 +20659,10 @@
         "sha256": "8fa34e2d91fb3d8130f545e260d61709f816af3f"
       },
       {
+        "path": "tools/verify_goal114_closeout.py",
+        "sha256": "77faa53057a72b6745f55df1a6e49161f9dbbd9c"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -20607,7 +20675,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "308e890f15a6c14fe1ea38c20cca0af9b48655db"
+    "head": "d6f3dd7d128bfa46b81c49653ae4bb13099e7ba1"
   },
   "fingerprint_before": {
     "files": [
@@ -21029,7 +21097,7 @@
       },
       {
         "path": ".cursor/memory/INDEX.md",
-        "sha256": "c4ad71b4d59bc9cda0e41ce5ec002cfbfdfb3b94"
+        "sha256": "be6f0d99e5120857723e92b60b8fd4ada49fc97f"
       },
       {
         "path": ".cursor/memory/entries/.gitkeep",
@@ -22004,8 +22072,12 @@
         "sha256": "324be36ab14bd09b70cb4c1064dcc63cb5b0a7a9"
       },
       {
+        "path": ".cursor/memory/entries/MEM-20261118-244-three-silent-faces-found-by-real-runs.md",
+        "sha256": "dca89b5f26193a429815353953a0b466edaeccd8"
+      },
+      {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "15c79a211c4d8d95cbf0f0d4692576ed0add2e00"
+        "sha256": "542f1f72cf76fa10b0e6ce7bf22b6711b4324023"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22489,11 +22561,15 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261114-113-memory-last-mile-and-compaction-guardrail.md",
-        "sha256": "f2118afbf20cb6e0147d7121268c89de87ba5317"
+        "sha256": "ae34a0016870e46f1a4da10c2489650c12cb56a9"
+      },
+      {
+        "path": ".cursor/plans/goals/GOAL-20261117-114-paired-ablation-from-mechanism-to-reading.md",
+        "sha256": "f0a640b17036d1616c26380a1b01d62208013bcd"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "c99f0bf7acd037318e422e471eac8ee40c06a2f4"
+        "sha256": "7749477891ae178512aafc3d7c07a3a480d93725"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -22758,6 +22834,14 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-15-revisions-78-only.md",
         "sha256": "2b7ae8f86f02846cf63e51528b470b4dce81e2db"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-18-progress-111-only.md",
+        "sha256": "f0ac28f83d7b276754a7026e1c874589c426b2fa"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-18-revisions-79-only.md",
+        "sha256": "10d4d018670d2a9f6dda231c193eb3a1e8782ea1"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -23610,6 +23694,10 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261114-113-next-round-charter.md",
         "sha256": "6939e7f1ded6329fde608b9d47cf18254b0ec9ee"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261117-114-ablation-k3.json",
+        "sha256": "bae55ccb956699098e06801337c2efc071e66276"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -25136,6 +25224,10 @@
         "sha256": "f7f1cb898c409e40d1713ea7018046952bf5172b"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261118-114-paired-ablation-readings.md",
+        "sha256": "205f3ae13daa7074c561c9464c6a02fdb57ef07b"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26586,6 +26678,10 @@
       {
         "path": ".cursor/plans/tasks/PLAN-20261114-113-memory-last-mile.md",
         "sha256": "890db29319e9971154821439ce26492832ba026e"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261117-114-paired-ablation-readings.md",
+        "sha256": "d09890e721f8c2f7ad14cb166d461f1e87459e63"
       },
       {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
@@ -34772,6 +34868,10 @@
         "sha256": "aaf1fd6baed7c811a2c59a45e9dee1a032f638ea"
       },
       {
+        "path": "examples/protocols/ablation_plan_probe_v1.yaml",
+        "sha256": "719aee31c1cf19e64c91d936dd15c198e5b87773"
+      },
+      {
         "path": "examples/protocols/ai_ml_research_v0_4_0.yaml",
         "sha256": "bbcdb5b2430c2cbcf654b40e1178be95f7bb25d9"
       },
@@ -35612,6 +35712,10 @@
         "sha256": "02dfd44d71bbd2ce8d144068491c70ca743c8d67"
       },
       {
+        "path": "packages/application/run_orchestration/ablation_observations.py",
+        "sha256": "603906ee3769b5ca46ce528ec3d6ec7593153dfe"
+      },
+      {
         "path": "packages/application/run_orchestration/acceptance_observation.py",
         "sha256": "af3147a72a70b2958fec56923344150875dad45a"
       },
@@ -35629,7 +35733,7 @@
       },
       {
         "path": "packages/application/run_orchestration/comparison_digest.py",
-        "sha256": "16b1565f5ae72582ac135a9e0b0ce434e42b821f"
+        "sha256": "3e37a2c201ef4203b4d64bcc2fc749aa8aac4aaa"
       },
       {
         "path": "packages/application/run_orchestration/context.py",
@@ -35657,7 +35761,7 @@
       },
       {
         "path": "packages/application/run_orchestration/eventing.py",
-        "sha256": "ea9307cfb71fbaf572f299683966a51717e96d17"
+        "sha256": "f2e3a93b06cc8e49f91bd76391212bef1b73e810"
       },
       {
         "path": "packages/application/run_orchestration/experiment_gate_inputs.py",
@@ -35797,7 +35901,7 @@
       },
       {
         "path": "packages/application/run_orchestration/retrieval_context.py",
-        "sha256": "19308e68048b083c73f92d99a0ef0f11005554c4"
+        "sha256": "905e6cbefc92f2e94f251144b8da5674834f150b"
       },
       {
         "path": "packages/application/run_orchestration/retrieval_prompt.py",
@@ -37872,6 +37976,10 @@
         "sha256": "7e43bd814d746fa556f8bf6e4f2c37446c264362"
       },
       {
+        "path": "tests/application/run_orchestration/test_ablation_observations.py",
+        "sha256": "8aab0720ed56fd741fe702d75161c2f8ffb0110e"
+      },
+      {
         "path": "tests/application/run_orchestration/test_ablation_pair.py",
         "sha256": "a7764ea13242a9972dbd22e4f5367a2ae2c61623"
       },
@@ -37885,7 +37993,7 @@
       },
       {
         "path": "tests/application/run_orchestration/test_comparison_digest.py",
-        "sha256": "ba56b6442335850031f53c4b232d8698f751b831"
+        "sha256": "2d92e18cd9b0250a3ae6c70f8e456fe11d23b3d9"
       },
       {
         "path": "tests/application/run_orchestration/test_compensation_boundary.py",
@@ -37925,7 +38033,7 @@
       },
       {
         "path": "tests/application/run_orchestration/test_frozen_payload_semantic_digest.py",
-        "sha256": "c3094544248547f3b4c35055675da2df5d436ed2"
+        "sha256": "67eaa605a861583b0687483420fe272eee679e0d"
       },
       {
         "path": "tests/application/run_orchestration/test_gate_nudge_on_the_run_path.py",
@@ -38505,7 +38613,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "2b661c9158a67b31680f1dd02d5ad21e65699182"
+        "sha256": "d23ea2abf13924fca34bd63929bc30669875f39f"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -38674,6 +38782,10 @@
       {
         "path": "tests/contracts/registry.py",
         "sha256": "755ac0f51fa64427b65bf0a15296ab19c4cc32ae"
+      },
+      {
+        "path": "tests/contracts/test_ablation_plan_probe_protocol.py",
+        "sha256": "260e7bb535633909f114d3520d989ffa5050e710"
       },
       {
         "path": "tests/contracts/test_agent_runtime_contract.py",
@@ -39088,6 +39200,10 @@
         "sha256": "1ac828d97e205d2746633f4da8ae05cbc37187b4"
       },
       {
+        "path": "tests/e2e/paired_ablation_live_support.py",
+        "sha256": "59ee3f97abd4920a05087d41d4e79ac0e489155f"
+      },
+      {
         "path": "tests/e2e/program_advance_support.py",
         "sha256": "ca47ccb16e23cf9bdf29cd25129b47edcd81c23c"
       },
@@ -39286,6 +39402,14 @@
       {
         "path": "tests/e2e/test_orchestration_convergence.py",
         "sha256": "52c37e28ce2f4f647f6f26bc70965da5ce91f699"
+      },
+      {
+        "path": "tests/e2e/test_paired_ablation_offline_arms.py",
+        "sha256": "0b1590b50a7b671f034fc85d9bb69de15314bb8f"
+      },
+      {
+        "path": "tests/e2e/test_paired_ablation_on_the_plan_live.py",
+        "sha256": "c3c91a35f98e223041401410cb25387b8f814153"
       },
       {
         "path": "tests/e2e/test_pg_crash_restart.py",
@@ -39909,7 +40033,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "ab41f189cebc13bac8532e122a26e414199ed8f7"
+        "sha256": "65aa658317d67137893754f65a568b4f2dc54296"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -40064,8 +40188,12 @@
         "sha256": "5c74a859bf06099ca69e65a9be0b3b810f3905f2"
       },
       {
+        "path": "tests/tooling/test_the_latest_terminal_goal_is_charter_readable.py",
+        "sha256": "6fb151c3d46e8f98183c4f0ded4bbe13e65c8561"
+      },
+      {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "9d8525963fde69aa6e37e3c090edbc2cbcd0a144"
+        "sha256": "d60864ef8d8f082c6728fe832dd2c5174c2df87a"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -40712,6 +40840,10 @@
         "sha256": "be2f24e94aa932da914dba5b880bc4011a4ad506"
       },
       {
+        "path": "tools/goal114_closeout_assertions.py",
+        "sha256": "f77f7f7fa91fdb452d21de5d0f0b253702ed6066"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -41204,6 +41336,10 @@
         "sha256": "8fa34e2d91fb3d8130f545e260d61709f816af3f"
       },
       {
+        "path": "tools/verify_goal114_closeout.py",
+        "sha256": "77faa53057a72b6745f55df1a6e49161f9dbbd9c"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -41216,11 +41352,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "308e890f15a6c14fe1ea38c20cca0af9b48655db"
+    "head": "d6f3dd7d128bfa46b81c49653ae4bb13099e7ba1"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "308e890f15a6c14fe1ea38c20cca0af9b48655db",
+  "ran_at_head": "d6f3dd7d128bfa46b81c49653ae4bb13099e7ba1",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
