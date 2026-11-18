@@ -47,6 +47,9 @@ from packages.application.run_orchestration.eventing import (
     frozen_payload,
     publish_event,
 )
+from packages.application.run_orchestration.manifest_freeze_events import (
+    publish_freeze_refusal,
+)
 from packages.application.run_orchestration.outcomes import RunOutcome, TaskOutcome
 from packages.application.run_orchestration.phase_runner import (
     PhaseContext,
@@ -144,13 +147,20 @@ class RunOrchestrationService:
             return self._fail_run(run.id.value, preflight_failure_message(report), False)
         run = run.transition(ResearchRunState.Transition.COMPILE_OK)
         run = run.transition(ResearchRunState.Transition.PREFLIGHT_OK)
-        manifest = freeze_manifest(
-            run.id.value,
-            plan,
-            report,
-            preflight_context,
-            pricing_freeze=PricingFreeze(table=self._deps.pricing, store=self._deps.pricing_store),
-        )
+        try:
+            manifest = freeze_manifest(
+                run.id.value,
+                plan,
+                report,
+                preflight_context,
+                pricing_freeze=PricingFreeze(self._deps.pricing, self._deps.pricing_store),
+            )
+        except ManifestFreezeError as refusal:
+            # GOAL-20261119-115 EC-03 ③：拒冻必须先落可读事件再结束（原先裸抛 ⇒
+            # `outbox_events` 为空、读面「秒失败无原因」，24 次 FAILED 里 5 次是这个形态）。
+            # **只走这一条**：它自己发一次 `run.failed` 并返回失败结局；
+            # 再调 `_fail_run` 会发第二条（实测重复）。
+            return publish_freeze_refusal(self._publish, run.id.value, refusal)
         run = self._started_run(run, manifest)
         if manifest.budget_reservation_ref is not None:
             self._reservation_refs[run.id.value] = manifest.budget_reservation_ref
