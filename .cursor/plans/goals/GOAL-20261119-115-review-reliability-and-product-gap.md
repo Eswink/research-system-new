@@ -351,10 +351,21 @@ EC 表见 frontmatter `exit_criteria`。
 | `collector-quality` | success |
 | `console-frontend` | success |
 
-**如实登记**：九个提交是**一次 push**（批次推送），所以 CI 只覆盖了**末态树**
+**如实登记**：九个提交是**一次 push**（批次推送），所以那次 CI 只覆盖了**末态树**
 （`d6dff1e8`）。中间提交（`aad730b3`…`9aaea0d1`）**没有各自的 CI run** ——
 它们的正确性只由「末态树包含它们且末态绿」间接保证，加上 push 前本地 m0 在同一末态
 上的 23/23。不把它们写成"逐提交全绿"。
+
+**记账提交 `e5b3bcf9` 的 CI 判红（如实登记，不藏）**：
+
+| 提交 | run | 结论 | 说明 |
+| --- | --- | --- | --- |
+| `e5b3bcf9`（CI 台账本身） | [`44384030299`](https://github.com/Eswink/research-system-new/actions/runs/44384030299) | **failure** | `quality-{ubuntu,windows}` 在 `test_m0_witness_matches_the_tree` 判红：**改记录 ⇒ 见证失效**。另 6 个 job 全绿 |
+
+**归因（类别 i/ii 的交界，但责任在流程而非产品）**：这一条**不是产品缺陷**，
+也不是环境 flake —— 它是本仓既有的**记录顺序纪律**：写记录 → 跑门 → 不再改树。
+我把台账提交放在 m0 之后，于是见证绑定的是**旧**树。修法与判据消息逐字一致：
+把记录推到最后一个动作，再跑一次 m0，之后不再改树（见下一行）。
 
 **本地门读数（2026-11-20，head `28b2e65c`，全部实跑）**：
 
