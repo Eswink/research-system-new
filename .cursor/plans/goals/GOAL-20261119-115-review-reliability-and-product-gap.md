@@ -276,7 +276,7 @@ EC 表见 frontmatter `exit_criteria`。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 见「CI 台账」 | 治理 `validate.py` 绿；记录面判据绿 | 见「CI 台账」 | — | EC-01…08 全 PENDING | cycle 1 = EC-01（换站落地 + 免费模型纪律） |
-| 1 | `PLAN-20261120-116`（换站 + 零价纪律 + 会话头缝） | `aad730b3` 静态路由头两条腿 / `a262323a` 换站 + 两个新判据 + 钉值判据同轮改 / `ad550bff` PRD 判据 + goal098 口径修正 | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 绿；`tests/{architecture,application/preflight,api}` 1102 passed / 4 skipped；`verify_goal108` 87/0；`verify_goal098` 104/0；新判据反证臂逐条咬合 | 见「CI 台账」 | — | **EC-01 PASS**（四模型 `tool_calls` 实测 + probe ok=True + 零价判据 + 双反证）；**EC-02 PASS**（旧站标识在产品/判据面零命中，白名单逐条给理由）；**EC-07 PASS**（四节 + 23 条去重 `file:line` + INDEX 登记 + 非 ZDR 事实） | cycle 2 = EC-03（四类失败模式各一条判据） |
+| 1 | `PLAN-20261120-116`（换站 + 零价纪律 + 会话头缝） | `aad730b3` 静态路由头两条腿 / `a262323a` 换站 + 两个新判据 + 钉值判据同轮改 / `ad550bff` PRD 判据 + goal098 口径修正 / `727659b1` 记录 / `2757edd8` 判据不自豁免 / `d7ad8547` RECHECK + 首批门修复 / `28b2e65c` live 开关单源 + 工具清单登记 | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 绿；`tests/{architecture,application/preflight,api}` 1102 passed / 4 skipped；`verify_goal108` 87/0；`verify_goal098` 104/0；**全量 m0 = `PASS: profile=m0; 23 deterministic checks`（exit 0，`tree changed during the run: False`，head `28b2e65c`）**；新判据反证臂逐条咬合 | 见「CI 台账」 | — | **EC-01 PASS**（四模型 `tool_calls` 实测 + probe ok=True + 零价判据 + 双反证）；**EC-02 PASS**（旧站标识在产品/判据面零命中，白名单逐条给理由）；**EC-07 PASS**（四节 + 23 条去重 `file:line` + INDEX 登记 + 非 ZDR 事实） | cycle 2 = EC-03（四类失败模式各一条判据） |
 
 **cycle 1 的实测发现（写进记录，不得只留在会话里）**：
 
@@ -336,3 +336,19 @@ EC 表见 frontmatter `exit_criteria`。
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
 | （建档提交） | 待回填 | 待回填 | GOAL-115 建档 + PLAN-115 + PRD 差距分析 + MAINLINE 序 83 + 归档 |
+| `aad730b3`…`28b2e65c`（7 个提交） | 待回填 | 待回填 | cycle 1：换站 + 会话头缝 + 两判据 + PRD 判据 + 两轮门修复。**每个提交都会被 push 前的 m0 与 push 后的 CI 覆盖**；本地读数见下 |
+
+**本地门读数（2026-11-20，head `28b2e65c`，全部实跑）**：
+
+| 面 | 读数 |
+| --- | --- |
+| 全量 m0 | `PASS: profile=m0; 23 deterministic checks`；`exit_code=0`；`tree changed during the run: False` |
+| 受影响定向套件 | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 passed |
+| 架构 / 预检 / API | 1102 passed / 4 skipped |
+| 收口资产 | `verify_goal108` 87/0；`verify_goal098` 104/0 |
+| 凭据审计 | `tools/credential_audit.py` 四面 `offenders=0` |
+| lint / format / mypy | `ruff check` 0；`ruff format --check` 1462 files clean；mypy 1452 files clean |
+
+**两轮门修复的如实登记**：首轮 m0 判红 5 条（lint / format / mypy / pytest / framework-validate），
+**全部来自本 cycle 自己的新文件**，与换站无关；修完第二轮只剩 `python/tests` 的 5 条，
+同样全部是新的（单源开关被绕过 / 拆出的工具脚本未登记 / 两处格式）。第三轮 23/23。
