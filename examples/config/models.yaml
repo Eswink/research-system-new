@@ -1,13 +1,35 @@
 models:
+  # ===========================================================================
+  # GOAL-20261119-115 EC-01：**只允许零价模型**。
+  #
+  # 四个模型名来自 `GET https://opencode.ai/inference/go/v1/models` 的实测读数
+  # （2026-11-20，`cost.text.input.price == 0` 且 `cost.text.output.price == 0`）：
+  #   hy4-flash-free · longcat-2.5-free · beam-free · iceman-contributor-free
+  # 判据 `tests/loaders/test_free_model_only_policy.py` 把这份文件与**离线夹具里的
+  # 零价集合**逐字对拍：收费名进来即判红并点名。
+  #
+  # **能力按实测声明，不按 provider 的声称**（既有纪律）：
+  # | 模型 | context | tools | structured_output（实测 `response_format: json_schema`）|
+  # | --- | --- | --- | --- |
+  # | hy4-flash-free | 1048576 | ✅ 标准 `tool_calls` | ✅ 只回 schema 内的键 |
+  # | longcat-2.5-free | 1000000 | ✅ | ✅ |
+  # | beam-free | 1048576 | ✅ | ✅（provider 也声称） |
+  # | iceman-contributor-free | 262144 | ✅ | ❌ **400 Structured response_format is not enabled** |
+  # ⇒ `iceman-contributor-free` **不**声明 `STRUCTURED_OUTPUT_NATIVE`；
+  # 另外 `longcat-2.5-free` 的 `temperature` 被 provider 标为不支持（`false`）⇒
+  # 它只在不需要采样参数的角色上用。
+  #
+  # 附注（实测，写在配置里是为了下一次换站能复用）：`hy4-flash-free` 是 reasoning 模型，
+  # `max_tokens=256` 时 `finish_reason: length` 且 `tool_calls` 为空 —— 给它工具面时
+  # 输出预算要 ≥ 2048（`max_tokens=2048` 实测正常返回 `tool_calls`）。
+  # ===========================================================================
+
+  # --- 写作组（`research_strong` / `research_fast` 的生产侧；WRITER 面） --------
   agnes_flash:
     endpoint: main
-    display_name: Hy4 Free (relay, writing/execution)
-    model_name: hy4free  # 写作组
-    # 声明值（由登记方声明、非探测）：本版本不发送给 provider，也不参与 eligibility 判定
-    # 读数来源（GOAL-20261111-108 实查，`GET /v1/models`）：`context_length = 960000`、
-    # `max_output_tokens = 64000`。**它是 reasoning 模型**（实测 `reasoning_tokens` 会吃掉
-    # 输出预算：64 token 上限时 `content` 为空、`finish_reason: length`）。
-    context_window_tokens: 960000
+    display_name: Hy4 Flash Free (relay, writing/execution)
+    model_name: hy4-flash-free  # 写作组
+    context_window_tokens: 1048576  # `limit.context`（input 983040 / output 65536）
     thinking_intensity: MAX
     capabilities:
       CHAT: &user_declared_supported
@@ -24,7 +46,7 @@ models:
   research_alpha:
     endpoint: main
     display_name: Research Alpha
-    model_name: hy4free  # 写作组（writer/director/domain_a）
+    model_name: hy4-flash-free  # 写作组（writer/director/domain_a）
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -35,60 +57,32 @@ models:
   coding_beta:
     endpoint: main
     display_name: Coding Beta
-    model_name: hy4free  # 写作组
+    model_name: hy4-flash-free  # 写作组
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
       TOOL_CALLING_NATIVE: *user_declared_supported
-      STRUCTURED_OUTPUT_NATIVE: *user_declared_supported
 
+  # 轻量面（`scout_b` / `research_fast`）。**不是评审面**：它是 `model_profiles`
+  # 里 `research_fast.primary` 的落点，为写作/侦察侧提供第二个执行目标。
   reviewer_gamma:
     endpoint: main
-    display_name: Reviewer Gamma
-    model_name: hy3  # 轻量面（scout_b / research_fast）
+    display_name: LongCat 2.5 Free (relay, light/scouting)
+    model_name: longcat-2.5-free
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
       STRUCTURED_OUTPUT_PROMPTED: *user_declared_supported
       TOOL_CALLING_NATIVE: *user_declared_supported
 
-  # 第三方评审模型（GOAL-20261018-084 EC-01/EC-02）：**底层 model_name 与生产者不同**
-  # （`deepseek-v4-flash-vision` vs `glm-5.3`），这是「评审独立于生产者」可判的前提。
-  # 读数来源（2026-10-18 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
-  #   - `GET /v1/models` 回报该 id `is_ready: true`、`max_context_length = 1048576`；
-  #   - `POST /v1/chat/completions` ⇒ HTTP 200、`content: "OK"`、**返回名 = 声明名** `glm-5.3`
-  #     （与主模型的 `deepseek-v4-flash-vision` → `dsv4-flash-vision` 不同，仍属 §4
-  #     「可重复配置」而非「完全模型可复现」）；
-  #   - `tool_choice: required` ⇒ 真返回标准 `tool_calls`（`TOOL_CALLING_NATIVE`）；
-  #   - `stream: true` ⇒ SSE chunk（`STREAMING`）；`usage` 逐次回报（`USAGE_REPORTING`）。
-  #   - **`STRUCTURED_OUTPUT_NATIVE` 不声明**：provider 的 `/v1/models` 把
-  #     `structured_outputs` 声称支持，但实跑 `response_format: json_schema` 时**多出 schema
-  #     之外的键且把 string 写成 number** ⇒ 实测未强制 ⇒ 声明为 `PROMPTED`（按实测，不按声称）。
+  # --- 评审 A（`critic_independent.primary`）--------------------------------
+  # **底层 model_name 与生产者不同**（`beam-free` vs `hy4-flash-free`），这是
+  # 「评审独立于生产者」可判的前提（`check_heterogeneity` + 工厂判据逐对判不交）。
   reviewer_independent:
     endpoint: main
-    display_name: Reviewer Independent (GLM-5.3, third-party reviewer)
-    model_name: hy4-preview-f  # 评审 A（critic_independent primary）
-    context_window_tokens: 1000000  # hy4-preview-f 1M
-    capabilities:
-      CHAT: *user_declared_supported
-      STREAMING: *user_declared_supported
-      TOOL_CALLING_NATIVE: *user_declared_supported
-      STRUCTURED_OUTPUT_PROMPTED: *user_declared_supported
-      USAGE_REPORTING: *user_declared_supported
-
-  # 第二个第三方评审模型（`max_instances: 2` 的评审 panel 的第二个成员）。
-  # 读数来源（2026-10-18 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
-  #   - `GET /v1/models` ⇒ `is_ready: true`、`max_context_length = 262144`；
-  #   - `POST /v1/chat/completions` ⇒ HTTP 200、`content: "OK"`、**返回名 = 声明名**；
-  #   - `tool_choice: required` ⇒ 真返回标准 `tool_calls`；`stream: true` ⇒ SSE chunk；
-  #     `usage` 逐次回报；
-  #   - `response_format: json_schema` 实测**被遵守**（只回 schema 内的键、类型正确）
-  #     ⇒ 这里是唯一声明 `STRUCTURED_OUTPUT_NATIVE` 的第三方模型（按**实测**，不按声称）。
-  kimi_k2_6:
-    endpoint: main
-    display_name: Kimi K2.6 (third-party reviewer, second panel member)
-    model_name: hy4flash-exp4  # 评审 B
-    context_window_tokens: 960000  # hy4flash-exp4 960K
+    display_name: Beam Free (third-party reviewer A)
+    model_name: beam-free
+    context_window_tokens: 1048576  # `limit.context`（output 131072）
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
@@ -96,79 +90,64 @@ models:
       STRUCTURED_OUTPUT_NATIVE: *user_declared_supported
       USAGE_REPORTING: *user_declared_supported
 
-  # 第三个第三方评审模型（GOAL-20261026-097 EC-04(b)）：`novelty_reviewer` 的评审者。
-  # **为什么必须再要一个**：`check_heterogeneity` 只判「writer ∪ reviewer 的目标集不相交」，
-  # 而**不**判「两位评审者彼此不同」⇒ 若新 agent 复用一个已有评审模型，判据会绿，但
-  # 「两个独立的评审面」这件事就只剩一个模型说了算（`panel_verdict.independent` 在运行期
-  # 才看得见）。本轮的取舍：用**第三个**底层模型，让独立性在**目录声明**上就成立。
-  #
-  # 读数来源（2026-10-26 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
-  #   - `GET /v1/models` ⇒ `is_ready: true`（13 个可用模型之一）；
-  #   - `POST /v1/chat/completions`（`max_tokens=512`）⇒ HTTP 200、`content: "OK"`、
-  #     **返回名 = 声明名** `minimax-m3`（与 `deepseek-v4-flash-vision` → `dsv4-flash-vision`
-  #     的改名形态不同；仍属 §4「可重复配置」而非「完全模型可复现」）；
-  #   - `tool_choice: required` ⇒ 真返回标准 `tool_calls`（`TOOL_CALLING_NATIVE`）；
-  #   - **不**声明 `STRUCTURED_OUTPUT_NATIVE`：本轮只实测了 chat 与 tool_calls，
-  #     「按实测声明」是本仓的既有纪律（`reviewer_independent` 的注释同一条）。
+  # --- 评审 B（`max_instances: 2` 的评审 panel 的第二个成员）----------------
+  # 与评审 A **不同目标**（`longcat-2.5-free` vs `beam-free`）—— 两位评审者彼此
+  # 也不同模型，`panel_verdict.independent` 因此在目录声明上就成立。
+  kimi_k2_6:
+    endpoint: main
+    display_name: LongCat 2.5 Free (third-party reviewer B)
+    model_name: longcat-2.5-free
+    context_window_tokens: 1000000
+    capabilities:
+      CHAT: *user_declared_supported
+      STREAMING: *user_declared_supported
+      TOOL_CALLING_NATIVE: *user_declared_supported
+      STRUCTURED_OUTPUT_NATIVE: *user_declared_supported
+      USAGE_REPORTING: *user_declared_supported
+
+  # --- 创新点评审 -----------------------------------------------------------
+  # **与评审 A 同目标**（`beam-free`）：这是 GOAL-20261111-108 由用户拍板放宽的那一面
+  # （四个零价模型不够三方互斥 + 作者独立）。`test_the_shared_review_target_is_recorded`
+  # 把它逐字登记为可读事实；`test_the_novelty_reviewer_is_not_on_the_writing_side`
+  # 守住**没有**放宽的那一面（不得落到写作组）。
   novelty_review_model:
     endpoint: main
-    display_name: MiniMax M3 (third-party novelty reviewer)
-    model_name: hy4-preview-f  # 创新点评审（本轮与评审 A 同 —— W-NN）
-    context_window_tokens: 960000  # hy4flash-exp4 960K
+    display_name: Beam Free (third-party novelty reviewer)
+    model_name: beam-free
+    context_window_tokens: 1048576
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
       TOOL_CALLING_NATIVE: *user_declared_supported
       USAGE_REPORTING: *user_declared_supported
 
-  # 第四个第三方模型（GOAL-20261027-098 EC-01）：`novelty_author` 的**绑定 agent**。
-  # **为什么必须再要一个**：拆开「创新点的作者」与「评审者」之后，作者**不得**落在
-  # 任何评审者或生产侧的执行目标上，否则「独立评审」在声明面上就不成立 ——
-  # `check_heterogeneity`（writer∪reviewer）与 `validate_bundle.py` 的
-  # writer/reviewer 集合不交两条判据都会判负。
-  #
-  # 读数来源（2026-10-27 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
-  #   - `GET /v1/models` ⇒ 在 13 个可用模型之列（`is_ready` 由该接口的判定给出）；
-  #   - `POST /v1/chat/completions`（`max_tokens=64`）⇒ HTTP 200、`content: "OK"`、
-  #     **返回名 = 声明名** `deepseek-v4-pro-0813`（与主模型的
-  #     `deepseek-v4-flash-vision` → `dsv4-flash-vision` 的改名形态不同；仍属 §4
-  #     「可重复配置」而非「完全模型可复现」）；
-  #   - `tool_choice: required` ⇒ 真返回标准 `tool_calls`（`TOOL_CALLING_NATIVE`）；
-  #     `usage` 逐次回报。
-  #   - **不**声明 `STRUCTURED_OUTPUT_NATIVE`：本轮只实测了 chat 与 tool_calls，
-  #     「按实测声明」是本仓的既有纪律（`novelty_review_model` 的注释同一条）。
+  # --- 创新点作者（`novelty_author`）--------------------------------------
+  # 必须独立于写作组与三位评审者 ⇒ 落到唯一剩下的零价模型
+  # `iceman-contributor-free`（契约：`test_the_author_agent_is_bound_to_a_fifth_distinct_model`）。
+  # **非 ZDR**：provider 明示 prompt 会用于改进模型；用户 2026-11-18 已授权，
+  # 该事实写进 `docs/product/PRD_GAP_ANALYSIS.md`（EC-07）。
+  # **不**声明 `STRUCTURED_OUTPUT_NATIVE`：实测 `response_format: json_schema` 被拒
+  # （400 `Structured response_format is not enabled`）。
   novelty_author_model:
     endpoint: main
-    display_name: DeepSeek V4 Pro 0813 (novelty author)
-    model_name: hy3  # 创新点作者（≠ 写作组 与 两位评审者）
-    context_window_tokens: 960000  # hy4free 960K
+    display_name: Iceman Contributor Free (novelty author)
+    model_name: iceman-contributor-free
+    context_window_tokens: 262144  # `limit.context`（output 131072；四个里最小）
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported
       TOOL_CALLING_NATIVE: *user_declared_supported
       USAGE_REPORTING: *user_declared_supported
 
-  # 第五个第三方模型（GOAL-20261029-100 EC-02）：`scientific_editor` 的**绑定 agent**。
-  # **为什么必须再要一个**：编辑处置的是**评审者**给出的意见 ⇒ 与评审者同模型的话，
-  # 「编辑对评审的处置」只是同一个模型自言自语。既有五个 `model_name` 各占一角
-  # （`deepseek-v4-flash-vision` / `glm-5.3` / `kimi-k2.6` / `minimax-m3` /
-  # `deepseek-v4-pro-0813`），本模型是第六个。
-  #
-  # 读数来源（2026-10-29 实查，同一 `main` 端点 + `LLM_MAIN_KEY`）：
-  #   - `GET /v1/models` ⇒ `is_ready: true`（13 个可用模型之一）；
-  #   - `POST /v1/chat/completions` ⇒ HTTP 200、**返回名 = 声明名** `qwen3.8-27b`
-  #     （与主模型的 `deepseek-v4-flash-vision` → `dsv4-flash-vision` 的改名形态不同；
-  #     仍属 §4「可重复配置」而非「完全模型可复现」）；
-  #   - `max_tokens=32` ⇒ `content: None`、`completion_tokens_details.reasoning_tokens=32`
-  #     （该模型先花 token 在推理上）；`max_tokens=400` ⇒ `content: "\n\nOK"`。
-  #     **这是实测行为**，不是故障：额度给小了拿不到正文。
-  #   - **不**声明 `TOOL_CALLING_NATIVE` / `STRUCTURED_OUTPUT_NATIVE`：本轮只实测了
-  #     chat 与 usage，「按实测声明」是本仓既有纪律（`novelty_author_model` 同一条）。
+  # --- 编辑（`scientific_editor`，`editorial` 相）---------------------------
+  # 编辑读的是**评审者**的判词；与写作组同模型是**既有取舍**（GOAL-20261111-108：
+  # 四个零价模型下写作组整体占一个）。它与评审 A/B 仍不同模型 ⇒
+  # `validate_bundle` 的 writer ∩ reviewer = ∅ 仍成立。
   scientific_editor_model:
     endpoint: main
-    display_name: Qwen3.8 27B (handling editor)
-    model_name: hy4free  # 编辑
-    context_window_tokens: 960000  # hy4free 960K
+    display_name: Hy4 Flash Free (handling editor)
+    model_name: hy4-flash-free  # 编辑
+    context_window_tokens: 1048576
     capabilities:
       CHAT: *user_declared_supported
       STREAMING: *user_declared_supported

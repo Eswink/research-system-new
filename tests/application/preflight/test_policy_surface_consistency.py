@@ -55,7 +55,7 @@ def _deps() -> Any:
 
     **为什么**（GOAL-20261111-108）：本文件判的是「**策略面**一致性」——`POLICY_DENIED`
     是否清零、两套装配是否同结论。它**不**判地址策略。换到局域网中转站之后，默认
-    `EndpointUrlPolicy()` 会把 `http://192.168.101.9:8798/v1` 判成 `ENDPOINT_URL_DENIED`
+    `EndpointUrlPolicy()` 会把一个私有地址（`http://10.0.0.5:8798/v1` 之类）判成 `ENDPOINT_URL_DENIED`
     （§9 的 deny 姿态，**正确**），于是本判据因为**另一个维度**的 finding 而 FAIL ——
     那不是它要测的东西。
 

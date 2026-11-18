@@ -103,7 +103,7 @@ def build_base_deps(
 def test_endpoint_url_policy() -> Any:
     """**测试装配**用的 URL 策略：放行局域网端点（GOAL-20261111-108）。
 
-    出厂目录现在指向局域网中转站（`http://192.168.101.9:8798/v1`），而
+    出厂目录此前指向一个局域网中转站（私有地址），而
     `EndpointUrlPolicy()` 默认拒 private —— 那是 §9 的 deny 姿态，**正确**。但本目录的
     判据测「真实装配能否过预检 / 跑到 SUCCEEDED」，不是地址策略，故在**测试装配**放行。
     **产品默认不变**（仍要 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1`）。地址策略本身由

@@ -25,11 +25,23 @@ ENDPOINTS = "examples/config/llm_endpoints.yaml"
 MODELS = "examples/config/models.yaml"
 CONTRACTS = "examples/contracts/task_contracts.yaml"
 
-#: 四个免费模型（`credits: x0.00` 且实测支持 `tool_calls`）。
-FREE_MODELS: tuple[str, ...] = ("hy4free", "hy4-preview-f", "hy4flash-exp4", "hy3")
+#: 四个零价模型（`cost.text.*.price == 0` 且实测支持 `tool_calls`）。
+#:
+#: **GOAL-20261119-115 cycle 1 更新（不是放宽，是站点演进）**：本断言集判的是
+#: 「**换站这件事在树上成立**」——即 `llm_endpoints.yaml` 的 `main` 指向本次接入的站点、
+#: 且 `allow_models` 恰是当时**零价**的那几个。站点在 2026-11-20 从局域网私有地址换到
+#: `https://opencode.ai/inference/go`，零价集合随之整组更换（四个名字见下）；
+#: 实测读数裁剪进 `tests/fixtures/free_models_catalog.json`。**判法未变**：仍然要求
+#: 配置里的每个名字逐字命中本元组，且 `allow_models` 数量相等。
+FREE_MODELS: tuple[str, ...] = (
+    "hy4-flash-free",
+    "longcat-2.5-free",
+    "beam-free",
+    "iceman-contributor-free",
+)
 
-#: 局域网站点（**私有 IP**；放行靠环境开关，不改产品默认）。
-LAN_HOST = "192.168.101.9:8798"
+#: `main` 端点的站点前缀（新站是公网域名 ⇒ 不再需要私有地址放行开关）。
+LAN_HOST = "https://opencode.ai/inference/go/openai/v1"
 
 #: `R-1`…`R-4` 四件的实现面（缺一件 = 那条 EC 没交付）。
 RELIABILITY_FILES: tuple[tuple[str, str], ...] = (
@@ -121,9 +133,9 @@ def _station_verdicts(root: Path, toolbox: Any) -> list[Any]:
     listed = [model for model in FREE_MODELS if f"- {model}" in main_block]
     return [
         toolbox.verdict(
-            "station-points-at-the-lan-relay",
+            "station-points-at-the-relay",
             LAN_HOST in main_block,
-            "`main.base_url` 必须指向局域网中转站",
+            "`main.base_url` 必须指向本次接入的中转站（GOAL-115 起为 opencode go）",
         ),
         toolbox.verdict(
             "station-timeout-is-raised",
@@ -137,8 +149,8 @@ def _station_verdicts(root: Path, toolbox: Any) -> list[Any]:
         ),
         toolbox.verdict(
             "station-does-not-allowlist-a-paid-model",
-            "hy4std" not in main_block and "hy3-x" not in main_block,
-            "`allow_models` 不得列入收费模型（hy4std / hy3-x）",
+            "deepseek-v4-pro" not in main_block and "glm-5.3" not in main_block,
+            "`allow_models` 不得列入收费模型（deepseek-v4-pro / glm-5.3）",
         ),
     ]
 

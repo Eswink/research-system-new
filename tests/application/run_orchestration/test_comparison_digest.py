@@ -41,7 +41,7 @@ _BASE: dict[str, object] = {
     "source_commit": "371b6a8f",
     "role_definitions": {"writer": {"panel_role": "WRITER"}},
     "agent_specs": {"writer": {"model_binding": {"type": "MODEL_PROFILE"}}},
-    "resolved_models": {"writer": "hy4free"},
+    "resolved_models": {"writer": "hy4-flash-free"},
     "model_runtime_fingerprints": {"writer": {"verdict": "REPEATABLE_CONFIGURATION"}},
     "effective_tools": {"literature.search": "europe_pmc"},
     "tool_pack_digests": ["sha256:cc"],

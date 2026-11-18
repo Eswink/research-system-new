@@ -157,7 +157,7 @@ def assembled_product() -> Any:
             db_path=f"data/goal106-live-{os.getpid()}-{unique()}.db",
             agent_runtime=OPENHANDS_RUNTIME,
             # GOAL-20261111-108 R-4：**不再写死 `False`**，改为读与产品同一个环境开关。
-            # 换到局域网中转站后，`192.168.101.9` 被 `endpoint_policy` 判成 private ⇒
+            # 换到局域网中转站时，那个私有地址被 `endpoint_policy` 判成 private ⇒
             # 默认拒（§9 姿态，正确）。产品路径的放行口就是
             # `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1`（`ApiSettings.from_env` 读它，
             # `assembly._endpoint_url_policy` 把它同时映射到 allow_private）。

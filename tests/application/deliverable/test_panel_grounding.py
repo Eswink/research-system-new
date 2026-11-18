@@ -50,7 +50,7 @@ def _refuted(rationale: str) -> PanelVerdict:
         rubric_id="argument_holds",
         verdict="REFUTED",
         rationale=rationale,
-        reviewer_model="main/hy4free",
+        reviewer_model="main/beam-free",
     )
 
 
@@ -124,7 +124,7 @@ class TestRefutedMustBePointed:
         assert verdict.rationale.startswith(UNGROUNDED_MARK)
         assert "S99" in verdict.rationale
         assert "model said:" in verdict.rationale
-        assert verdict.reviewer_model == "main/hy4free"
+        assert verdict.reviewer_model == "main/beam-free"
 
     def test_an_empty_rationale_refutation_is_degraded(self) -> None:
         """**反证**：空 rationale ⇒ 同样降级（两种不成立都拦，但点名不同）。"""
@@ -138,7 +138,7 @@ class TestRefutedMustBePointed:
             rubric_id="method_appropriate",
             verdict="SUPPORTED",
             rationale="",
-            reviewer_model="main/hy4free",
+            reviewer_model="main/beam-free",
         )
         assert ground_verdict(supported, _MANUSCRIPT) is supported
 

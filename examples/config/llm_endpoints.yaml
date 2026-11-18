@@ -2,46 +2,57 @@ llm_endpoints:
   main:
     name: Main Relay
     protocol: OPENAI_COMPATIBLE
-    # GOAL-20261111-108：**局域网中转站**（此前是 discovery-api.intern-ai.org.cn）。
-    # 这个地址是 **private IP** ⇒ `endpoint_policy` 默认拒绝（§9 的 deny 姿态不变）；
-    # 放行靠 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1`（设置名带 localhost，实际同时覆盖
-    # private/link-local —— 见 `services/api/assembly.py`）。判据不看 DNS，只分类字面量。
-    base_url: http://192.168.101.9:8798/v1
+    # GOAL-20261119-115 EC-01：**opencode Go 中转站**（此前是一个局域网私有地址的站点）。
+    # 公网域名 ⇒ `endpoint_policy` 直接放行，不再需要
+    # `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS=1`（那是局域网站的补丁面）。
+    base_url: https://opencode.ai/inference/go/openai/v1
     credential_ref: LLM_MAIN_KEY
-    # GOAL-20261111-108：120 -> 300。**依据是实测分布，不是为绿调参**：
-    # RECHECK-202607（GOAL-106 F-14）量到同一模型同一条请求延迟 99.8 / 76.1 / 78.4 秒，
-    # 另有一条 120.1 秒 ReadTimeout —— 120 秒正好压在分布右尾上，长请求会被整齐地砍掉。
-    # 300 秒把悬崖移到实测分布之外；schema 与域对象允许 1…3600。
+    # **新站的硬要求**（2026-11-20 实测）：`/inference/go` 的推理面要求
+    # `x-opencode-session`，缺它 ⇒ HTTP 400 `MissingSessionID`（**鉴权通过也拒**）。
+    # `GET /models` 不需要该头，但 chat/completions 需要 ⇒ 它必须出现在**所有**推理腿上
+    # （relay gateway 四条 wire shape + OpenHands/litellm）。
+    # 值不是凭据：它是会话路由标识（官方文档口径「each conversation 一个稳定 id」），
+    # 本轮用固定串 —— 产品还没有"会话 id 从哪来"的语义，编一个假 id 反而更差。
+    extra_headers:
+      - name: x-opencode-session
+        value: research-os
+    # 120 -> 300 的依据是实测分布，不是为绿调参（RECHECK-202607 / GOAL-106 F-14：
+    # 同一模型同一条请求 99.8 / 76.1 / 78.4 秒，另有一条 120.1 秒 ReadTimeout）。
+    # 新站是公网 + 推理模型（reasoning token 会先吃掉预算），保留下限更高更稳妥。
     request_timeout_seconds: 300
     max_retries: 2
     concurrency_limit: 8
     enabled: true
     discovery:
       enabled: true
-      # GOAL-20261111-108：新站 23 个模型里有 5 个 `credits: x0.00`（免费），其中 4 个
-      # 支持 `tool_calls`（已逐个实测：`finish_reason: tool_calls` + 参数正确）。
+      # GOAL-20261119-115 EC-01：`GET /inference/go/v1/models` 回报 32 个模型，
+      # 其中 **cost 全零** 的恰好 4 个（按 `cost.text.*.price == 0` 判）。
       # `allow_models` 只作用于发现面（`POST /llm-endpoints/{id}/discover-models`），
-      # **不在运行路径上**；但它同时是「我们只用免费模型」这条纪律的可读声明。
+      # **不在运行路径上**；但它同时是「我们只用零价模型」这条纪律的可读声明，
+      # 且由 `tests/loaders/test_free_model_only_policy.py` 与配置逐字对拍。
       allow_models:
-        - hy4free
-        - hy4-preview-f
-        - hy4flash-exp4
-        - hy3
+        - hy4-flash-free
+        - longcat-2.5-free
+        - beam-free
+        - iceman-contributor-free
     circuit_breaker:
       failure_threshold: 5
       open_timeout_seconds: 60
       half_open_max_probes: 1
 
   agnes-anthropic:
-    name: Intern Anthropic
+    name: Opencode Anthropic
     protocol: ANTHROPIC
     # **GOAL-20261111-108**：本端点保留**启用**（`test_anthropic_surface_boundary` 的
     # 「probe 腿」判据要求 `enabled is True` —— 判的是「可被探测」，不是「探测一定成功」）。
-    # 新站是否真的提供 Anthropic Messages 形态，由健康探测如实回报（不可用 ⇒ UNKNOWN，
-    # 那是**读数**不是配置）。运行链**不走**这条路：`test_run_leg_models_all_sit_on_the
-    # _openai_compatible_face` 钉住 run 腿必须留在 `OPENAI_COMPATIBLE`。
-    base_url: http://192.168.101.9:8798/v1
+    # 运行链**不走**这条路：`test_run_leg_models_all_sit_on_the_openai_compatible_face`
+    # 钉住 run 腿必须留在 `OPENAI_COMPATIBLE`。
+    # GOAL-20261119-115：新站的 Anthropic 面同样要求 `x-opencode-session`（实测 400）。
+    base_url: https://opencode.ai/inference/go/anthropic/v1
     credential_ref: LLM_MAIN_KEY
+    extra_headers:
+      - name: x-opencode-session
+        value: research-os
     request_timeout_seconds: 300
     max_retries: 2
     concurrency_limit: 4

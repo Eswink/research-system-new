@@ -135,7 +135,7 @@ def _degradation_verdicts(panel: ModuleType, toolbox: Any) -> list[Any]:
             rubric_id="argument_holds",
             verdict="REFUTED",
             rationale=rationale,
-            reviewer_model="main/hy4free",
+            reviewer_model="main/beam-free",
         )
 
     degraded = panel.ground_verdict(refuted("S99 contradicts the abstract."), _MANUSCRIPT)
@@ -144,7 +144,7 @@ def _degradation_verdicts(panel: ModuleType, toolbox: Any) -> list[Any]:
         rubric_id="method_appropriate",
         verdict="SUPPORTED",
         rationale="",
-        reviewer_model="main/hy4free",
+        reviewer_model="main/beam-free",
     )
     return [
         toolbox.verdict(

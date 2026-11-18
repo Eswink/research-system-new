@@ -350,7 +350,8 @@ def test_the_novelty_reviewer_is_not_on_the_writing_side() -> None:
 
     **GOAL-20261111-108 的射程调整（用户 2026-11-11 拍板）**：原判据还要求它与
     `reviewer_a` / `reviewer_b` 都不同 —— 那需要**三个**互斥的评审目标，而新接入商的
-    免费模型只有四个（`hy4free` / `hy4-preview-f` / `hy4flash-exp4` / `hy3`），并且
+    免费模型只有四个（`hy4-flash-free` / `longcat-2.5-free` / `beam-free` /
+    `iceman-contributor-free`），并且
     写作组已经占掉一个、创新点作者必须再占掉一个 ⇒ **穷举 4^7 无解**（实测 0 解；
     放宽「作者独立」后有 96 解，放宽「评审互异」后有 192 解）。
 

@@ -200,35 +200,50 @@ circuit_breaker:
 
 不要在 MVP 引入复杂智能路由。
 
-### 10.1 当前部署：局域网免费中转站（GOAL-20261111-108）
+### 10.1 当前部署：opencode Go 中转站（GOAL-20261119-115）
 
 | 面 | 值 |
 | --- | --- |
-| `base_url` | `http://192.168.101.9:8798/v1`（**私有 IP**，不是域名） |
+| `base_url`（run 腿） | `https://opencode.ai/inference/go/openai/v1` |
+| `base_url`（probe 腿） | `https://opencode.ai/inference/go/anthropic/v1` |
 | `credential_ref` | `LLM_MAIN_KEY`（值只在 gitignored 的 `.env`） |
-| `request_timeout_seconds` | `300`（原 120） |
-| `allow_models` | 四个 `credits: x0.00` 模型 |
+| `request_timeout_seconds` | `300` |
+| `allow_models` | 四个 `cost` 全零模型 |
+| `extra_headers` | `x-opencode-session: research-os`（**必填**，见下） |
 
-`allow_models` 只作用于发现面，运行路径不受它限制；它在这里是「我们只用免费模型」
-这条纪律的**可读声明**。
+**两个面都是公网域名** ⇒ `endpoint_policy` 直接放行，**不再需要**
+`RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS`（那是局域网站的补丁面，保留但仍默认 deny）。
 
-**四个免费模型的真实分工**（`examples/config/models.yaml`）：
+`allow_models` 只作用于发现面，运行路径不受它限制；它在这里是「我们只用零价模型」
+这条纪律的**可读声明**，由 `tests/loaders/test_free_model_only_policy.py` 与实测
+零价集合逐字对拍（收费名进配置 ⇒ 判红并点名）。
+
+**四个零价模型的真实分工**（`examples/config/models.yaml`）：
 
 | 角色组 | `model_name` | 上下文 |
 | --- | --- | --- |
-| 写作组（`writer` / `director` / `domain_a` / `editor`） | `hy4free` | 960K |
-| 评审 A（`critic_independent`） | `hy4-preview-f` | 1M |
-| 评审 B | `hy4flash-exp4` | 960K |
-| 创新点评审（`novelty_review_model`） | `hy4-preview-f` | **与评审 A 同**（见下） |
-| 创新点作者（`novelty_author_model`） | `hy3` | 与写作组、两位评审全不同 |
+| 写作组（`writer` / `director` / `domain_a` / `editor`） | `hy4-flash-free` | 1048576 |
+| 轻量面（`scout_b` / `research_fast`） | `longcat-2.5-free` | 1000000 |
+| 评审 A（`critic_independent`） | `beam-free` | 1048576 |
+| 评审 B | `longcat-2.5-free` | 1000000 |
+| 创新点评审（`novelty_review_model`） | `beam-free` | **与评审 A 同**（见下） |
+| 创新点作者（`novelty_author_model`） | `iceman-contributor-free` | 262144 |
 
 **这里有一处**不满足**全独立**，且它是数学结论不是配置疏漏**：把
 「写作组 / 评审 A / 评审 B / 创新点评审 / 创新点作者」五个目标要求两两互异，
-在四个免费模型上穷举 `4^7` 得 **0 解**。用户 2026-11-11 拍板「**保作者独立**」
-⇒ 创新点评审与评审 A 共用 `hy4-preview-f`。**关键的那一面仍成立**：写作组与评审组的
+在四个零价模型上穷举无解。用户 2026-11-11 拍板「**保作者独立**」
+⇒ 创新点评审与评审 A 共用 `beam-free`。**关键的那一面仍成立**：写作组与评审组的
 交集是**空集**。判据 `test_the_shared_review_target_is_recorded`
 （`tests/contracts/test_direction_to_report_v2_novelty.py`）把共用的目标逐字枚举 ——
 放宽是**可读事实**，不是静默降级。
+
+**`x-opencode-session` 是硬要求**（2026-11-20 实测）：`/inference/go` 的推理面
+（`chat/completions` 与 `messages`）在没有该头时返回
+`400 MissingSessionID`，**鉴权通过也拒**；`GET /models` 不需要它。
+两条腿都必须发：relay gateway（四条 wire shape）与 OpenHands/litellm
+（`LLMEndpoint.extra_headers` → `build_llm` 的 `extra_headers`）。
+域对象在构造期**拒绝**把 `authorization` / `x-api-key` / `anthropic-version`
+放进这个字段 —— 凭据只能从 `credential_ref` 来。
 
 **超时为什么是 300 秒**：同一模型同一条请求实测延迟 99.8 / 76.1 / 78.4 秒，另有一条
 120.1 秒的 read timeout ⇒ 120 秒压在实测分布的右尾上，长请求会被整齐地砍掉。
@@ -236,21 +251,21 @@ circuit_breaker:
 
 **四个模型都是 reasoning 模型**：`max_tokens` 给小了会拿到 `content: null` +
 `reasoning_tokens` 吃满预算 —— 那看起来像「模型没回答」，实际是输出上限不足。
-输出上限必须按**正文长度**给，不能按「一句话够不够」给。
+实测：`hy4-flash-free` 在 `max_tokens=256` 且带 `tool_choice: required` 时
+`finish_reason: length` 且 `tool_calls` 为空；`max_tokens=2048` 正常返回。
 
-### 10.2 局域网地址的两道门（`RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS` 的名字误导）
+**能力按实测声明**：`iceman-contributor-free` **不**声明 `STRUCTURED_OUTPUT_NATIVE`
+（实测 `response_format: json_schema` 被拒：`Structured response_format is not enabled`）；
+`longcat-2.5-free` 的 `temperature` 被 provider 标为不支持。
 
-`192.168.101.9` 是**私有**地址 ⇒ `endpoint_policy` **默认拒绝**（§9 的 deny 姿态不变，
-这是**正确**行为）；拒绝的分类错误是 `ENDPOINT_URL_DENIED`。
+### 10.2 地址策略与（不再需要的）局域网放行开关
 
-**放行开关叫 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS`，但它同时覆盖 private 与 link-local**
-（`services/api/assembly.py` 把同一个布尔量映射到 `allow_localhost` / `allow_private` /
-`allow_link_local` 三个字段）。**名字带 localhost 是历史命名，读的时候不要按字面理解**：
-设了它，`192.168.x.x` 也能过。取值语义与既有开发开关同形（`1`/`true`/`yes`/`on` 为开）。
+新站是公网域名 ⇒ 默认策略直接放行。`RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS` 仍然存在
+（局域网站时代的补丁面）。**它的名字是误导**：名字带 localhost，实际同时覆盖
+localhost / private / link-local（`services/api/assembly.py` 把同一个布尔量映射到
+三个字段）⇒ 设了它，私有地址也能过。**它不改产品默认**：不设变量时 private 地址仍然 deny。
 
-**它不改产品默认**：不设变量时仍然是 deny。放行只发生在**显式**设置了它的进程里。
-
-**判据侧读同一个变量**：`tests/e2e/manuscript_chain_live_support.py` 的
+判据侧读同一个变量：`tests/e2e/manuscript_chain_live_support.py` 的
 `_allow_local_endpoints()` 读的就是它 —— 写死 `False` 会让「产品能跑、判据不能跑」，
 那条 live 判据就永远证明不了产品面可用（这是 GOAL-20261111-108 的 `R-4`）。
 

@@ -56,7 +56,11 @@ _PROTOCOL_ID = "dual_model_review_v1_0_0"
 _CONTRACT = "dual_model_review_deliverable"
 _RUN_ID = "run-goal091-ec04-dual-review"
 #: 出厂目录里两个第三方评审模型解析后的**执行目标**（`endpoint/model_name`）。
-_EXPECTED_TARGETS = {"main/glm-5.3", "main/kimi-k2.6"}
+#: GOAL-20261119-115 cycle 1：换到 opencode go 之后，评审 A/B 落在这两个零价模型上
+#: （原先是上一个站点的 `glm-5.3` / `kimi-k2.6`；那两个名字在新站是**收费**模型，
+#: 不得出现在配置里）。这条常量必须随目录演进 —— 它判的是「这次 run 的两位评审
+#: 是不是目录里声明的那两个不同目标」，不是「某个接入商的某个产品名」。
+_EXPECTED_TARGETS = {"main/beam-free", "main/longcat-2.5-free"}
 _SAMPLE = Path("scratch") / "goal091-ec04-dual-review.json"
 
 

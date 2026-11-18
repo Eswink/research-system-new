@@ -487,19 +487,24 @@ Windows 上按**大小写不敏感**查找，但解析器把它拷贝成**普通
 再怀疑产品代码。判据：`curl -H "Authorization: Bearer $LLM_MAIN_KEY" <base_url>/models`
 应回 200 —— 401 就是 key 过期，换 key 后**新起进程**（解析器是快照，见上表）。
 
-## 9. 局域网中转站：开关、模型与两条陷阱
+## 9. 中转站：会话头、模型与两条陷阱
 
-**站点**：`http://192.168.101.9:8798/v1`（私有 IP）。端点、模型分工与超时的完整读数见
+**站点**：`https://opencode.ai/inference/go/openai/v1`（run 腿）与
+`.../go/anthropic/v1`（probe 腿）—— 公网域名。端点、模型分工与超时的完整读数见
 [LLM_ENDPOINTS.md](LLM_ENDPOINTS.md) §10.1；本节只写**跑 live 前必须知道的四件事**。
 
-### 9.1 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS` 的名字是误导
+### 9.1 `x-opencode-session` 是必填头（缺它 400，鉴权通过也拒）
 
-私有 IP 被 `endpoint_policy` 判成 `private` ⇒ **默认拒绝**（§9 的 deny 姿态，正确）。
-放行开关叫 `RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS`，但 `services/api/assembly.py`
-把它**同时**映射到 `allow_private` / `allow_link_local` ⇒ **设了它，`192.168.x.x` 也能过**。
-名字里的 localhost 只是历史命名。
+实测 2026-11-20：`/inference/go` 的 `chat/completions` 与 `messages` 在没有
+`x-opencode-session` 时返回 `400 MissingSessionID`；`GET /models` 不需要它。
+配置面是 `LLMEndpoint.extra_headers`（`examples/config/llm_endpoints.yaml` 的两个端点各一条），
+两条腿都发：relay gateway 的四条 wire shape 与 OpenHands/litellm（`build_llm` 的
+`extra_headers`）。**值不是凭据**（会话路由标识）；该字段**拒绝** `authorization` /
+`x-api-key` / `anthropic-version` —— 凭据只能从 `credential_ref` 来。
 
-**它不持久化、也不改默认**：不设就仍然是 deny。live 判据侧读**同一个变量**
+**旧的局域网放行开关仍存在但不必要**：新站是公网域名 ⇒ 默认策略直接放行。
+`RESEARCHOS_ALLOW_LOCALHOST_ENDPOINTS`（名字是历史命名，实际同时覆盖 private / link-local）
+仍然只作用于显式设置了它的进程，**不改产品默认**；live 判据侧读**同一个变量**
 （`tests/e2e/manuscript_chain_live_support.py` 的 `_allow_local_endpoints()`）——
 写死 `False` 会让「产品能跑、判据不能跑」。
 

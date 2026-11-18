@@ -56,7 +56,7 @@ def _manifest() -> RunManifest:
         run_id="run-a",
         project_id="proj-1",
         protocol_version=Version(text="1.0.0"),
-        resolved_models={"writer": "hy4free"},
+        resolved_models={"writer": "hy4-flash-free"},
     )
 
 
