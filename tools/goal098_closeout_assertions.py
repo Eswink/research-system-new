@@ -20,7 +20,9 @@
 
 from __future__ import annotations
 
+import importlib.util
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -85,6 +87,27 @@ CASE_FLOORS: tuple[tuple[str, int], ...] = (
 TEST_DEFINITION = re.compile(r"(?m)^\s*def test_")
 
 
+
+def _load_model_independence() -> Any:
+    """按路径加载 `tools/goal098_model_independence.py`（`tools/` 不是包）。
+
+    **先写 `sys.modules` 再 `exec_module`**：dataclass / 类型注解解析需要模块已在
+    `sys.modules` 里（既有纪律，见同目录其它按路径加载的资产）。
+    """
+    name = "goal098_model_independence"
+    if name in sys.modules:
+        return sys.modules[name]
+    path = Path(__file__).resolve().parent / "goal098_model_independence.py"
+    spec = importlib.util.spec_from_file_location(name, path)
+    assert spec is not None and spec.loader is not None, path
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+_model_independence = _load_model_independence()
+
 def _text(root: Path, relative: str) -> str:
     path = root / relative
     return path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
@@ -117,7 +140,7 @@ def _independence_verdicts(root: Path, toolbox: Any) -> list[Any]:
         verdict("ec01-author-model-declared", "  novelty_author_model:" in models, MODELS),
         verdict(
             "ec01-author-model-is-distinct",
-            _author_sits_on_a_distinct_target(root),
+            _model_independence.author_sits_on_a_distinct_target(root),
             "作者必须落在与生产侧 + 三位评审者**都不同**的底层目标上",
         ),
         verdict("ec01-author-in-the-team-pool", "novelty_author" in teams, TEAMS),
@@ -408,40 +431,3 @@ __all__ = [
     "assertion_verdicts",
     "collected_case_count",
 ]
-
-
-def _author_sits_on_a_distinct_target(root: Path) -> bool:
-    """作者的执行目标（`endpoint` / `model_name`）与生产侧 + 三位评审者都不相交。
-
-    **GOAL-20261119-115 的口径修正（与 GOAL-108 同一条教训）**：原先这里断言
-    `"deepseek-v4-pro-0813" in models` —— 那写死的是**某次接入商的某个模型名**，
-    是运维数据而不是这条 EC 要守的性质。换站后它必红，而红不代表独立性坏了。
-    真正要守的是「作者组与生产/评审组不相交」，用产品自己的解析器判。
-    """
-    import sys
-
-    if str(root) not in sys.path:
-        sys.path.insert(0, str(root))
-    from adapters.contracts.models_loaders import load_model_profiles, load_models
-    from adapters.contracts.roles_loaders import load_agents
-    from packages.application.ports.resource_catalog import CatalogSnapshot
-    from packages.application.preflight.review_independence import resolve_agent_targets
-
-    snapshot = CatalogSnapshot(
-        models=load_models(str(root / MODELS)),
-        model_profiles=load_model_profiles(str(root / "examples/config/model_profiles.yaml")),
-        agents=load_agents(str(root / AGENTS)),
-        roles={},
-    )
-    author = resolve_agent_targets(
-        "novelty_writer", snapshot.agents["novelty_writer"], snapshot
-    )
-    if not author.resolved or not author.targets:
-        return False
-    others: set[tuple[str, str]] = set()
-    for agent_id in ("writer", "reviewer_a", "reviewer_b", "novelty_a"):
-        resolved = resolve_agent_targets(agent_id, snapshot.agents[agent_id], snapshot)
-        if not resolved.resolved or not resolved.targets:
-            return False
-        others |= resolved.targets
-    return not (author.targets & others)

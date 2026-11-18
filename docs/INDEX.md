@@ -55,6 +55,7 @@ M8-M11 为 M7 后并行组 1；M12 PASS 判定曾经 M12-R1 独立复审证伪�
 
 - `product/END_TO_END_USER_JOURNEY.md`
 - `product/CONSOLE_INFORMATION_ARCHITECTURE.md`
+- `product/PRD_GAP_ANALYSIS.md` — 与市面科研 agent 的对照 + 作为科研 agent 的不足（GOAL-20261119-115 建档轮调研交付物；只写差在哪）
 - `frontend/UI_DESIGN_PROMPTS.md` — Console 页面/组件设计约束（M13；含 UI 验收条件）
 - `frontend/CONSOLE_REBUILD.md` — Console 全站重建设计说明 v2（八域；PLAN-20260908-034；页面清单、设计控件→真实契约映射、主题/布局/状态/验收基准；v1 历史保留）
 - `frontend/CONSOLE_PAGE_MAP.md` — 33 规范路由逐页/逐操作 API-DTO 映射与后端能力缺口 G1–G14（PLAN-20260908-034 T02）
