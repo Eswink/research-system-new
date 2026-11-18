@@ -1888,7 +1888,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261117-114-paired-ablation-from-mechanism-to-reading.md",
-        "sha256": "f0a640b17036d1616c26380a1b01d62208013bcd"
+        "sha256": "20dfb8b830fb2ac9291d49b06b1ca548906a3bd5"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -20675,7 +20675,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "d6f3dd7d128bfa46b81c49653ae4bb13099e7ba1"
+    "head": "9bf10c503ab07860e8237812d3f4bd5d6111100e"
   },
   "fingerprint_before": {
     "files": [
@@ -22565,7 +22565,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261117-114-paired-ablation-from-mechanism-to-reading.md",
-        "sha256": "f0a640b17036d1616c26380a1b01d62208013bcd"
+        "sha256": "20dfb8b830fb2ac9291d49b06b1ca548906a3bd5"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -41352,11 +41352,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "d6f3dd7d128bfa46b81c49653ae4bb13099e7ba1"
+    "head": "9bf10c503ab07860e8237812d3f4bd5d6111100e"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "d6f3dd7d128bfa46b81c49653ae4bb13099e7ba1",
+  "ran_at_head": "9bf10c503ab07860e8237812d3f4bd5d6111100e",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
