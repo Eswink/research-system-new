@@ -2,14 +2,14 @@
 id: PLAN-20261120-117
 slug: four-failure-modes-and-upstream-retryability
 title: GOAL-115 cycle 2 —— 四类失败模式各一条判据（EC-03）+ 上游可重试性（EC-06）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-11-20
 updated_at: 2026-11-20
 parent_goal: GOAL-20261119-115
 owners:
   - root-agent
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261120-117-four-failure-modes-and-retryability.md
 memory_entries: []
 ---
 
@@ -37,12 +37,12 @@ EC-06 要求「上游瞬时失败在会话契约里可重试」。两条共享�
 
 ## 交付面（checkbox）
 
-- [ ] WP-1 ①单测：`MessageEvent` 无 `content` 属性时不抛（含 `llm_message is None`）
-- [ ] WP-2 ②改 `dual_model_review_deliverable.retry_policy`（照 `multi_role_review` 形态）
-- [ ] WP-3 ③拒冻落可读事件（`run.failed` 带 `missing` 清单）
-- [ ] WP-4 ④拼装顺序判据（`_section_of` 认 `str` + 段落顺序与合约措辞一致）
-- [ ] WP-5 EC-06 两份会话契约的 `retryable_categories` 覆盖上游瞬时失败
-- [ ] WP-6 四条反证臂（每条都要**按压判红**，按 raw `sha256` 逐字节复原）
+- [x] WP-1 ①单测：`MessageEvent` 无 `content` 属性时不抛（含 `llm_message is None`）
+- [x] WP-2 ②改 `dual_model_review_deliverable.retry_policy`（照 `multi_role_review` 形态）
+- [x] WP-3 ③拒冻落可读事件（`run.failed` 带 `missing` 清单）
+- [x] WP-4 ④拼装顺序判据（`_section_of` 认 `str` + 段落顺序与合约措辞一致）
+- [x] WP-5 EC-06 两份会话契约的 `retryable_categories` 覆盖上游瞬时失败
+- [x] WP-6 四条反证臂（每条都要**按压判红**，按 raw `sha256` 逐字节复原）
 
 ## 实施清单
 
@@ -107,11 +107,11 @@ uv run --frozen --no-sync python -B tools/run_m0_with_witness.py
 
 | ID | 对应项 | 类型 | 引用或命令 | 结果 |
 | --- | --- | --- | --- | --- |
-| EV-01 | ① | test | `test_event_mapping_missing_content.py` | 待跑 |
-| EV-02 | ② | config | `task_contracts.yaml` 的 `dual_model_review_deliverable.retry_policy` | 待改 |
-| EV-03 | ③ | test + 反证 | 拒冻落 `run.failed` | 待做 |
-| EV-04 | ④ | test + 反证 | `_section_of` 认 `str` + 段落顺序 | 待做 |
-| EV-05 | EC-06 | test | 两份契约的 `retry_policy` 形状 | 待做 |
+| EV-01 | ① | test | `test_event_mapping_missing_content.py` | 9 passed；三种缺失形态不抛、不泄漏 repr；反证臂咬合 |
+| EV-02 | ② | config | `dual_model_review_deliverable.retry_policy` | `max_attempts: 2` + 三类别 + `backoff_seconds: 30` |
+| EV-03 | ③ | test + 反证 | 真实服务 + 真 outbox | 8 passed；**恰好一条** `run.failed`（第二版修掉了重复发布） |
+| EV-04 | ④ | test + 反证 | `_section_of` 认 `str` + 段落顺序 | 7 passed；反证臂换成"只认视图" ⇒ 正文消失 |
+| EV-05 | EC-06 | test | 四份上游合约的 `retry_policy` | 21 passed；配置按回空表 ⇒ 点名三个缺失类别 |
 
 ## 验收条件
 
@@ -124,6 +124,10 @@ uv run --frozen --no-sync python -B tools/run_m0_with_witness.py
 
 - 2026-11-20：建档。cycle 1 因出站 HTTPS 全断而**未能 push 最后一个提交**
   （`18a0668f`）；本轮先做**不需出网**的 EC-03/EC-06，push 一恢复即补推并记账。
+- 2026-11-20：**DONE**。网络恢复后先补推 `18a0668f`（CI run `44423270174`），
+  随后四个提交落 cycle 2：`b8c2f293` ①、`08330fd8` ③、`8e0fd15a` ②+EC-06、
+  `7a0d5d74` ④。本轮**发现并修复两个真实缺陷**（repr 当正文 / 拒冻重复发事件），
+  后者只有跑通整条路径才看得见。
 
 ## 影响报告
 

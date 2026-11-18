@@ -91,7 +91,20 @@ exit_criteria:
       逐条定向套件 + 逐条**反证臂**：还原成直接属性访问 / `max_attempts` 改回 1 /
       摘掉事件写入 / 摘掉渲染段 ⇒ 各判红，按压后按 raw `sha256` 逐字节复原。
       ④ 另需一次真实 run 的提示词取证（落 `.cursor/plans/goals/evidence/`）。
-    status: PENDING
+      **证据（2026-11-20 实跑）**：四类各一条判据且**逐条按压过** ——
+      ① `test_event_mapping_missing_content.py` 9 passed（三种缺失形态不抛、不泄漏 repr；
+      反证臂：直接属性访问抛 `AttributeError`）；② `test_upstream_failures_are_retryable.py`
+      21 passed（四份上游合约 `max_attempts ≥ 2` + 三类别 + backoff；按压成空表 ⇒ 点名判红）；
+      ③ `test_manifest_freeze_refusal_event.py` 8 passed（**真实编排服务 + 真 outbox**：
+      拒冻 ⇒ **恰好一条** `run.failed` 带 `reason=manifest_freeze_refused`）；
+      ④ `test_under_review_segment_is_present.py` 7 passed（已渲染 `str` 原样在场、
+      六段顺序与文档一致；反证臂换成"只认视图对象" ⇒ 正文消失）。
+      **本轮顺带修掉两个真实缺陷**：没有 `content` 时把 `str(llm_message)` 的 **Python repr**
+      当正文（不崩但更难诊断）；拒冻接线第一版**重复发** `run.failed`（helper 单测看不见，
+      只有跑通整条路径才暴露）。
+      **如实边界**：④ 的「真实 run 提示词取证」与 ① 的「该消息在真实 run 中不再出现」
+      仍需出网真跑 —— 本轮网络整段中断，**这两格记 PENDING 不记 PASS**。
+    status: PASS
   - id: EC-04
     criterion: >-
       **连续三次真实双评审读数**：新中转站 + 真实 runtime 上跑 `dual_model_review_v1`
@@ -130,7 +143,14 @@ exit_criteria:
     verify: >-
       定向套件断言两份契约的 `retry_policy` 形状 + 分类映射表；
       **反证臂**：把 `retryable_categories` 清空 ⇒ 判红。
-    status: PENDING
+      **证据（2026-11-20 实跑）**：`dual_model_review_deliverable` 与
+      `research_question_retrieval` 从 `max_attempts: 1` + **空类别**改为
+      `max_attempts: 2` + 三个瞬时类别 + `backoff_seconds: 30`（检索那份多列 `TOOL_TIMEOUT`，
+      它走工具面）；`research_manuscript` / `retrieval_report_from_the_run_chain` 本已合规。
+      判据 `test_upstream_failures_are_retryable.py` 21 passed，类别逐条对
+      `FailureCategory` **闭集**（拼错即静默不重试）。**硬门未动**：`REVIEW_SCORE ≥ 0.8`
+      与 `review_panel: COMPLETE_THEN_JUDGE` 逐字保留。
+    status: PASS
   - id: EC-07
     criterion: >-
       **PRD 差距分析落树且被登记**：`docs/product/PRD_GAP_ANALYSIS.md` 存在、四节齐全
@@ -277,6 +297,7 @@ EC 表见 frontmatter `exit_criteria`。
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 见「CI 台账」 | 治理 `validate.py` 绿；记录面判据绿 | 见「CI 台账」 | — | EC-01…08 全 PENDING | cycle 1 = EC-01（换站落地 + 免费模型纪律） |
 | 1 | `PLAN-20261120-116`（换站 + 零价纪律 + 会话头缝） | `aad730b3` 静态路由头两条腿 / `a262323a` 换站 + 两个新判据 + 钉值判据同轮改 / `ad550bff` PRD 判据 + goal098 口径修正 / `727659b1` 记录 / `2757edd8` 判据不自豁免 / `d7ad8547` RECHECK + 首批门修复 / `28b2e65c` live 开关单源 + 工具清单登记 | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 绿；`tests/{architecture,application/preflight,api}` 1102 passed / 4 skipped；`verify_goal108` 87/0；`verify_goal098` 104/0；**全量 m0 = `PASS: profile=m0; 23 deterministic checks`（exit 0，`tree changed during the run: False`，head `28b2e65c`）**；新判据反证臂逐条咬合 | 见「CI 台账」 | — | **EC-01 PASS**（四模型 `tool_calls` 实测 + probe ok=True + 零价判据 + 双反证）；**EC-02 PASS**（旧站标识在产品/判据面零命中，白名单逐条给理由）；**EC-07 PASS**（四节 + 23 条去重 `file:line` + INDEX 登记 + 非 ZDR 事实） | cycle 2 = EC-03（四类失败模式各一条判据） |
+| 2 | `PLAN-20261120-117`（四类失败模式 + 上游可重试性） | `b8c2f293` ① repr 当正文 / `08330fd8` ③ 拒冻落事件 / `8e0fd15a` ②+EC-06 重试策略 / `7a0d5d74` ④ UNDER REVIEW 判据 | 四份新判据 45 passed（9+8+7+21），四条反证臂逐条按压；`tests/{adapters/openhands,application/run_orchestration,contracts,loaders}` 1209 passed / 73 skipped；ruff + format + mypy 全清 | 见「CI 台账」 | — | **EC-03 PASS**（四类各一条判据 + 按压；④ 的真跑取证仍 PENDING）；**EC-06 PASS**（四份上游合约可重试，硬门逐字未动） | cycle 3 = EC-04（三次真实双评审读数） |
 
 **cycle 1 的实测发现（写进记录，不得只留在会话里）**：
 
@@ -302,6 +323,13 @@ EC 表见 frontmatter `exit_criteria`。
   四个零价模型实测都返回标准 `tool_calls`（escalation 未命中）；
   `iceman-contributor-free` 实测**不支持** `structured_output` ⇒ 不声明该能力。
   残余：`W-3`（`extra_headers` 未投影进 endpoint 读面）。
+- 2026-11-20（同日晚些）：cycle 1 的 `18a0668f` **在网络恢复后补推**（该提交曾被出站
+  HTTPS 全断阻塞约两小时，CI run `44423270174`）。
+- 2026-11-20：cycle 2 收口（`PLAN-20261120-117`）。**EC-03 / EC-06 PASS**。
+  四类失败模式各一条判据且逐条按压；本轮**发现并修复两个真实缺陷**：
+  ① 没有 `content` 时把 Python repr 当正文；③ 拒冻接线第一版**重复发** `run.failed`
+  （helper 单测全绿，只有跑通整条路径才暴露）。④ 的真实 run 提示词取证与 ① 的
+  「真跑中不再出现」仍需出网，**记 PENDING**。
 
 ## 残余与未覆盖范围
 
