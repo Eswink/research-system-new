@@ -26,13 +26,18 @@ import pytest
 
 _ROOT = Path(__file__).resolve().parents[2]
 
-#: 要清零的旧站标识（地址 + 三个旧模型名）。`hy4free` 是 `hy4-flash-free` 的子串
-#: 反面：两者互不为子串，所以按字面量搜不会互相误伤。
+#: 要清零的旧站标识（地址 + 三个旧模型名）。
+#:
+#: **为什么用拼接而不是字面量**：本判据自己的源码必须能被自己的扫描器扫过 ——
+#: 若把四个标记写成字面量，`test_no_stale_marker_survives...` 会命中**本文件自身**
+#: （实测就这样红过一次）。给它开一条"豁免自己"的白名单是更差的解法（那是一条
+#: 可以藏真实违规的暗门）；拼接让标记在运行时才成形，文件里不存在可命中的字面量。
+_STALE_ADDRESS = "192" + ".168.101" + ".9"
 STALE_MARKERS: tuple[str, ...] = (
-    "192.168.101.9",
-    "hy4free",
-    "hy4-preview-f",
-    "hy4flash-exp4",
+    _STALE_ADDRESS,
+    "hy4" + "free",
+    "hy4" + "-preview-f",
+    "hy4" + "flash-exp4",
 )
 
 #: 受判面（仓库相对路径前缀）。**只有这些**目录里的命中算违规。
@@ -157,7 +162,7 @@ class TestTheCriterionBitesInBothDirections:
     def test_a_marker_inside_an_exempt_path_is_not_reported(self) -> None:
         """豁免面确实豁免（否则白名单形同虚设，历史记录会被要求改写）。"""
         relative = ".cursor/plans/rechecks/RECHECK-20261111-108-example.md"
-        hits = scan(extra={relative: "旧站 192.168.101.9 的读数\n"})
+        hits = scan(extra={relative: f"旧站 {_STALE_ADDRESS} 的读数"})
         assert not hits, hits
 
     def test_a_clean_product_file_is_not_reported(self) -> None:
