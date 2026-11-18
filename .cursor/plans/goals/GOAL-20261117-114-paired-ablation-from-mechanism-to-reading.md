@@ -221,7 +221,7 @@ m0 witness + 两树复检）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PLAN-20261117-114-paired-ablation-readings | `25fa8887`、`2260b7eb`、`453898c8` | EC-01…06 落地 + 定向套件全绿；真实 k=3 六次 run 全 SUCCEEDED（26m29s） | 见下方 CI 台账（三条 chore 待 push 后回填） | 4（拒冻不落事件 / 相 id 静默跳过 / assemble 缺 runtime 回落 Fake / citation 缺分母恒 0） | W-1（采集器未产品化）、W-2（plan_fallback 死缝）、U-1（只测一格）、U-2（n=3 非统计功效） | 下一轮 charter 由本文件读出 |
+| 1 | PLAN-20261117-114-paired-ablation-readings | `25fa8887`、`2260b7eb`、`453898c8` | EC-01…06 落地 + 定向套件全绿；真实 k=3 六次 run 全 SUCCEEDED（26m29s） | [M0 44272246406](https://github.com/Eswink/research-system-new/actions/runs/44272246406) **8/8 `success`** / [Push 44272246485](https://github.com/Eswink/research-system-new/actions/runs/44272246485) 3/3 `success` | 4（拒冻不落事件 / 相 id 静默跳过 / assemble 缺 runtime 回落 Fake / citation 缺分母恒 0） | W-1（采集器未产品化）、W-2（plan_fallback 死缝）、U-1（只测一格）、U-2（n=3 非统计功效） | 下一轮 charter 由本文件读出 |
 
 ## 真实 k=3 实测（EC-07 的现场记录）
 
@@ -285,8 +285,11 @@ m0 witness + 两树复检）。
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `25fa8887` | 待回填（push 后登记） | 待回填 | 代码 + 判据 + 记录（EC-01…10 全部交付）；六次真实 run 的读数见 `evidence/GOAL-20261117-114-ablation-k3.json` |
-| `2260b7eb` | 待回填（push 后登记） | 待回填 | 记录面收敛：两条台账对齐 + 两处规模门（451→450 行 / `_arm_deps` 拆分）。**M0 真红一条**：`python/tests`——该 chore 主题点名`goal114` ⇒ 提交链判据把它算进本轮，而台账里没有它（连环 tip 债） |
-| `453898c8` | 待回填（push 后登记） | 待回填 | 子 PLAN + 工程记忆（MEM-244）+ 三个判据文件的 ruff format；同样因主题点名 `goal114` 进入本轮链 |
+| `25fa8887` | [M0 44272246406](https://github.com/Eswink/research-system-new/actions/runs/44272246406) / [Push 44272246485](https://github.com/Eswink/research-system-new/actions/runs/44272246485) | **8/8 job `success`**；Push 3/3 `success` | 代码 + 判据 + 记录（EC-01…10 全部交付）；六次真实 run 的读数见 `evidence/GOAL-20261117-114-ablation-k3.json` |
+| `2260b7eb` | 同上（同一批 push 的 tip 读数为准） | 同上 | 记录面收敛：两条台账对齐 + 两处规模门（451→450 行 / `_arm_deps` 拆分）。**M0 真红一条**：`python/tests`——该 chore 主题点名`goal114` ⇒ 提交链判据把它算进本轮，而台账里没有它（连环 tip 债） |
+| `453898c8` | 同上（同一批 push 的 tip 读数为准） | 同上 | 子 PLAN + 工程记忆（MEM-244）+ 三个判据文件的 ruff format；同样因主题点名 `goal114` 进入本轮链 |
 
-tip 的 CI 读数由下一轮 prep 按惯例登记（见 GOAL-112 / 113 台账尾的同形先例）。
+**本轮的 CI 读数已齐**：五个提交一次推送（`25fa8887`…`f9402826`），GitHub 只为 tip 起 run ——
+[M0 44272246406](https://github.com/Eswink/research-system-new/actions/runs/44272246406) **8/8 job `success`**、
+[Push 44272246485](https://github.com/Eswink/research-system-new/actions/runs/44272246485) 3/3 `success`。
+本台账的回填提交（本次）由下一轮 prep 按惯例登记（见 GOAL-112 / 113 台账尾的同形先例）。
