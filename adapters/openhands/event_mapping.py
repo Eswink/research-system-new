@@ -59,12 +59,21 @@ def _content_text(content: object) -> str:
 
 
 def _message_text(event: Event) -> str:
+    """事件的**正文**；取不到正文时返回空串，**绝不返回对象 repr**。
+
+    **GOAL-20261119-115 EC-03 ①（本行是修的缺陷，不是防御性代码）**：没有 `content`
+    属性时原写法回落到 `str(llm_message)` —— 那是
+    `<MessageEvent object at 0x…>` 这样的 **Python repr**，不是文本。它会被当成
+    「模型说过的话」往下游流（事件面、交付物抽取、判据按文本找 JSON 块），
+    于是失败形态从「没有正文」变成「有正文但内容是内存地址」—— 后者更难诊断。
+    **空不是缺陷，编造才是**：取不到就返回空，由调用方判「无正文」。
+    """
     llm_message = getattr(event, "llm_message", None)
     if llm_message is not None:
         content = getattr(llm_message, "content", None)
         if content is not None:
             return redact_exception_message(_content_text(content)[:EVENT_MESSAGE_LIMIT])
-        return redact_exception_message(str(llm_message)[:EVENT_MESSAGE_LIMIT])
+        return ""
     fallback = str(getattr(event, "message", None) or "")
     return redact_exception_message(fallback[:EVENT_MESSAGE_LIMIT])
 
