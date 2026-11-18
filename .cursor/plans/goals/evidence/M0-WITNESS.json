@@ -1400,7 +1400,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "542f1f72cf76fa10b0e6ce7bf22b6711b4324023"
+        "sha256": "57075218de1c754121009ebadbb14c9b43d805c1"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1891,8 +1891,12 @@
         "sha256": "20dfb8b830fb2ac9291d49b06b1ca548906a3bd5"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
+        "sha256": "f28c62695da4ca99f5ab813304c3be18ec838193"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "7749477891ae178512aafc3d7c07a3a480d93725"
+        "sha256": "aa7435b6d58cbb1f00795ff2f7068ad18498f4ec"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -2165,6 +2169,10 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-18-revisions-79-only.md",
         "sha256": "10d4d018670d2a9f6dda231c193eb3a1e8782ea1"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-19-revisions-80-only.md",
+        "sha256": "4bf727c5f314f720b52f63f04e0198cecb21933b"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -4551,6 +4559,10 @@
         "sha256": "205f3ae13daa7074c561c9464c6a02fdb57ef07b"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261120-116-relay-switch-and-free-model-discipline.md",
+        "sha256": "49591be3178fd258369758d8a9c7899b517d8fc5"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -6007,6 +6019,14 @@
         "sha256": "d09890e721f8c2f7ad14cb166d461f1e87459e63"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261119-115-prd-gap-and-review-reliability.md",
+        "sha256": "776991dd97f5b053d8e3bb83e1098e643476a8e3"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261120-116-relay-switch-and-free-model-discipline.md",
+        "sha256": "25037da6a77dbca17887238400778d338929360a"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -6336,7 +6356,7 @@
       },
       {
         "path": "adapters/contracts/models_loaders.py",
-        "sha256": "0db4affe0ce051e9365a5bd43855610524870918"
+        "sha256": "f0f5600122f2c080e13da3c897026e6b0018dd52"
       },
       {
         "path": "adapters/contracts/pricing_loaders.py",
@@ -6544,7 +6564,7 @@
       },
       {
         "path": "adapters/openhands/llm_factory.py",
-        "sha256": "45063219d4a42379ba0562bad4b4fc1235f60289"
+        "sha256": "ee5428896ea66ef7c845c16fb85ed474a7283130"
       },
       {
         "path": "adapters/openhands/policy_enforcing_agent.py",
@@ -6892,7 +6912,7 @@
       },
       {
         "path": "adapters/relay/completions.py",
-        "sha256": "f32080e15efe2d182c8c89d6aa6a7c16f22eaeb5"
+        "sha256": "b7906f96dddf082047d06c188c20f344807cf18b"
       },
       {
         "path": "adapters/relay/credential_resolver.py",
@@ -6904,7 +6924,7 @@
       },
       {
         "path": "adapters/relay/gateway.py",
-        "sha256": "14f8ab1ada4baaed744b253583fa2dafadf361e8"
+        "sha256": "28e4aac76157104af2e2d7e7c9778a72195bdba6"
       },
       {
         "path": "adapters/relay/parsing.py",
@@ -6912,7 +6932,7 @@
       },
       {
         "path": "adapters/relay/protocols.py",
-        "sha256": "429c4604919500f539d132b35833308506ee2594"
+        "sha256": "1fe471b3d98b8fae5b1822267322ccb7ecdd6f2c"
       },
       {
         "path": "adapters/relay/registry_credential_resolver.py",
@@ -7004,7 +7024,7 @@
       },
       {
         "path": "adapters/sqlite/endpoint_store.py",
-        "sha256": "cc559cf6d7f39b3033e70207aaf6b10b80424ba6"
+        "sha256": "ad7efa10b5af55cbebdc166622b3bd0ba40b6fce"
       },
       {
         "path": "adapters/sqlite/eval_report_store.py",
@@ -12540,7 +12560,7 @@
       },
       {
         "path": "docs/INDEX.md",
-        "sha256": "404a8f3b26050f152c00bfc71564a7fd0862a534"
+        "sha256": "438267e6c60232685366b36493886c008d26ae16"
       },
       {
         "path": "docs/PRODUCT.md",
@@ -12904,11 +12924,11 @@
       },
       {
         "path": "docs/integration/LIVE_MODEL_RUNBOOK.md",
-        "sha256": "c2c23088f06d8d32e60810fda53b90a6063d452f"
+        "sha256": "0dd6c331fea6fb4234cd60fa57ea35bea1c85518"
       },
       {
         "path": "docs/integration/LLM_ENDPOINTS.md",
-        "sha256": "13fdfb7bdc4b22933f493e4cb835279c2038338a"
+        "sha256": "82c978669a8b1f0e037085548b27661c93a7b5ce"
       },
       {
         "path": "docs/integration/MCP_TOOL_PROVIDERS.md",
@@ -12973,6 +12993,10 @@
       {
         "path": "docs/product/END_TO_END_USER_JOURNEY.md",
         "sha256": "5b1e4f5e2f9517e8426c44ba391eba2f9359ab51"
+      },
+      {
+        "path": "docs/product/PRD_GAP_ANALYSIS.md",
+        "sha256": "7665aa8609c784feec35b840b4629c3791dd3429"
       },
       {
         "path": "docs/references/LICENSE_MATRIX.md",
@@ -14052,7 +14076,7 @@
       },
       {
         "path": "examples/config/llm_endpoints.yaml",
-        "sha256": "8861c329799eaa12c4ca3526fad3216c1cb072be"
+        "sha256": "8f132f7aeef3b5fa802150baf090abfaf251d378"
       },
       {
         "path": "examples/config/memory_policy.yaml",
@@ -14060,11 +14084,11 @@
       },
       {
         "path": "examples/config/model_profiles.yaml",
-        "sha256": "ef78471fcc323685dbf8ae4c57e17f9572b6366c"
+        "sha256": "22bf6c8ef0a101f6ac005502fd54c3258c35633d"
       },
       {
         "path": "examples/config/models.yaml",
-        "sha256": "fdfb8d7926249eaa8e6229ea14beb6183212bd98"
+        "sha256": "9c4a4192f1444b64c5db561fdad55abc36afbc83"
       },
       {
         "path": "examples/config/policy.yaml",
@@ -15472,7 +15496,7 @@
       },
       {
         "path": "packages/domain/models.py",
-        "sha256": "3ada7216fb75682b9d762aa7e5821b12df82e43e"
+        "sha256": "a84006b76003768cf9811f4f12814871d338d08f"
       },
       {
         "path": "packages/domain/ops_control.py",
@@ -15648,7 +15672,7 @@
       },
       {
         "path": "schemas/llm-endpoint.schema.json",
-        "sha256": "4ba9e5eb8765f437b7ca6bb4ec11f77e357623a4"
+        "sha256": "0831deec9c051c295783b6d96632d0aad47fb8ca"
       },
       {
         "path": "schemas/model-definition.schema.json",
@@ -16632,7 +16656,7 @@
       },
       {
         "path": "tests/api/base_fixtures.py",
-        "sha256": "1dbcf5768a348f14d92b700ee887ce583eca3014"
+        "sha256": "734f896ee82f6246bbadf2aaada38894aa8cc983"
       },
       {
         "path": "tests/api/conftest.py",
@@ -17028,7 +17052,7 @@
       },
       {
         "path": "tests/application/deliverable/test_panel_grounding.py",
-        "sha256": "2400223195156f18cf6a948795800b4abd2ffe63"
+        "sha256": "15be9cda1557289cdf49cdb185ef9a404fdb3a8b"
       },
       {
         "path": "tests/application/evidence/m12_chain_fixtures.py",
@@ -17256,7 +17280,7 @@
       },
       {
         "path": "tests/application/preflight/test_policy_surface_consistency.py",
-        "sha256": "c983e910cedc1008bd2593564a5db2a646338110"
+        "sha256": "6e4ae6358188c02dd376e7dd5cfb457f9c912c14"
       },
       {
         "path": "tests/application/preflight/test_policy_surface_difference_set.py",
@@ -17304,7 +17328,7 @@
       },
       {
         "path": "tests/application/run_orchestration/test_ablation_pair.py",
-        "sha256": "a7764ea13242a9972dbd22e4f5367a2ae2c61623"
+        "sha256": "804077e41e0d49fa401931103bd1a17e7f3620df"
       },
       {
         "path": "tests/application/run_orchestration/test_acceptance_gate_input_face.py",
@@ -17316,7 +17340,7 @@
       },
       {
         "path": "tests/application/run_orchestration/test_comparison_digest.py",
-        "sha256": "2d92e18cd9b0250a3ae6c70f8e456fe11d23b3d9"
+        "sha256": "93de690a811c65dc73ffdad9a3ca5c9a4e70f223"
       },
       {
         "path": "tests/application/run_orchestration/test_compensation_boundary.py",
@@ -17936,7 +17960,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "d23ea2abf13924fca34bd63929bc30669875f39f"
+        "sha256": "8e09a91a6aa66bbe45b465755a7d4c21aa8ed52f"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -18152,7 +18176,7 @@
       },
       {
         "path": "tests/contracts/test_direction_to_report_v2_novelty.py",
-        "sha256": "7db56c40b25fe1ccbf440f9326bcb64543bbc9af"
+        "sha256": "9554782b8db951047aa0d3666562f96bd9cf9d41"
       },
       {
         "path": "tests/contracts/test_dispatch_ownership_contract.py",
@@ -18512,7 +18536,7 @@
       },
       {
         "path": "tests/e2e/manuscript_chain_live_support.py",
-        "sha256": "ea6fe5874561adc47ceb964975ff3fabb8b60e21"
+        "sha256": "04e1b5d45ccab6b057343238473f9ba8ba63a31f"
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
@@ -18904,7 +18928,7 @@
       },
       {
         "path": "tests/e2e/test_two_models_judge_the_same_artifact_live.py",
-        "sha256": "916ef67272be724ecd45e87dca4dd0574fafbf85"
+        "sha256": "317d6be45443c64a88afa045684256b0342e3e37"
       },
       {
         "path": "tests/e2e/test_vertical_slice_happy_path.py",
@@ -18987,6 +19011,10 @@
         "sha256": "7e925be681685cb1f7d0539a00e1422d7ead297f"
       },
       {
+        "path": "tests/fixtures/free_models_catalog.json",
+        "sha256": "73d6c1d6e9c045dbf7c7660d11f30e22e7276e7f"
+      },
+      {
         "path": "tests/integration/capability_plane_support.py",
         "sha256": "6054edebef8a7427add4cc318c4c0addcf86ff5f"
       },
@@ -19029,6 +19057,10 @@
       {
         "path": "tests/loaders/test_example_protocol_integration.py",
         "sha256": "3e9ef19e5572da41a5297aebdb5134e755f4bea0"
+      },
+      {
+        "path": "tests/loaders/test_free_model_only_policy.py",
+        "sha256": "d955a42ec5ea657d3e91741a1ef521760f91bd74"
       },
       {
         "path": "tests/loaders/test_pricing_loaders.py",
@@ -19471,6 +19503,10 @@
         "sha256": "ebec1fd6866210a07a9060ac0f6ee09be3024486"
       },
       {
+        "path": "tests/tooling/test_prd_gap_analysis_recorded.py",
+        "sha256": "7211f8879960d49afc1b85c4533205352e6f41bf"
+      },
+      {
         "path": "tests/tooling/test_python_source_limits.py",
         "sha256": "7b05508ec8255e84633a1f1ca1056c0a6f86644f"
       },
@@ -19481,6 +19517,10 @@
       {
         "path": "tests/tooling/test_record_tables_are_structurally_sound.py",
         "sha256": "0da482dfd3ca1edd7b4f34b3d648fa8051ea1d55"
+      },
+      {
+        "path": "tests/tooling/test_relay_pins_are_cleared.py",
+        "sha256": "cb3b404c9968fe2eb03c5fc04e5f8918e360fa6d"
       },
       {
         "path": "tests/tooling/test_release_file_selection.py",
@@ -19516,7 +19556,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "d60864ef8d8f082c6728fe832dd2c5174c2df87a"
+        "sha256": "d3975c3458192b837bfeb166cfcbfd9b8749049b"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -20092,7 +20132,11 @@
       },
       {
         "path": "tools/goal098_closeout_assertions.py",
-        "sha256": "eb223d2185973117fb5094f6e65943d749717171"
+        "sha256": "bbabb2fba7de5b1a2c86fcb7194ad86a687bcf35"
+      },
+      {
+        "path": "tools/goal098_model_independence.py",
+        "sha256": "c65afa0f140f723219b0b61938e5d98da076e046"
       },
       {
         "path": "tools/goal099_closeout_assertions.py",
@@ -20140,7 +20184,7 @@
       },
       {
         "path": "tools/goal108_closeout_assertions.py",
-        "sha256": "e2e9463d404a1ccf1baafb7d0c8f2efe0307dba8"
+        "sha256": "b6d77ab68c1d1d59b33366f76eabd60d6f683e06"
       },
       {
         "path": "tools/goal109_closeout_assertions.py",
@@ -20152,7 +20196,7 @@
       },
       {
         "path": "tools/goal111_closeout_assertions.py",
-        "sha256": "f5a4597e4e54e550083941394f685b529fa9e078"
+        "sha256": "5e6790e37e61448587ffd4e9049404f1d96cfbb4"
       },
       {
         "path": "tools/goal112_closeout_assertions.py",
@@ -20675,7 +20719,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "9bf10c503ab07860e8237812d3f4bd5d6111100e"
+    "head": "9aaea0d1d09a64b4267f1a9c2b5def1fe6482dc7"
   },
   "fingerprint_before": {
     "files": [
@@ -22077,7 +22121,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "542f1f72cf76fa10b0e6ce7bf22b6711b4324023"
+        "sha256": "57075218de1c754121009ebadbb14c9b43d805c1"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22568,8 +22612,12 @@
         "sha256": "20dfb8b830fb2ac9291d49b06b1ca548906a3bd5"
       },
       {
+        "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
+        "sha256": "f28c62695da4ca99f5ab813304c3be18ec838193"
+      },
+      {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "7749477891ae178512aafc3d7c07a3a480d93725"
+        "sha256": "aa7435b6d58cbb1f00795ff2f7068ad18498f4ec"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -22842,6 +22890,10 @@
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-18-revisions-79-only.md",
         "sha256": "10d4d018670d2a9f6dda231c193eb3a1e8782ea1"
+      },
+      {
+        "path": ".cursor/plans/goals/archive/MAINLINE-2026-11-19-revisions-80-only.md",
+        "sha256": "4bf727c5f314f720b52f63f04e0198cecb21933b"
       },
       {
         "path": ".cursor/plans/goals/archive/SHORT-REVISION-ROWS.md",
@@ -25228,6 +25280,10 @@
         "sha256": "205f3ae13daa7074c561c9464c6a02fdb57ef07b"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261120-116-relay-switch-and-free-model-discipline.md",
+        "sha256": "49591be3178fd258369758d8a9c7899b517d8fc5"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26684,6 +26740,14 @@
         "sha256": "d09890e721f8c2f7ad14cb166d461f1e87459e63"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261119-115-prd-gap-and-review-reliability.md",
+        "sha256": "776991dd97f5b053d8e3bb83e1098e643476a8e3"
+      },
+      {
+        "path": ".cursor/plans/tasks/PLAN-20261120-116-relay-switch-and-free-model-discipline.md",
+        "sha256": "25037da6a77dbca17887238400778d338929360a"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -27013,7 +27077,7 @@
       },
       {
         "path": "adapters/contracts/models_loaders.py",
-        "sha256": "0db4affe0ce051e9365a5bd43855610524870918"
+        "sha256": "f0f5600122f2c080e13da3c897026e6b0018dd52"
       },
       {
         "path": "adapters/contracts/pricing_loaders.py",
@@ -27221,7 +27285,7 @@
       },
       {
         "path": "adapters/openhands/llm_factory.py",
-        "sha256": "45063219d4a42379ba0562bad4b4fc1235f60289"
+        "sha256": "ee5428896ea66ef7c845c16fb85ed474a7283130"
       },
       {
         "path": "adapters/openhands/policy_enforcing_agent.py",
@@ -27569,7 +27633,7 @@
       },
       {
         "path": "adapters/relay/completions.py",
-        "sha256": "f32080e15efe2d182c8c89d6aa6a7c16f22eaeb5"
+        "sha256": "b7906f96dddf082047d06c188c20f344807cf18b"
       },
       {
         "path": "adapters/relay/credential_resolver.py",
@@ -27581,7 +27645,7 @@
       },
       {
         "path": "adapters/relay/gateway.py",
-        "sha256": "14f8ab1ada4baaed744b253583fa2dafadf361e8"
+        "sha256": "28e4aac76157104af2e2d7e7c9778a72195bdba6"
       },
       {
         "path": "adapters/relay/parsing.py",
@@ -27589,7 +27653,7 @@
       },
       {
         "path": "adapters/relay/protocols.py",
-        "sha256": "429c4604919500f539d132b35833308506ee2594"
+        "sha256": "1fe471b3d98b8fae5b1822267322ccb7ecdd6f2c"
       },
       {
         "path": "adapters/relay/registry_credential_resolver.py",
@@ -27681,7 +27745,7 @@
       },
       {
         "path": "adapters/sqlite/endpoint_store.py",
-        "sha256": "cc559cf6d7f39b3033e70207aaf6b10b80424ba6"
+        "sha256": "ad7efa10b5af55cbebdc166622b3bd0ba40b6fce"
       },
       {
         "path": "adapters/sqlite/eval_report_store.py",
@@ -33217,7 +33281,7 @@
       },
       {
         "path": "docs/INDEX.md",
-        "sha256": "404a8f3b26050f152c00bfc71564a7fd0862a534"
+        "sha256": "438267e6c60232685366b36493886c008d26ae16"
       },
       {
         "path": "docs/PRODUCT.md",
@@ -33581,11 +33645,11 @@
       },
       {
         "path": "docs/integration/LIVE_MODEL_RUNBOOK.md",
-        "sha256": "c2c23088f06d8d32e60810fda53b90a6063d452f"
+        "sha256": "0dd6c331fea6fb4234cd60fa57ea35bea1c85518"
       },
       {
         "path": "docs/integration/LLM_ENDPOINTS.md",
-        "sha256": "13fdfb7bdc4b22933f493e4cb835279c2038338a"
+        "sha256": "82c978669a8b1f0e037085548b27661c93a7b5ce"
       },
       {
         "path": "docs/integration/MCP_TOOL_PROVIDERS.md",
@@ -33650,6 +33714,10 @@
       {
         "path": "docs/product/END_TO_END_USER_JOURNEY.md",
         "sha256": "5b1e4f5e2f9517e8426c44ba391eba2f9359ab51"
+      },
+      {
+        "path": "docs/product/PRD_GAP_ANALYSIS.md",
+        "sha256": "7665aa8609c784feec35b840b4629c3791dd3429"
       },
       {
         "path": "docs/references/LICENSE_MATRIX.md",
@@ -34729,7 +34797,7 @@
       },
       {
         "path": "examples/config/llm_endpoints.yaml",
-        "sha256": "8861c329799eaa12c4ca3526fad3216c1cb072be"
+        "sha256": "8f132f7aeef3b5fa802150baf090abfaf251d378"
       },
       {
         "path": "examples/config/memory_policy.yaml",
@@ -34737,11 +34805,11 @@
       },
       {
         "path": "examples/config/model_profiles.yaml",
-        "sha256": "ef78471fcc323685dbf8ae4c57e17f9572b6366c"
+        "sha256": "22bf6c8ef0a101f6ac005502fd54c3258c35633d"
       },
       {
         "path": "examples/config/models.yaml",
-        "sha256": "fdfb8d7926249eaa8e6229ea14beb6183212bd98"
+        "sha256": "9c4a4192f1444b64c5db561fdad55abc36afbc83"
       },
       {
         "path": "examples/config/policy.yaml",
@@ -36149,7 +36217,7 @@
       },
       {
         "path": "packages/domain/models.py",
-        "sha256": "3ada7216fb75682b9d762aa7e5821b12df82e43e"
+        "sha256": "a84006b76003768cf9811f4f12814871d338d08f"
       },
       {
         "path": "packages/domain/ops_control.py",
@@ -36325,7 +36393,7 @@
       },
       {
         "path": "schemas/llm-endpoint.schema.json",
-        "sha256": "4ba9e5eb8765f437b7ca6bb4ec11f77e357623a4"
+        "sha256": "0831deec9c051c295783b6d96632d0aad47fb8ca"
       },
       {
         "path": "schemas/model-definition.schema.json",
@@ -37309,7 +37377,7 @@
       },
       {
         "path": "tests/api/base_fixtures.py",
-        "sha256": "1dbcf5768a348f14d92b700ee887ce583eca3014"
+        "sha256": "734f896ee82f6246bbadf2aaada38894aa8cc983"
       },
       {
         "path": "tests/api/conftest.py",
@@ -37705,7 +37773,7 @@
       },
       {
         "path": "tests/application/deliverable/test_panel_grounding.py",
-        "sha256": "2400223195156f18cf6a948795800b4abd2ffe63"
+        "sha256": "15be9cda1557289cdf49cdb185ef9a404fdb3a8b"
       },
       {
         "path": "tests/application/evidence/m12_chain_fixtures.py",
@@ -37933,7 +38001,7 @@
       },
       {
         "path": "tests/application/preflight/test_policy_surface_consistency.py",
-        "sha256": "c983e910cedc1008bd2593564a5db2a646338110"
+        "sha256": "6e4ae6358188c02dd376e7dd5cfb457f9c912c14"
       },
       {
         "path": "tests/application/preflight/test_policy_surface_difference_set.py",
@@ -37981,7 +38049,7 @@
       },
       {
         "path": "tests/application/run_orchestration/test_ablation_pair.py",
-        "sha256": "a7764ea13242a9972dbd22e4f5367a2ae2c61623"
+        "sha256": "804077e41e0d49fa401931103bd1a17e7f3620df"
       },
       {
         "path": "tests/application/run_orchestration/test_acceptance_gate_input_face.py",
@@ -37993,7 +38061,7 @@
       },
       {
         "path": "tests/application/run_orchestration/test_comparison_digest.py",
-        "sha256": "2d92e18cd9b0250a3ae6c70f8e456fe11d23b3d9"
+        "sha256": "93de690a811c65dc73ffdad9a3ca5c9a4e70f223"
       },
       {
         "path": "tests/application/run_orchestration/test_compensation_boundary.py",
@@ -38613,7 +38681,7 @@
       },
       {
         "path": "tests/architecture/python/test_live_switch_is_single_source.py",
-        "sha256": "d23ea2abf13924fca34bd63929bc30669875f39f"
+        "sha256": "8e09a91a6aa66bbe45b465755a7d4c21aa8ed52f"
       },
       {
         "path": "tests/architecture/python/test_model_config_face_wiring.py",
@@ -38829,7 +38897,7 @@
       },
       {
         "path": "tests/contracts/test_direction_to_report_v2_novelty.py",
-        "sha256": "7db56c40b25fe1ccbf440f9326bcb64543bbc9af"
+        "sha256": "9554782b8db951047aa0d3666562f96bd9cf9d41"
       },
       {
         "path": "tests/contracts/test_dispatch_ownership_contract.py",
@@ -39189,7 +39257,7 @@
       },
       {
         "path": "tests/e2e/manuscript_chain_live_support.py",
-        "sha256": "ea6fe5874561adc47ceb964975ff3fabb8b60e21"
+        "sha256": "04e1b5d45ccab6b057343238473f9ba8ba63a31f"
       },
       {
         "path": "tests/e2e/manuscript_replies.py",
@@ -39581,7 +39649,7 @@
       },
       {
         "path": "tests/e2e/test_two_models_judge_the_same_artifact_live.py",
-        "sha256": "916ef67272be724ecd45e87dca4dd0574fafbf85"
+        "sha256": "317d6be45443c64a88afa045684256b0342e3e37"
       },
       {
         "path": "tests/e2e/test_vertical_slice_happy_path.py",
@@ -39664,6 +39732,10 @@
         "sha256": "7e925be681685cb1f7d0539a00e1422d7ead297f"
       },
       {
+        "path": "tests/fixtures/free_models_catalog.json",
+        "sha256": "73d6c1d6e9c045dbf7c7660d11f30e22e7276e7f"
+      },
+      {
         "path": "tests/integration/capability_plane_support.py",
         "sha256": "6054edebef8a7427add4cc318c4c0addcf86ff5f"
       },
@@ -39706,6 +39778,10 @@
       {
         "path": "tests/loaders/test_example_protocol_integration.py",
         "sha256": "3e9ef19e5572da41a5297aebdb5134e755f4bea0"
+      },
+      {
+        "path": "tests/loaders/test_free_model_only_policy.py",
+        "sha256": "d955a42ec5ea657d3e91741a1ef521760f91bd74"
       },
       {
         "path": "tests/loaders/test_pricing_loaders.py",
@@ -40148,6 +40224,10 @@
         "sha256": "ebec1fd6866210a07a9060ac0f6ee09be3024486"
       },
       {
+        "path": "tests/tooling/test_prd_gap_analysis_recorded.py",
+        "sha256": "7211f8879960d49afc1b85c4533205352e6f41bf"
+      },
+      {
         "path": "tests/tooling/test_python_source_limits.py",
         "sha256": "7b05508ec8255e84633a1f1ca1056c0a6f86644f"
       },
@@ -40158,6 +40238,10 @@
       {
         "path": "tests/tooling/test_record_tables_are_structurally_sound.py",
         "sha256": "0da482dfd3ca1edd7b4f34b3d648fa8051ea1d55"
+      },
+      {
+        "path": "tests/tooling/test_relay_pins_are_cleared.py",
+        "sha256": "cb3b404c9968fe2eb03c5fc04e5f8918e360fa6d"
       },
       {
         "path": "tests/tooling/test_release_file_selection.py",
@@ -40193,7 +40277,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "d60864ef8d8f082c6728fe832dd2c5174c2df87a"
+        "sha256": "d3975c3458192b837bfeb166cfcbfd9b8749049b"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -40769,7 +40853,11 @@
       },
       {
         "path": "tools/goal098_closeout_assertions.py",
-        "sha256": "eb223d2185973117fb5094f6e65943d749717171"
+        "sha256": "bbabb2fba7de5b1a2c86fcb7194ad86a687bcf35"
+      },
+      {
+        "path": "tools/goal098_model_independence.py",
+        "sha256": "c65afa0f140f723219b0b61938e5d98da076e046"
       },
       {
         "path": "tools/goal099_closeout_assertions.py",
@@ -40817,7 +40905,7 @@
       },
       {
         "path": "tools/goal108_closeout_assertions.py",
-        "sha256": "e2e9463d404a1ccf1baafb7d0c8f2efe0307dba8"
+        "sha256": "b6d77ab68c1d1d59b33366f76eabd60d6f683e06"
       },
       {
         "path": "tools/goal109_closeout_assertions.py",
@@ -40829,7 +40917,7 @@
       },
       {
         "path": "tools/goal111_closeout_assertions.py",
-        "sha256": "f5a4597e4e54e550083941394f685b529fa9e078"
+        "sha256": "5e6790e37e61448587ffd4e9049404f1d96cfbb4"
       },
       {
         "path": "tools/goal112_closeout_assertions.py",
@@ -41352,11 +41440,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "9bf10c503ab07860e8237812d3f4bd5d6111100e"
+    "head": "9aaea0d1d09a64b4267f1a9c2b5def1fe6482dc7"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "9bf10c503ab07860e8237812d3f4bd5d6111100e",
+  "ran_at_head": "9aaea0d1d09a64b4267f1a9c2b5def1fe6482dc7",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
