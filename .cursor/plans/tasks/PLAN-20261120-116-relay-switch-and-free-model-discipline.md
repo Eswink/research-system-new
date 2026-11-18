@@ -2,7 +2,7 @@
 id: PLAN-20261120-116
 slug: relay-switch-and-free-model-discipline
 title: GOAL-115 cycle 1 —— 换站落地（opencode /inference/go）+ 免费模型纪律 + 会话头缝
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-11-20
 updated_at: 2026-11-20
 parent_goal: GOAL-20261119-115
@@ -42,14 +42,14 @@ GOAL-115 的 EC-01（换站 + 免费模型纪律）与 EC-02（旧站 pin 全清
 
 ## 交付面（checkbox）
 
-- [ ] WP-1 `LLMEndpoint` 新增 `extra_headers`（域 + schema + loader + sqlite 往返 + DTO 只读投影）
-- [ ] WP-2 两条腿真的发出该头：relay gateway / completions（全部 wire shape）+ OpenHands `build_llm`
-- [ ] WP-3 `llm_endpoints.yaml` 换到新站（两个 `base_url` + `allow_models` 四个免费模型 + `extra_headers`）
-- [ ] WP-4 `models.yaml` 九个 `model_name` 全部指向四个免费模型（按实测能力声明）
-- [ ] WP-5 钉值判据同轮改：`test_goal108_probe_readings.py` / `goal108_closeout_assertions.py`（FREE_MODELS 从新站读数取）、`test_direction_to_report_v2_novelty.py` 注释、`_EXPECTED_TARGETS`
-- [ ] WP-6 新判据 `tests/loaders/test_free_model_only_policy.py`（EC-01）
-- [ ] WP-7 新判据 `tests/tooling/test_relay_pins_are_cleared.py`（EC-02，白名单进源码）
-- [ ] WP-8 文档同步：`docs/integration/LLM_ENDPOINTS.md` / `LIVE_MODEL_RUNBOOK.md`
+- [x] WP-1 `LLMEndpoint` 新增 `extra_headers`（域 + schema + loader + sqlite 往返 + DTO 只读投影）
+- [x] WP-2 两条腿真的发出该头：relay gateway / completions（全部 wire shape）+ OpenHands `build_llm`
+- [x] WP-3 `llm_endpoints.yaml` 换到新站（两个 `base_url` + `allow_models` 四个免费模型 + `extra_headers`）
+- [x] WP-4 `models.yaml` 九个 `model_name` 全部指向四个免费模型（按实测能力声明）
+- [x] WP-5 钉值判据同轮改：`test_goal108_probe_readings.py` / `goal108_closeout_assertions.py`（FREE_MODELS 从新站读数取）、`test_direction_to_report_v2_novelty.py` 注释、`_EXPECTED_TARGETS`
+- [x] WP-6 新判据 `tests/loaders/test_free_model_only_policy.py`（EC-01）
+- [x] WP-7 新判据 `tests/tooling/test_relay_pins_are_cleared.py`（EC-02，白名单进源码）
+- [x] WP-8 文档同步：`docs/integration/LLM_ENDPOINTS.md` / `LIVE_MODEL_RUNBOOK.md`
 
 ## 四模型分配（按实测 + 既有独立性约束求解）
 
@@ -173,6 +173,9 @@ uv run --frozen --no-sync python -B tools/run_m0_with_witness.py
 
 - 2026-11-20：建档。本 cycle 从 PLAN-115 的 WP-A 切出，**并加一格原计划没有的
   `extra_headers` 缝**（新站 400 实证）；四模型分配按实测能力与既有独立性约束求解。
+- 2026-11-20：**DONE**。三个提交（`aad730b3` 缝 / `a262323a` 换站+两判据 / `ad550bff`
+  PRD 判据+goal098 口径修正）。WP-8 文档同步完成；`LLMEndpoint` 读面投影**未做**，
+  登记为 GOAL 残余 `W-3`（理由在 WP-1 小节与 GOAL 残余节）。
 
 ## 影响报告
 

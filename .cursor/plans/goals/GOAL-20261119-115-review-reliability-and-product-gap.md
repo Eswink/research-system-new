@@ -4,7 +4,7 @@ slug: review-reliability-and-product-gap
 title: 复检在真实路径上第一次产出可归因读数（硬门不动 + advisory 并存），并落下 PRD 差距分析
 status: ACTIVE
 created_at: 2026-11-19
-updated_at: 2026-11-19
+updated_at: 2026-11-20
 owners:
   - root-agent
 latest_recheck: null
@@ -56,7 +56,12 @@ exit_criteria:
       最小 probe（含 `tool_choice: required` 的 `tool_calls` 形态）；
       `uv run ... -m pytest tests/loaders/test_free_model_only_policy.py -q` ⇒ 全绿；
       `uv run ... python -B tools/credential_audit.py` 四面 `offenders=0`。
-    status: PENDING
+      **证据（2026-11-20 实跑）**：`tools/m12_relay_smoke.py` ⇒ probe ok=True、
+      returned_model_name=hy4-flash-free、5 能力、0 失败；四个零价模型各跑一次
+      `tool_choice: required` ⇒ 全返回标准 `tool_calls`；`test_free_model_only_policy.py`
+      12 passed / 1 skipped（live 腿默认 skip，`RESEARCHOS_LIVE_E2E=1` 才比夹具）；
+      `credential_audit.py` 四面 offenders=0。
+    status: PASS
   - id: EC-02
     criterion: >-
       **旧站 pin 全清零**：`192.168.101.9` / `hy4free` / `hy4-preview-f` / `hy4flash-exp4`
@@ -67,7 +72,10 @@ exit_criteria:
     verify: >-
       `uv run ... -m pytest tests/tooling/test_relay_pins_are_cleared.py -q` ⇒ 全绿；
       白名单外的命中逐条点名（路径 + 行号）。
-    status: PENDING
+      **证据（2026-11-20 实跑）**：`test_relay_pins_are_cleared.py` 9 passed；
+      受判面 200+ 文件、四个标记逐条注入反证臂全红；`docs/integration/` 两页与
+      `examples/config/` 三份配置零命中。
+    status: PASS
   - id: EC-03
     criterion: >-
       **四类真实失败模式各一条判据**（全部来自 24 次 FAILED 的实测画像）：
@@ -131,7 +139,10 @@ exit_criteria:
     verify: >-
       定向判据断言四节标题在场、至少 20 条 `file:line` 形态的引用、
       文末含「来源」节；`docs/INDEX.md` 有该路径。
-    status: PENDING
+      **证据（2026-11-20 实跑）**：`test_prd_gap_analysis_recorded.py` 9 passed；
+      四节齐 + 去重 23 条 `file:line` + `## 6. 来源` 收尾 + INDEX 登记；
+      非 ZDR 事实（`iceman-contributor-free` 的 prompt 会进训练）写进 §5.1。
+    status: PASS
   - id: EC-08
     criterion: >-
       **全量门与收口**：as-is m0 = `PASS: profile=m0; 23 deterministic checks`
@@ -265,12 +276,32 @@ EC 表见 frontmatter `exit_criteria`。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 见「CI 台账」 | 治理 `validate.py` 绿；记录面判据绿 | 见「CI 台账」 | — | EC-01…08 全 PENDING | cycle 1 = EC-01（换站落地 + 免费模型纪律） |
+| 1 | `PLAN-20261120-116`（换站 + 零价纪律 + 会话头缝） | `aad730b3` 静态路由头两条腿 / `a262323a` 换站 + 两个新判据 + 钉值判据同轮改 / `ad550bff` PRD 判据 + goal098 口径修正 | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 绿；`tests/{architecture,application/preflight,api}` 1102 passed / 4 skipped；`verify_goal108` 87/0；`verify_goal098` 104/0；新判据反证臂逐条咬合 | 见「CI 台账」 | — | **EC-01 PASS**（四模型 `tool_calls` 实测 + probe ok=True + 零价判据 + 双反证）；**EC-02 PASS**（旧站标识在产品/判据面零命中，白名单逐条给理由）；**EC-07 PASS**（四节 + 23 条去重 `file:line` + INDEX 登记 + 非 ZDR 事实） | cycle 2 = EC-03（四类失败模式各一条判据） |
+
+**cycle 1 的实测发现（写进记录，不得只留在会话里）**：
+
+| # | 事实 | 影响 |
+| --- | --- | --- |
+| D-1 | 新站 `/inference/go` 的推理面**要求 `x-opencode-session`**，缺它 400（鉴权通过也拒） | 纯配置换站**不可能**成功 ⇒ 本轮必须新增 `LLMEndpoint.extra_headers` 缝 |
+| D-2 | `adapters/relay/completions.py` 的 chat / responses 腿**从不传 headers**（走 transport 默认头） | 静态头只有 Anthropic 腿会发出去；四条腿统一到 `_headers()` 才修好 |
+| D-3 | 零价恰四个，但 `iceman-contributor-free` **不支持** `structured_output` | 它**不**声明 `STRUCTURED_OUTPUT_NATIVE`（按实测声明） |
+| D-4 | `hy4-flash-free` 是 reasoning 模型：`max_tokens=256` + `tool_choice: required` ⇒ `finish_reason: length`、`tool_calls` 空 | 给它工具面时预算 ≥ 2048；写进模型配置注释与端点文档 |
+| D-5 | `tools/goal098_closeout_assertions.py` 断言「作者必须落在 `deepseek-v4-pro-0813`」 | 那是把运营数据写成判据（GOAL-108 已总结过的同一教训）⇒ 改成用产品解析器判**目标不相交**，分文件以守 450 行门 |
+| D-6 | `tests/tooling/test_goal108_probe_readings.py` 读的是 GOAL-108 台账（历史记录） | 它对旧模型名**不豁免**会自相矛盾 ⇒ 白名单给它一条**精确文件**豁免 + 理由，当前零价纪律由 EC-01 判据判 |
+| D-7 | 旧站 `192.168.101.9:8798` **仍在线**（实测 200） | 换站是**纪律选择**，不是旧站故障；记录不得写成"旧站不可用" |
 
 ## 状态历史
 
 - 2026-11-19：建档。取证见上表（24/24 全来自单一 47 分钟窗口、换站后未重跑、
   四类失败中一半不是判负）；用户四项拍板写进 `authorization.ref`；
   PRD 差距调研交付物 `docs/product/PRD_GAP_ANALYSIS.md` 同轮落树。
+- 2026-11-20：cycle 1 收口（`PLAN-20261120-116`）。**EC-01 / EC-02 / EC-07 PASS**。
+  换站落地在**新增一条产品缝**之后才成立：新站的推理面要求 `x-opencode-session`
+  （缺它 400，鉴权通过也拒），而产品两条腿都不发 ⇒ `LLMEndpoint.extra_headers`
+  + `request_headers(..., extra_headers)` + `build_llm(extra_headers=...)`。
+  四个零价模型实测都返回标准 `tool_calls`（escalation 未命中）；
+  `iceman-contributor-free` 实测**不支持** `structured_output` ⇒ 不声明该能力。
+  残余：`W-3`（`extra_headers` 未投影进 endpoint 读面）。
 
 ## 残余与未覆盖范围
 
@@ -280,6 +311,11 @@ EC 表见 frontmatter `exit_criteria`。
 
 - `W-1`（承接 GOAL-114）**采集器仍是判据侧驱动**：产品面没有"从 run 库自动汇总 k×2"的命令。
 - `W-2`（承接 GOAL-114）**`plan_fallback` 是死缝**：有实现、被 preflight 读、运行期从不切。
+- `W-3`（cycle 1 新增）**`LLMEndpoint.extra_headers` 未投影进 endpoint 读面**：
+  它进域对象、进 sqlite 往返、进两条出网腿，但 `LlmEndpointReadDto` 里看不到。
+  缺它的代价是「一个 400 MissingSessionID 在控制面上看起来像配置对而请求失败」。
+  没做的理由：投影会连带 OpenAPI 快照 + `web/src/types.ts` + e2e 夹具三处同步，
+  而 EC-01 判的是配置与出网。**这是缺口不是成就**。
 
 ### 未覆盖范围
 
