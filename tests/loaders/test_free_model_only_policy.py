@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -47,7 +47,8 @@ _SESSION_HEADER = "x-opencode-session"
 
 
 def catalog() -> dict[str, Any]:
-    return json.loads(_CATALOG.read_text(encoding="utf-8"))
+    # `cast` 而不是 `# type: ignore`：strict 配置下后者是 syntax error（既有纪律）。
+    return cast(dict[str, Any], json.loads(_CATALOG.read_text(encoding="utf-8")))
 
 
 def zero_price_models(payload: dict[str, Any]) -> set[str]:
@@ -150,7 +151,8 @@ class TestTheEndpointsPointAtTheNewStation:
         endpoint = load_llm_endpoints(_ENDPOINTS)[endpoint_id]
         names = {name.lower() for name, _value in endpoint.extra_headers}
         assert _SESSION_HEADER in names, (
-            f"{endpoint_id} 没有声明 {_SESSION_HEADER}：新站的 chat/completions 会 400 MissingSessionID"
+            f"{endpoint_id} 没有声明 {_SESSION_HEADER}："
+            "新站的 chat/completions 会 400 MissingSessionID"
         )
 
     def test_the_session_header_is_not_a_credential(self) -> None:
@@ -188,9 +190,7 @@ class TestTheLiveCatalogStillAgrees:
             )
         import httpx
 
-        response = httpx.get(
-            "https://opencode.ai/inference/go/v1/models", timeout=60.0
-        )
+        response = httpx.get("https://opencode.ai/inference/go/v1/models", timeout=60.0)
         response.raise_for_status()
         live = zero_price_models(response.json())
         recorded = zero_price_models(catalog())

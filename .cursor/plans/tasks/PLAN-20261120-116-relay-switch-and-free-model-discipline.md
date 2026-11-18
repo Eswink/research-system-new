@@ -8,8 +8,8 @@ updated_at: 2026-11-20
 parent_goal: GOAL-20261119-115
 owners:
   - root-agent
-subagent_parallel_limit: 2
-latest_recheck: null
+subagent_parallel_limit: 3
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261120-116-relay-switch-and-free-model-discipline.md
 memory_entries: []
 ---
 
@@ -160,6 +160,22 @@ uv run --frozen --no-sync python -B -m pytest tests/application tests/api -q
 # 3. 全量门
 uv run --frozen --no-sync python -B tools/run_m0_with_witness.py
 ```
+
+## 证据
+
+| ID | 对应项 | 类型 | 引用或命令 | 结果 |
+| --- | --- | --- | --- | --- |
+| EV-01 | EC-01 零价集合 | command | `GET https://opencode.ai/inference/go/v1/models` ⇒ `cost.text.*.price` 全 0 | 32 模型，零价恰 4 个，逐字与配置一致 |
+| EV-02 | EC-01 `tool_calls` | live | 四模型各一次 `tool_choice: required` | 4/4 标准 `tool_calls`；`hy4-flash-free` 需 2048 预算 |
+| EV-03 | EC-01 probe | command | `tools/m12_relay_smoke.py` | `probe ok=True`、`returned_model_name=hy4-flash-free`、5 能力、0 失败 |
+| EV-04 | EC-01 判据 | test | `tests/loaders/test_free_model_only_policy.py` | 12 passed / 1 skipped；反证臂点名 `deepseek-v4-pro` |
+| EV-05 | EC-01 会话头（OpenHands 腿） | live | `build_llm(...).completion(...)` | `OK`；去掉头 ⇒ `LLMBadRequestError: missing x-opencode-session` |
+| EV-06 | EC-01 凭据纪律 | command | `tools/credential_audit.py` | 四面 `offenders=0` |
+| EV-07 | EC-02 旧 pin 清零 | test | `tests/tooling/test_relay_pins_are_cleared.py` | 9 passed；四个标记注入反证 4/4 命中 |
+| EV-08 | EC-07 PRD 文档 | test | `tests/tooling/test_prd_gap_analysis_recorded.py` | 9 passed；去重 23 条 `file:line` |
+| EV-09 | 影响面 | test | `tests/adapters/{relay,openhands}` + `tests/loaders` | 227 passed |
+| EV-10 | 影响面 | test | `tests/{architecture,application/preflight,api}` | 1102 passed / 4 skipped |
+| EV-11 | 收口资产回归 | command | `tools/verify_goal108_closeout.py` / `verify_goal098_closeout.py` | 87/0、104/0 |
 
 ## 验收条件
 
