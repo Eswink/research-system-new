@@ -130,34 +130,20 @@ def _live_preflight_context(deps: Any) -> Any:
     )
 
 
-def _arm_deps(db_path: str, *, arm: str) -> Any:
-    """一臂的**产品装配**（`assemble()`；两臂只差「有没有那一条记忆」）。
-
-    **检索调用表由本判据给出**（`europepmc_calls()`），不是产品的 `product_retrieval`：
-    产品那一份的检索词路径是 `research_question.query`，要求本 run 有一个**问题相**；
-    本探针是单相、由声明简报驱动（消融要固定输入，不能每臂换问题）⇒ 检索词来自简报的
-    `retrieval.query`。这是既有 live 判据同款处置（`manuscript_chain_live_support`
-    也由装配方接 `capabilities`）。
-    """
+def _assembled(db_path: str) -> Any:
+    """产品组合根（**真实执行体** + 离线端点放行 + 长租约）。"""
     import os
 
     from services.api.composition import assemble
     from services.api.runtime_support import OPENHANDS_RUNTIME
     from services.api.settings import ApiSettings
-    from tests.e2e.literature_chain_support import (
-        EUROPE_PMC_ID,
-        capabilities_for,
-        europepmc_calls,
-        with_capabilities,
-    )
     from tests.e2e.live_run_support import register_live_key
 
     deps = assemble(
         ApiSettings(
             db_path=db_path,
-            # **真实执行体**：不传它 ⇒ 选择面回落 `fake`（受控 demo，产出
-            # `analysis_report`）⇒ 探针的 `research_plan` 恒缺、run 在验收门判拒。
-            # 本判据测的就是真实模型 ⇒ 必须显式选 runtime。
+            # 不传 `agent_runtime` ⇒ 选择面回落 `fake`（受控 demo，产出 `analysis_report`）
+            # ⇒ 探针的 `research_plan` 恒缺、run 在验收门判拒。本判据测真实模型 ⇒ 必须显式选。
             agent_runtime=OPENHANDS_RUNTIME,
             allow_localhost_endpoints=True,
             workspace_allow_host_shell=True,
@@ -167,11 +153,28 @@ def _arm_deps(db_path: str, *, arm: str) -> Any:
     assert deps.runs is not None and deps.artifacts is not None
     assert deps.preflight_override is None, "组合根不得自带 preflight 上下文"
     register_live_key(deps, os.environ.get("LLM_MAIN_KEY"))
+    return deps
+
+
+def _arm_deps(db_path: str, *, arm: str) -> Any:
+    """一臂的**产品装配**；两臂只差「有没有那一条记忆」。
+
+    **检索调用表由本判据给出**（`europepmc_calls()`），不是产品的 `product_retrieval`：
+    产品那一份的检索词路径是 `research_question.query`，要求本 run 有一个**问题相**；
+    本探针是单相、由声明简报驱动（消融要固定输入，不能每臂换问题）⇒ 检索词来自简报的
+    `retrieval.query`。provider **实例**取自组合根自己那份 `CapabilityDeps`（组合根不把
+    它放在 `deps.tool_providers` 上 —— 那里是空 dict，实测）。
+    """
+    from tests.e2e.literature_chain_support import (
+        EUROPE_PMC_ID,
+        capabilities_for,
+        europepmc_calls,
+        with_capabilities,
+    )
+
+    deps = _assembled(db_path)
     # 先补显式运维上下文（`capabilities_for` 从它取 provider 声明 —— 那是规格来源）。
     deps.preflight_override = _live_preflight_context(deps)
-    # provider **实例**取自组合根自己那份 `CapabilityDeps`（组合根不把它放在
-    # `deps.tool_providers` 上 —— 那里是空 dict，实测）。本判据只换「调用表」这一面：
-    # 检索词来自声明简报的 `retrieval.query`，而产品那份要 `research_question.query`。
     shipped = deps.runs._deps.capabilities
     assert shipped is not None, "产品组合根必须给出运行链检索面（本判据的前提）"
     with_capabilities(
