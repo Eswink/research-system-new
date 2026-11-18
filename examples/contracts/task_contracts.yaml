@@ -709,10 +709,22 @@ task_contracts:
     timeout_seconds: 300
     failure_policy:
       # 同批**都评完再判**（一位判负不取消另一位）—— 否则分歧永远不出现（GOAL-087）。
+      # **GOAL-20261119-115 四类失败模式之③**：`ManifestFreezeError` 现在会先落一条
+      # 可读事件再拒绝（见 `run_orchestration/manifest_freeze_events.py`），
+      # 所以「任务从未派发」在 outbox 里不再是空白。
       review_panel: COMPLETE_THEN_JUDGE
     retry_policy:
-      max_attempts: 1
-      retryable_categories: []
+      # GOAL-20261119-115 EC-03 ②：**上游瞬时失败不该是终态**。原先是
+      # `max_attempts: 1` + 空类别 —— 24 次 FAILED 里有 4 次是 `retry budget exhausted`，
+      # 而根因是上游超时/5xx（GOAL-106 F-10/F-11 的同一形态）。形态照同文件的
+      # `multi_role_review`（`max_attempts: 2` + 三个类别 + `backoff_seconds: 30`）：
+      # 类别**显式列出**，不靠空表的通配语义（空表在进程内=通配、域层=全不重试，
+      # 两处语义自相矛盾 —— 本行不赌哪一处生效）。
+      # **不动** `acceptance_criteria` 的 `REVIEW_SCORE ≥ 0.8`，也**不动**
+      # `failure_policy.review_panel`：重试次数与验收阈值是两件事。
+      max_attempts: 2
+      retryable_categories: [MODEL_RELAY_UNAVAILABLE, MODEL_RATE_LIMIT, MODEL_TIMEOUT]
+      backoff_seconds: 30
 
   research_report_deliverable:
     version: 1.0.0
@@ -823,8 +835,14 @@ task_contracts:
         minimum_tool_evidences: 1
     timeout_seconds: 300
     retry_policy:
-      max_attempts: 1
-      retryable_categories: []
+      # GOAL-20261119-115 EC-06：这个格**就是**碰文献 API 的那一格，而十一相链 31 次
+      # FAILED 里 retrieval 占 9 次、主因是上游超时与 5xx（GOAL-106 F-10/F-11）。
+      # `max_attempts: 1` + 空类别 ⇒ 一次上游抖动就是终态。类别显式列出（不用空表的
+      # 通配语义，理由同 `multi_role_review`）。
+      # `TOOL_TIMEOUT` 也列：检索走的是工具面（`run_chain`），不是纯模型调用。
+      max_attempts: 2
+      retryable_categories: [MODEL_RELAY_UNAVAILABLE, MODEL_RATE_LIMIT, MODEL_TIMEOUT, TOOL_TIMEOUT]
+      backoff_seconds: 30
 
   # GOAL-20261026-097 EC-04(a)：**创新点声明**的交付物契约。
   #
