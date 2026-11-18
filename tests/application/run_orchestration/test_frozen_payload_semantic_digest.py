@@ -57,3 +57,44 @@ def test_a_field_drift_moves_the_payload_semantic_digest() -> None:
     drifted = frozen_payload(_run(), _manifest(policy_version="policy-v2"))
 
     assert drifted["semantic_digest"] != base["semantic_digest"]
+
+
+# ---------------------------------------------------------------------------
+# GOAL-20261117-114 EC-03：**可比键进冻结快照**（配对消融的事后审计面）。
+#
+# 完整 `RunManifest` 不落库 ⇒ 想判「两次 run 是不是同一份装配」必须有一个**落库的**
+# 可比键。它不能复用 `digest` / `semantic_digest`：前者含 `frozen_at`、后者含 `run_id`，
+# 两者在真实的两臂对上都不等（那是 `semantic_digest_cannot_be_the_pairing_key` 那条
+# 判据的同一事实）。所以 payload 里第三个 digest 是**另一件事**，这三条钉住它不是别名。
+# ---------------------------------------------------------------------------
+
+
+def test_the_frozen_payload_carries_the_comparison_digest() -> None:
+    """payload 的可比键 == 现算的可比键（同源，不是另存一份可能漂移的副本）。"""
+    from packages.application.run_orchestration.comparison_digest import comparison_digest
+
+    manifest = _manifest()
+    payload = frozen_payload(_run(), manifest)
+
+    assert payload["comparison_digest"] == str(comparison_digest(manifest).digest)
+    assert str(payload["comparison_digest"]).startswith("sha256:")
+
+
+def test_the_comparison_digest_pairs_two_runs_the_other_two_cannot_pair() -> None:
+    """**这条是 EC-03 的全部意义**：两个身份字段不同的 run，只有可比键相等。"""
+    left = frozen_payload(_run(), _manifest())
+    right = frozen_payload(
+        _run(), _manifest(run_id=ID.generate().value, frozen_at="2026-11-17T00:00:00Z")
+    )
+
+    assert left["comparison_digest"] == right["comparison_digest"]
+    assert left["digest"] != right["digest"]
+    assert left["semantic_digest"] != right["semantic_digest"]
+
+
+def test_a_semantic_drift_moves_the_comparison_digest() -> None:
+    """反证：装配内容变了 ⇒ 可比键也必须变（它不是恒等函数）。"""
+    base = frozen_payload(_run(), _manifest())
+    drifted = frozen_payload(_run(), _manifest(policy_version="policy-v2"))
+
+    assert drifted["comparison_digest"] != base["comparison_digest"]

@@ -2,9 +2,11 @@
 
 **它补哪一环**：`ContextSnapshot`（`selected_refs` / `retrieval_digest` /
 `token_allocation` / `trust_labels`）在域层**早就声明**，`AgentSessionSpec.context_snapshot`
-也一直在 —— 但**建档实测：全仓零构造点**（`context_snapshot=` 在 `packages/`·`services/`
+也一直在 —— 但**建档时实测：全仓零构造点**（`context_snapshot=` 在 `packages/`·`services/`
 零命中）⇒ 会话上下文里**没有任何检索内容**，模型读不到上游取回的文献
-（GOAL-077 只把它做进了**报告**）。本模块就是这个槽位的**生产者**。
+（GOAL-077 只把它做进了**报告**）。本模块就是这个槽位的**生产者**（构造点在
+同文件的 `:127` / `:179`，消费点是 `task_executor.py` 的 `spec_context` 装配）——
+上面那句「零构造点」是**建档时的陈述**，已被本模块自身取代。
 
 **四条边界**（本模块不越界）：
 

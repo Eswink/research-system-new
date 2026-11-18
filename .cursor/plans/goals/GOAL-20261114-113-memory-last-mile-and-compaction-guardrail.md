@@ -205,6 +205,32 @@ m0 witness + 两树复检）。
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PLAN-20261114-113-memory-last-mile | `864652a8`、`308e890f` | 定向套件全绿 + 静态门全绿 + 离线十一相 9/9 + live 十一相 SUCCEEDED（run `8ba73c2a`，`m12_memory`=1 且下一轮可读） | CI 两轮（见 CI 台账）：census 真缺陷已修；台账/见证两格随收口 chore 提交收敛；6/8 job 两轮均 success | 3（F-1 float→Decimal；F-2 白名单脚本补 `metrics` 制品；census 分类新 metric 发射点） | W-1（condenser span output 出口无人看守）；`memory.read` 声明面仍未进任何协议；同会话第二判据因中转站配额 429 失败（2026-11-16 00:28 UTC+8 重置，基础设施） | 下一轮 charter 由本文件读出 |
 
+## 残余与未覆盖范围
+
+### 残余（本轮已交付里仍然存在的缺口）
+
+- **`W-1`** **condenser 的 span output 出口无人看守**：`LLMSummarizingCondenser` 的
+  `@observe` 有 `ignore_inputs` 但**没有 `ignore_output`** ⇒ 摘要文本会作为 span
+  output 上线。今天 SDK observability 未启用（靠的是「没人 export 那四个 `OTEL_*` /
+  `LMNR_PROJECT_API_KEY` 环境变量」——**环境事实，不是结构保证**），且
+  `privacy_exit_census` 的 `PRODUCT_ROOTS` **不含 `.venv`** ⇒ 该出口任何判据都看不见。
+  第二层不可见：该发射点是**装饰器**形态，而普查的 `_is_span` 只认
+  `with operation(...)` 语句 ⇒ 即便把 `.venv` 加进扫描面，这条出口也不会被认出来。
+  归属上游面，本轮只登记不修（原文见 `RECHECK-20261115-113` 的「残余 / 未覆盖 /
+  声称边界」节）。
+
+### 未覆盖范围（本轮**没有**触及的面）
+
+- `U-1` **记忆写入只覆盖一个合约**（`research_manuscript`），其余 33 份不写 ——
+  这是**设计**（合约声明式授权），不是遗漏；但「大部分 run 仍不写记忆」因此是既成事实。
+- `U-2` **`memory.read` 声明面仍未出现在任何协议**：`required_capabilities` 命中 0 份。
+  能力实现 / 放行 / 测试都在（`adapters/canonical/memory_read.py`、
+  `examples/config/capabilities.yaml` 词表含它），缺的只是**一份协议的声明**。
+  本轮只接了写面 + `prior_knowledge` 读面（后者不经协议声明，由组合根注入）。
+- `U-3` **同会话第二条 live 判据因中转站配额 429 失败**（重置 2026-11-16 00:28 UTC+8）：
+  基础设施限流，该 run 在第一次模型调用即 429（6 个事件、1 个任务、无相位推进）。
+  本轮的成功读数只来自一条 run，不宣称「两次都通」。
+
 ## 状态历史
 
 - 2026-11-14：建档（charter 已由 `next_round_charter.py` 从 GOAL-112 产出）。
@@ -226,4 +252,7 @@ m0 witness + 两树复检）。
 
 本轮 tip（收口 chore 提交，`.cursor`-only、不带 `goal113` 主题 ⇒ 不进本链台账）：
 台账两行已回填、本地全量 m0 witness 在**回填后的树**上重跑（终态行 + 见证 JSON 同提交）。
-tip 的 CI 读数由下一轮 prep 按惯例登记（见 GOAL-112 台账尾的同形先例）。
+**tip 的 CI 读数（序 82 prep 回填，2026-11-18）**：
+[M0 43637393786](https://github.com/Eswink/research-system-new/actions/runs/43637393786) **8/8 job `success`**；
+[Push 43637393531](https://github.com/Eswink/research-system-new/actions/runs/43637393531) 3/3 `success`。
+⇒ 本轮**全部提交的 CI 读数已齐**（三条主链 + tip 收口），无遗留红项。

@@ -1,0 +1,63 @@
+id: ablation_plan_probe_v1_0_0
+version: 0.1.0
+
+# 单相**消融台**：只跑「立题」这一格，用于**配对消融**的真实读数采集
+# （GOAL-20261117-114 EC-05；阶梯「计划」域的下一次取证）。
+#
+# 为什么要有这条协议（不是为了「多一条链」）：配对消融实测只需要 `plan` 相的那一件产物
+# （`research_plan` 的正文 + 设计块 + 引用），其余相**不产生任何读数**。而在十一相链上
+# 跑 6 次真实 run 的代价是 6 × 24–29 分钟（GOAL-113 实测 `8ba73c2a` = 28m46s），且任一相
+# 失败就丢一对样本。本协议把一次 run 压到「检索 + 一次会话」（实测同相：
+# retrieval 0m54s + plan 2m55s ≈ 3–4 分钟），并把失败面收窄到那一格本身。
+#
+# 与既有协议的关系（**新增，不替代**）：
+#   * `research_report_chain_v1.yaml` 的 `plan` 相是本协议的**逐字来源** —— 同一批能力
+#     （`artifact.read` / `literature.search` / `literature.read` / `workspace.read` /
+#     `evidence.read`）、同一份合约 `research_report_plan`、同一个 `capability_execution:
+#     run_chain`、同一份输入声明。两处若漂移，「消融台上的读数」就不再是那条链的读数。
+#   * 与 `direction_to_question_v1.yaml` 的差别：那条从**项目方向**起（模型自己提问题），
+#     本协议从**已给的简报**起 —— 消融要固定输入，方向面的自由度会污染两臂比较。
+#
+# 为什么不声明 `session_tool_bindings`：`capability_execution: run_chain` 把本相声明的
+# **全部**能力（含合约带来的 `artifact.read` / `evidence.read`）连同它们的 provider 一起
+# 从会话工具面排除 ⇒ 会话工具面为**空**。空面没有任何名字需要绑定，而越界绑定会被点名
+# 拒绝 —— 不写绑定是**唯一**正确的形态（与 `research_report_chain_v1` 的 plan 相同一手法）。
+#
+# **为什么相 id 叫 `retrieval` 而不是 `plan`**（本轮实测，不是风格）：出厂检索面
+# `services/api/retrieval_wiring` 把两步链的 `phase_id` 钉成 `RETRIEVAL_PHASE =
+# "retrieval"`，而 `planned_in_this_phase` 对不匹配的相**静默跳过**（那正是它设计的行为：
+# 防止同一 provider 的调用在两个相都执行）。⇒ 相位取名成别的，**任何**按产品声明装配的
+# 调用表在本协议上都不会执行检索，而合约的 `minimum_retrieved_sources: 1` 随后拒稿 ——
+# 失败会落在下游验收门上，不是落在「检索没跑」这个真实原因上。
+#
+# **如实边界（本轮实测）**：产品那一份调用表的检索词路径是 `research_question.query`
+# （`retrieval_wiring.QUERY_PATH`）—— 那要求本 run 有一个**问题相**产出 `research_question`。
+# 本探针是**单相、由声明简报驱动**的（消融要固定输入，不能每臂换问题），它的检索词来自
+# 简报的 `retrieval.query`，因此调用表由**装配方**给出（与 `research_report_chain_v1` 的
+# live 判据同一手法）。相 id 仍按产品瞄准的那个取：产品面今天不认这份协议是既有缺口，
+# 而 id 一致让「哪一天产品面按协议解析调用归属」时不需要再改协议。
+
+phases:
+  - id: retrieval
+    name: Retrieval Then Plan
+    strategy: single_agent
+    required_roles:
+      - {role: research_director, min_instances: 1, max_instances: 1}
+    required_capabilities:
+      - artifact.read
+      - literature.search
+      - literature.read
+      # `workspace.read` 在这里是**冻结集**的需要（实验格的 provider 若被声明进冻结集，
+      # 不在这里声明就会落进本相的会话工具列表 ⇒ 生产装配没有 provider→SDK 映射时会话
+      # 创建点名失败；与 `research_report_chain_v1` 的 plan 相逐字同源）。
+      - workspace.read
+      - evidence.read
+    # 由运行链执行、不暴露为会话工具（检索真的发出，记录落进证据链）。
+    capability_execution: run_chain
+    # 立题的合约：产物 `research_plan` 存在 + 覆盖**两维**（计数 + 性质）。
+    # 它的 purpose 里逐字要求「引用至少一条 PRIOR KNOWLEDGE 的 memory id」——
+    # 这正是两臂不同的那个槽位在**输出侧**留下的可数痕迹（`citation_count`）。
+    task_contract: research_report_plan
+    inputs: [input-brief:real_research_v1]
+    outputs: [research_plan]
+    timeout_seconds: 300

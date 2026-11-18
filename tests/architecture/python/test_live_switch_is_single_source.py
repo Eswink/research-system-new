@@ -141,6 +141,8 @@ LIVE_MODULES: tuple[str, ...] = (
     "tests/e2e/test_novelty_author_is_not_its_reviewer_live.py",
     # GOAL-20261104-106 EC-01：十一相（方向→…→报告）在一个真 run 里走完（本 GOAL 的 live 面）。
     "tests/e2e/test_the_manuscript_chain_runs_live.py",
+    # GOAL-20261117-114 EC-07：真实 k=3 两臂配对消融（六次真实 run 的读数采集）。
+    "tests/e2e/test_paired_ablation_on_the_plan_live.py",
 )
 
 #: 模块级或函数级 mark 都算（`pytestmark = ...` 或标注装饰器形态）。

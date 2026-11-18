@@ -1,0 +1,176 @@
+{
+  "goal": "GOAL-20261117-114",
+  "protocol": "ablation_plan_probe_v1.yaml",
+  "arm_sequence": [
+    "present",
+    "absent",
+    "present",
+    "absent",
+    "present",
+    "absent"
+  ],
+  "memory": {
+    "id": "mem-ablation-live-prior",
+    "provenance": "run:ablation-prior:claim:result",
+    "tier": "PROJECT"
+  },
+  "runs": [
+    {
+      "index": 1,
+      "arm": "present",
+      "run_id": "f6684846-473e-46ef-8912-cbf16eb4d553",
+      "state": "SUCCEEDED",
+      "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+      "retrieved_sources": 2,
+      "seconds": 223.9,
+      "observation": {
+        "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+        "design_block": 1,
+        "arm_count": 2,
+        "parameter_count": 6,
+        "citation_count": 1
+      },
+      "cited_memory_ids": [
+        "mem-ablation-live-prior"
+      ],
+      "reading_note": "读数在分母修正后重算（同一批落库产物字节）；原判据缺 known_memory_ids ⇒ citation_count 结构上恒为 0"
+    },
+    {
+      "index": 2,
+      "arm": "absent",
+      "run_id": "ce1b60b8-68c0-4450-895f-79fcf0ccd5d4",
+      "state": "SUCCEEDED",
+      "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+      "retrieved_sources": 2,
+      "seconds": 266.7,
+      "observation": {
+        "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+        "design_block": 1,
+        "arm_count": 2,
+        "parameter_count": 6,
+        "citation_count": 0
+      },
+      "cited_memory_ids": [],
+      "reading_note": "读数在分母修正后重算（同一批落库产物字节）；原判据缺 known_memory_ids ⇒ citation_count 结构上恒为 0"
+    },
+    {
+      "index": 3,
+      "arm": "present",
+      "run_id": "aebf1e54-7e35-4cb3-a13e-9174129d8c98",
+      "state": "SUCCEEDED",
+      "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+      "retrieved_sources": 2,
+      "seconds": 306.7,
+      "observation": {
+        "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+        "design_block": 1,
+        "arm_count": 2,
+        "parameter_count": 6,
+        "citation_count": 1
+      },
+      "cited_memory_ids": [
+        "mem-ablation-live-prior"
+      ],
+      "reading_note": "读数在分母修正后重算（同一批落库产物字节）；原判据缺 known_memory_ids ⇒ citation_count 结构上恒为 0"
+    },
+    {
+      "index": 4,
+      "arm": "absent",
+      "run_id": "2062bf6c-c941-4767-a23e-730c92d76bc6",
+      "state": "SUCCEEDED",
+      "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+      "retrieved_sources": 2,
+      "seconds": 196.4,
+      "observation": {
+        "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+        "design_block": 1,
+        "arm_count": 3,
+        "parameter_count": 9,
+        "citation_count": 0
+      },
+      "cited_memory_ids": [],
+      "reading_note": "读数在分母修正后重算（同一批落库产物字节）；原判据缺 known_memory_ids ⇒ citation_count 结构上恒为 0"
+    },
+    {
+      "index": 5,
+      "arm": "present",
+      "run_id": "79ae40a8-fe46-4345-b994-2ea1fa85d3fa",
+      "state": "SUCCEEDED",
+      "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+      "retrieved_sources": 2,
+      "seconds": 298.9,
+      "observation": {
+        "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+        "design_block": 1,
+        "arm_count": 2,
+        "parameter_count": 6,
+        "citation_count": 1
+      },
+      "cited_memory_ids": [
+        "mem-ablation-live-prior"
+      ],
+      "reading_note": "读数在分母修正后重算（同一批落库产物字节）；原判据缺 known_memory_ids ⇒ citation_count 结构上恒为 0"
+    },
+    {
+      "index": 6,
+      "arm": "absent",
+      "run_id": "95da01b5-bd6a-42b2-97e2-060d8008297d",
+      "state": "SUCCEEDED",
+      "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+      "retrieved_sources": 2,
+      "seconds": 281.6,
+      "observation": {
+        "comparison_digest": "sha256:57a7b1a3b4f058dba2bac2097cedd6e74331e499e081d2977285b3bfcf62d4be",
+        "design_block": 1,
+        "arm_count": 2,
+        "parameter_count": 6,
+        "citation_count": 0
+      },
+      "cited_memory_ids": [],
+      "reading_note": "读数在分母修正后重算（同一批落库产物字节）；原判据缺 known_memory_ids ⇒ citation_count 结构上恒为 0"
+    }
+  ],
+  "corpus_gate": {
+    "sufficient": true,
+    "pairs": 3,
+    "missing": []
+  },
+  "column_shifts": [
+    {
+      "field": "design_block",
+      "present_mean": 1.0,
+      "absent_mean": 1.0,
+      "shift": 0.0
+    },
+    {
+      "field": "arm_count",
+      "present_mean": 2.0,
+      "absent_mean": 2.3333,
+      "shift": -0.3333
+    },
+    {
+      "field": "parameter_count",
+      "present_mean": 6.0,
+      "absent_mean": 7.0,
+      "shift": -1.0
+    },
+    {
+      "field": "citation_count",
+      "present_mean": 1.0,
+      "absent_mean": 0.0,
+      "shift": 1.0
+    }
+  ],
+  "shifted_columns": [
+    "arm_count",
+    "parameter_count",
+    "citation_count"
+  ],
+  "rendered_report": "# Ablation report: slot=prior_knowledge\npairs: 3 (MIN_CORPUS=3)\ngate: sufficient\n\ncolumn | present_mean | absent_mean | shift | shifted\n--- | --- | --- | --- | ---\ndesign_block | 1.0 | 1.0 | 0.0 | no\narm_count | 2.0 | 2.3333 | -0.3333 | yes\nparameter_count | 6.0 | 7.0 | -1.0 | yes\ncitation_count | 1.0 | 0.0 | 1.0 | yes\n\nverdict: with 3 pairs, output readings shifted in 3 of 4 columns (arm_count, parameter_count, citation_count)\n",
+  "refused": null,
+  "recorded_at": "2026-11-18T13:23:21",
+  "host_pid": 21112,
+  "recomputed_at": "2026-11-18",
+  "recompute_note": "首轮采样的 citation_count 两臂全 0 是**判据缺陷**（read_plan_payload 缺 known_memory_ids 分母），不是模型没引用：present 臂的计划正文逐字写着 mem-ablation-live-prior。本文件是**同一批落库产物字节**的重算读数（六次 run 全部 SUCCEEDED，模型输出不受判据缺陷影响；重跑只会换六份新随机输出、丢掉那次真跑的读数）。重算器：scratch/g114-recompute-readings.py。",
+  "armed_protocol_note": "六次 run 的真实 run id 逐条登记（顺序 = ARM_SEQUENCE 预先声明的 P/A 交替）；库在 pytest tmp 目录里，退出即可能被清理 ⇒ run id + 观测是本文件的持久事实。"
+}

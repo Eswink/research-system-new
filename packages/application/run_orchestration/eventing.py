@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from packages.application.ports.event_publisher import EventPublisher
 from packages.application.principal_context import current_principal
+from packages.application.run_orchestration.comparison_digest import comparison_digest
 from packages.domain.core import Timestamp
 from packages.domain.events import EventEnvelope, EventType, digest_of_payload
 from packages.domain.manifest import RunManifest
@@ -73,11 +74,21 @@ def frozen_payload(run: ResearchRun, manifest: RunManifest) -> dict[str, object]
     `digest` 覆盖 `frozen_at`（这份快照的字节级标识），`semantic_digest` 排除冻结时刻
     （resume 漂移校验的输入）。两者都要进 payload：失败收敛路径没有 `RunOutcome` 可读，
     只能从事件链把 run 行的冻结引用补回来（GOAL-004 cycle 4 / RECHECK-083 W-1+W-2）。
+
+    **`comparison_digest`**（GOAL-20261117-114 EC-03）：配对消融的**可比键**。它和上面两个
+    digest 不是同一件事 —— 那两个是「这一份快照」的身份（覆盖/排除冻结时刻），这个是
+    「这份装配与其他 run 可比吗」的键（排除 run 身份与冻结时刻，含例外表的语义内容）。
+    为什么要进事件：**完整 `RunManifest` 不落库**（run 行只有 digest，`run_execution_view`
+    的读面只认本 payload），事后无从复算 ⇒ 没有这一格，「两次 run 可比」这个事实只能在
+    内存里成立、不能审计。写入时**现算**（不另存副本，少一处可漂移的面）。
     """
     return {
         "run_id": run.id.value,
         "digest": str(manifest.digest()),
         "semantic_digest": str(manifest.semantic_digest()),
+        # GOAL-20261117-114 EC-03：两臂配对的依据。与 `digest` / `semantic_digest` 同源
+        # 现算，读面回读的仍是本 payload。
+        "comparison_digest": str(comparison_digest(manifest).digest),
         "pricing_version": manifest.pricing_version,
         "pricing_digest": manifest.pricing_digest,
         # PLAN-20260919-107（EC-01）：执行基质随冻结快照进读面。EC-01 时读面只走

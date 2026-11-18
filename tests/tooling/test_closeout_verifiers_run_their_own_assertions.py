@@ -170,6 +170,10 @@ _VERIFIERS: tuple[str, ...] = (
     # GOAL-20261114-113 EC-10：收口验证器（断言集 `goal113_closeout_assertions.py`）。
     # 它判**四行装配 / 声明面（Decimal）/ gate 不知声明 / condenser 护栏 / metric 名 / 阶梯射程**。
     "tools/verify_goal113_closeout.py",
+    # GOAL-20261117-114 EC-10：收口验证器（断言集 `goal114_closeout_assertions.py`）。
+    # 它判**可比键归一化面 / 冻结快照第三键 / 观测四列拒 bool / 消融台能力集同源 /
+    # 真跑证据（六条 run 同一可比键 + 三列位移）/ 阶梯 bar 未升**。
+    "tools/verify_goal114_closeout.py",
 )
 #: 断言**内联**的旧一代验证器（逐条登记 + 理由非空；与 `_VERIFIERS` 的分区判据同形）。
 LEGACY_INLINE: tuple[tuple[str, str], ...] = (
