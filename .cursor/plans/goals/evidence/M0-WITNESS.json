@@ -1892,7 +1892,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "c13740c63da230ceed1489e17c3d925d927fb03d"
+        "sha256": "6ac9983c8f39276f183cce055d775f1e5704c770"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -20719,7 +20719,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "939ec7880a33ae1e1152a7af31834cc72c39505e"
+    "head": "451b4e7e03d07a6212def79db19f1f0fb17facf7"
   },
   "fingerprint_before": {
     "files": [
@@ -22613,7 +22613,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "c13740c63da230ceed1489e17c3d925d927fb03d"
+        "sha256": "6ac9983c8f39276f183cce055d775f1e5704c770"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -41440,11 +41440,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "939ec7880a33ae1e1152a7af31834cc72c39505e"
+    "head": "451b4e7e03d07a6212def79db19f1f0fb17facf7"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "939ec7880a33ae1e1152a7af31834cc72c39505e",
+  "ran_at_head": "451b4e7e03d07a6212def79db19f1f0fb17facf7",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }

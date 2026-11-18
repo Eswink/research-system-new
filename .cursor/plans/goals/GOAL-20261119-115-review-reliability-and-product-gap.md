@@ -369,10 +369,11 @@ EC 表见 frontmatter `exit_criteria`。
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `939ec788`（见证重绑） | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | **success（8/8 job）** | 记录已定稿、见证绑定 `c3c9c508`；两个 `quality-*` 全绿 ⇒ 见证检查通过 |
+| `939ec788`（见证重绑） | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | **success（8/8 job）** | 见证绑定 `c3c9c508`；两个 `quality-*` 全绿 ⇒ 见证检查通过 |
+| `451b4e7e`（终态记录 + 见证重绑） | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | **success（8/8 job）** | cycle 1 的**最终读数**；见证覆盖本提交的 GOAL 内容（blob `c13740c6` = `hash-object`） |
 
-**cycle 1 的 CI 终态**：末态 `939ec788` 八 job 全 success；`e5b3bcf9` 那次的判红是
-**记录顺序**问题（见证失效），已由 `939ec788` 修正并在树上留下归因。
+**cycle 1 的 CI 终态**：末态 `451b4e7e` 八 job 全 success；`e5b3bcf9` 那次的判红是
+**记录顺序**问题（见证失效），已由后续提交修正并在树上留下归因。
 
 **见证机制的一条实测知识（写下来，下一轮直接用）**：见证为每个文件记录的是
 **git blob 的 sha256**（不是工作树字节 —— 本机 CRLF 与 blob 的 LF 不同，比对时别用原始字节）；
