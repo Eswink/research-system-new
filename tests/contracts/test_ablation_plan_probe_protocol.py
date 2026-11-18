@@ -93,7 +93,10 @@ def test_the_probe_capabilities_are_the_source_phase_capabilities() -> None:
     """
     probe = set(_phases()[RETRIEVAL_PHASE]["required_capabilities"])
     source = set(_phases(_SOURCE)["plan"]["required_capabilities"])
-    assert probe == source, {"only_in_probe": sorted(probe - source), "missing": sorted(source - probe)}
+    assert probe == source, {
+        "only_in_probe": sorted(probe - source),
+        "missing": sorted(source - probe),
+    }
 
 
 def test_the_probe_does_not_declare_session_tool_bindings() -> None:

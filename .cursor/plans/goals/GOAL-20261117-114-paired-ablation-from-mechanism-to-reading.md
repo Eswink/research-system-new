@@ -158,7 +158,8 @@ escalation_triggers:
   - 新依赖/上游版本 pin 变更
   - 同一失败签名超过 fix_policy 上限
   - 中转站配额耗尽（429）且本轮窗口内不重置
-child_plans: []
+child_plans:
+  - .cursor/plans/tasks/PLAN-20261117-114-paired-ablation-readings.md
 memory_entries: []
 ---
 
@@ -220,7 +221,7 @@ m0 witness + 两树复检）。
 
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | （本轮直接在 GOAL 下推进，未单立 PLAN） | `25fa8887` | EC-01…06 落地 + 定向套件全绿；真实 k=3 见下方「真跑实测」 | 待填 | 待填 | 待填 | 下一轮 charter 由本文件读出 |
+| 1 | PLAN-20261117-114-paired-ablation-readings | `25fa8887` | EC-01…06 落地 + 定向套件全绿；真实 k=3 见下方「真跑实测」 | 待填 | 待填 | 待填 | 下一轮 charter 由本文件读出 |
 
 ## 真实 k=3 实测（EC-07 的现场记录）
 

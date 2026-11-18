@@ -6,7 +6,7 @@ status: COMPLETED
 result: PASS_WITH_WARNINGS
 created_at: 2026-11-18
 updated_at: 2026-11-18
-plan_id: null
+plan_id: PLAN-20261117-114
 parent_goal: GOAL-20261117-114
 owners:
   - root-agent

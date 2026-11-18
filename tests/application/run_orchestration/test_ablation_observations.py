@@ -72,18 +72,14 @@ def _readings(payload: object, *, known: tuple[str, ...] = _KNOWN) -> PlanOutput
 
 def test_the_four_columns_are_ints_and_never_booleans() -> None:
     """四列必须是 `int` 且 `type(...) is int`（`bool` 是 `int` 的子类，会骗过 isinstance）。"""
-    observation = observation_from(
-        _readings({"content": _PLAN}), comparison_digest="sha256:aa"
-    )
+    observation = observation_from(_readings({"content": _PLAN}), comparison_digest="sha256:aa")
     for key in READING_KEYS:
         assert type(observation[key]) is int, f"{key} 不是 int（bool 会被消融门拒）"
 
 
 def test_a_full_plan_maps_to_the_four_readings() -> None:
     """正例：两条臂 + 三个参数 + 一个引用。"""
-    observation = observation_from(
-        _readings({"content": _PLAN}), comparison_digest="sha256:aa"
-    )
+    observation = observation_from(_readings({"content": _PLAN}), comparison_digest="sha256:aa")
     assert observation["design_block"] == 1
     assert observation["arm_count"] == 2
     assert observation["parameter_count"] == 3
@@ -105,9 +101,7 @@ def test_the_three_empty_states_each_map_without_guessing(
     payload: object, expected: tuple[int, int, int]
 ) -> None:
     """两种「空」与「没产出」各自映射；`block_absent` 不得因为「有正文」就记 1。"""
-    observation = observation_from(
-        _readings(payload), comparison_digest="sha256:aa"
-    )
+    observation = observation_from(_readings(payload), comparison_digest="sha256:aa")
     assert (
         observation["arm_count"],
         observation["parameter_count"],
@@ -117,9 +111,7 @@ def test_the_three_empty_states_each_map_without_guessing(
 
 def test_the_block_present_state_is_one_and_the_others_are_zero() -> None:
     """`block_present` ⇒ 1；`block_absent` ⇒ 0（逐格钉，不靠上面那条的三元组）。"""
-    present = observation_from(
-        _readings({"content": _PLAN}), comparison_digest="sha256:aa"
-    )
+    present = observation_from(_readings({"content": _PLAN}), comparison_digest="sha256:aa")
     absent = observation_from(
         _readings({"content": "no block here"}), comparison_digest="sha256:aa"
     )
@@ -130,9 +122,7 @@ def test_the_block_present_state_is_one_and_the_others_are_zero() -> None:
 def test_an_observation_is_accepted_by_the_ablation_gate() -> None:
     """**闭环**：观测直接喂 `build_report` ⇒ 门接受、四列在场、措辞守卫不抛。"""
     report_tool = _load_report()
-    observation = observation_from(
-        _readings({"content": _PLAN}), comparison_digest="sha256:aa"
-    )
+    observation = observation_from(_readings({"content": _PLAN}), comparison_digest="sha256:aa")
     raw = {
         "slot": "prior_knowledge",
         "pairs": [

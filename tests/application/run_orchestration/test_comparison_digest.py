@@ -142,6 +142,7 @@ def test_the_compared_surface_is_not_empty() -> None:
 # 正是这一点让七条 EC 全绿却零次真实使用。
 # ---------------------------------------------------------------------------
 
+
 #: 一条**真实形状**的例外（键与值都照 `policy_acceptance._allowed_entries` 写）。
 def _exception(**overrides: object) -> dict[str, object]:
     entry: dict[str, object] = {
