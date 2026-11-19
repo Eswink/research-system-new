@@ -399,6 +399,8 @@ EC 表见 frontmatter `exit_criteria`。
 | --- | --- | --- | --- |
 | `939ec788`（见证重绑） | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | **success（8/8 job）** | 见证绑定 `c3c9c508`；两个 `quality-*` 全绿 ⇒ 见证检查通过 |
 | `451b4e7e`（终态记录 + 见证重绑） | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | **success（8/8 job）** | cycle 1 的**最终读数**；见证覆盖本提交的 GOAL 内容（blob `c13740c6` = `hash-object`） |
+| `18a0668f`（补推：终态台账 + 见证重绑） | [`44423270174`](https://github.com/Eswink/research-system-new/actions/runs/44423270174) | **success（8/8 job）** | 该提交曾被出站 HTTPS 全断阻塞约两小时；网络恢复后补推，八 job 全绿 |
+| `b8c2f293`…`c7b2e44d`（cycle 2 四个提交） | 见下行 | 待回填 | 四类失败模式判据 + 重试策略 |
 
 **cycle 1 的 CI 终态**：末态 `451b4e7e` 八 job 全 success；`e5b3bcf9` 那次的判红是
 **记录顺序**问题（见证失效），已由后续提交修正并在树上留下归因。
