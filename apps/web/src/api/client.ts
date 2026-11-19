@@ -165,6 +165,8 @@ export const api = {
   runDeliverable: (runId: string) => inspectionClient.deliverable(runId),
   runLineage: (runId: string) => inspectionClient.lineage(runId),
   /** 逐条验收判词（GOAL-20261103-104 EC-03）：读原文，前端不聚合。 */
+  // GOAL-20261119-115 EC-05：面板**建议**（只读；硬门在后端且未改）。
+  runPanelAdvice: (runId: string) => inspectionClient.panelAdvice(runId),
   runReviews: (runId: string) => inspectionClient.reviews(runId),
   projectLineage: (projectId?: string) => inspectionClient.projectLineage(projectId),
 

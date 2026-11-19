@@ -13,17 +13,21 @@ export function useRunTimeline(props: RunSelectionProps) {
   const replay = useResource(key, () => api.runEvents(runId));
   // GOAL-20261103-104 EC-03：评审判词（逐条原文；失败不吞掉，由面板自己说）。
   const reviews = useResource(key, () => api.runReviews(runId));
+  // GOAL-20261119-115 EC-05：按被评对象聚合的**建议**读数（不是验收结论）。
+  const panelAdvice = useResource(key, () => api.runPanelAdvice(runId));
   const stream = useRunEventStream(key);
   const { reload: reloadRun } = run;
   const { reload: reloadTasks } = tasks;
   const { reload: reloadReplay } = replay;
   const { reload: reloadReviews } = reviews;
+  const { reload: reloadPanelAdvice } = panelAdvice;
   const refresh = useCallback(() => {
     reloadRun();
     reloadTasks();
     reloadReplay();
     reloadReviews();
-  }, [reloadRun, reloadTasks, reloadReplay, reloadReviews]);
+    reloadPanelAdvice();
+  }, [reloadRun, reloadTasks, reloadReplay, reloadReviews, reloadPanelAdvice]);
   useEventRefresh(key, stream.events.at(-1)?.event_id, refresh);
   return {
     runId,
@@ -32,6 +36,7 @@ export function useRunTimeline(props: RunSelectionProps) {
     tasks,
     replay,
     reviews,
+    panelAdvice,
     stream,
     refresh,
     events: mergeEvents(replay.data ?? [], stream.events),

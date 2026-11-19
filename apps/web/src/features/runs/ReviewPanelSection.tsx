@@ -13,7 +13,7 @@
  * 也**不等于**「独立」⇒ 显式写成「未声明」，不猜。
  */
 
-import type { ReviewFindingDto } from "../../api/types";
+import type { PanelAdviceDto, ReviewFindingDto } from "../../api/types";
 import { Chip } from "../../components/Chip";
 import { PanelSection } from "../../components/PanelSection";
 import { useI18n } from "../../i18n/useI18n";
@@ -58,12 +58,102 @@ function ReviewRow({ finding, zh }: { finding: ReviewFindingDto; zh: boolean }) 
   );
 }
 
+/** 票型 → `PASS×1 / REJECT×1`（键序稳定，空表说「无」）。 */
+function votesText(votes: Record<string, number>, zh: boolean): string {
+  const parts = Object.entries(votes).map(([verdict, count]) => `${verdict}×${String(count)}`);
+  return parts.length === 0 ? (zh ? "无" : "none") : parts.join(" / ");
+}
+
+function adviceTone(advice: PanelAdviceDto): "accent" | "warn" | "danger" | "neutral" {
+  if (advice.advisory === null) return "neutral";
+  return verdictTone(advice.advisory);
+}
+
+function AdviceHead({ advice, zh }: { advice: PanelAdviceDto; zh: boolean }) {
+  return (
+    <div className={reviewStyles.head}>
+      <span className="mono">{advice.phase_id}</span>
+      <Chip tone={adviceTone(advice)}>
+        {advice.advisory ?? (zh ? "无多数" : "no majority")}
+      </Chip>
+      <span className={reviewStyles.muted} data-testid={`panel-votes-${advice.phase_id}`}>
+        {zh ? "票型" : "Votes"}: {votesText(advice.votes, zh)}
+      </span>
+      <span className={reviewStyles.muted}>
+        {zh ? "可归因票" : "Voters"}: {advice.voters}
+      </span>
+      <span className={reviewStyles.muted} data-testid={`panel-independent-${advice.phase_id}`}>
+        {zh ? "独立" : "Independent"}: {advice.independent ? (zh ? "是" : "yes") : zh ? "否" : "no"}
+      </span>
+    </div>
+  );
+}
+
+function AdviceNotes({ advice, zh }: { advice: PanelAdviceDto; zh: boolean }) {
+  return (
+    <>
+      {advice.dissent.length === 0 ? null : (
+        <p className={reviewStyles.muted} data-testid={`panel-dissent-${advice.phase_id}`}>
+          {zh ? "少数意见" : "Dissent"}: {advice.dissent.join("; ")}
+        </p>
+      )}
+      <p className={reviewStyles.muted}>
+        {[...advice.notes, ...advice.independence_notes].join("; ")}
+      </p>
+    </>
+  );
+}
+
+/**
+ * **面板建议**（GOAL-20261119-115 EC-05）：一负一过在这里读得出来。
+ *
+ * 它**不是**验收结论：硬门仍是后端 `REVIEW_SCORE >= 0.8` 与 `panel_rejection()`，
+ * 两者一行未改。这一块只把已经落库的聚合读数显示出来。
+ */
+function PanelAdviceRows({ advices, zh }: { advices: PanelAdviceDto[]; zh: boolean }) {
+  return (
+    <ul className={reviewStyles.list} data-testid="panel-advice">
+      {advices.map((advice) => (
+        <li
+          key={advice.phase_id}
+          className={reviewStyles.row}
+          data-testid={`panel-advice-${advice.phase_id}`}
+        >
+          <AdviceHead advice={advice} zh={zh} />
+          <AdviceNotes advice={advice} zh={zh} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** 空态与错误态（两种都必须说出来；抽出来守 50 行函数门）。 */
+function ReviewNotice({ zh, testId, text }: { zh: boolean; testId: string; text: string | null }) {
+  const message =
+    text === null
+      ? zh
+        ? "这条运行还没有落库的评审判词（不是「评审通过」）。"
+        : "No review verdict is recorded for this run (not the same as passing review)."
+      : zh
+        ? `判词读面不可用：${text}`
+        : `Review read surface unavailable: ${text}`;
+  return (
+    <PanelSection title={zh ? "评审判词" : "Review verdicts"}>
+      <p className={styles.notice} data-testid={testId}>
+        {message}
+      </p>
+    </PanelSection>
+  );
+}
+
 export function ReviewPanelSection({
   findings,
+  advice = null,
   loading,
   error,
 }: {
   findings: ReviewFindingDto[] | null;
+  advice?: PanelAdviceDto[] | null;
   loading: boolean;
   error: string | null;
 }) {
@@ -74,33 +164,22 @@ export function ReviewPanelSection({
   }
   if (error !== null) {
     // 读面拒绝/不可用要**说出来**，不能渲染成「没有判词」。
-    return (
-      <PanelSection title={zh ? "评审判词" : "Review verdicts"}>
-        <p className={styles.notice} data-testid="review-panel-error">
-          {zh ? `判词读面不可用：${error}` : `Review read surface unavailable: ${error}`}
-        </p>
-      </PanelSection>
-    );
+    return <ReviewNotice zh={zh} testId="review-panel-error" text={error} />;
   }
   if (findings === null) {
     return null;
   }
   if (findings.length === 0) {
-    return (
-      <PanelSection title={zh ? "评审判词" : "Review verdicts"}>
-        <p className={styles.notice} data-testid="review-panel-empty">
-          {zh
-            ? "这条运行还没有落库的评审判词（不是「评审通过」）。"
-            : "No review verdict is recorded for this run (not the same as passing review)."}
-        </p>
-      </PanelSection>
-    );
+    return <ReviewNotice zh={zh} testId="review-panel-empty" text={null} />;
   }
   return (
     <PanelSection
       title={zh ? "评审判词" : "Review verdicts"}
       count={findings.length}
     >
+      {advice === null || advice.length === 0 ? null : (
+        <PanelAdviceRows advices={advice} zh={zh} />
+      )}
       <ul className={reviewStyles.list} data-testid="review-panel">
         {findings.map((finding) => (
           <ReviewRow key={finding.id} finding={finding} zh={zh} />

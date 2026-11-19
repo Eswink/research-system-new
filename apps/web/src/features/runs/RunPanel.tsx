@@ -43,6 +43,7 @@ function RunProgressSections({ flow }: { flow: ReturnType<typeof useRunTimeline>
       {flow.runId === "" ? null : (
         <ReviewPanelSection
           findings={flow.reviews.data}
+          advice={flow.panelAdvice.data}
           loading={flow.reviews.phase === "loading"}
           error={flow.reviews.error}
         />

@@ -71,19 +71,19 @@ def seeded_client(run_ready_client: TestClient, run_ready_deps: Any) -> TestClie
     assert response.status_code == 200, response.text
     run_id = response.json()["id"]
     _seed(run_ready_deps.review_findings, run_id)
-    run_ready_client.panel_run_id = run_id  # type: ignore[attr-defined]
+    setattr(run_ready_client, "panel_run_id", run_id)
     return run_ready_client
 
 
 class TestTheTwoFacesShareOneSource:
     def test_reviews_lists_both_findings(self, seeded_client: TestClient) -> None:
-        run_id = seeded_client.panel_run_id  # type: ignore[attr-defined]
+        run_id = str(getattr(seeded_client, "panel_run_id"))
         response = seeded_client.get(f"/runs/{run_id}/reviews")
         assert response.status_code == 200, response.text
         assert sorted(item["verdict"] for item in response.json()) == ["PASS", "REJECT"]
 
     def test_panel_advice_aggregates_the_same_findings(self, seeded_client: TestClient) -> None:
-        run_id = seeded_client.panel_run_id  # type: ignore[attr-defined]
+        run_id = str(getattr(seeded_client, "panel_run_id"))
         response = seeded_client.get(f"/runs/{run_id}/panel-advice")
         assert response.status_code == 200, response.text
         phases = {item["phase_id"]: item for item in response.json()}
@@ -96,7 +96,7 @@ class TestTheTwoFacesShareOneSource:
 
     def test_the_two_faces_agree_on_the_vote_counts(self, seeded_client: TestClient) -> None:
         """同源判据：逐条面聚合出的票型 == 聚合面的 `votes`。"""
-        run_id = seeded_client.panel_run_id  # type: ignore[attr-defined]
+        run_id = str(getattr(seeded_client, "panel_run_id"))
         listed = seeded_client.get(f"/runs/{run_id}/reviews").json()
         counted: dict[str, int] = {}
         for item in listed:

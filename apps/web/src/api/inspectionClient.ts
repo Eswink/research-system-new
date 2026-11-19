@@ -12,6 +12,7 @@ import type {
   ExportBundleDto,
   LineageDto,
   ProjectLineageDto,
+  PanelAdviceDto,
   ReviewFindingDto,
 } from "./types";
 
@@ -49,6 +50,10 @@ export const inspectionClient = {
    * 读的是**域函数逐字给出的判词**；前端**不做聚合** —— `aggregate_panel` 是领域逻辑
    * （平票 ⇒ advisory 为 None、无身份者不进票、单评审不聚合），前端复刻必然漂移。
    */
+  /** 评审小组**建议**（只读；不是验收结论 —— 硬门在后端且未改）。 */
+  panelAdvice(runId: string): Promise<PanelAdviceDto[]> {
+    return request(`/runs/${encodeURIComponent(runId)}/panel-advice`, { method: "GET" });
+  },
   reviews(runId: string): Promise<ReviewFindingDto[]> {
     return request(`/runs/${encodeURIComponent(runId)}/reviews`, { method: "GET" });
   },

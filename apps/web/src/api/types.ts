@@ -669,6 +669,26 @@ export interface ReviewFindingDto {
   reviewer_model: string | null;
 }
 
+/**
+ * GOAL-20261119-115 EC-05：一个**被评对象**（phase）上的**建议性**读数。
+ *
+ * **它不是验收结论**：硬门仍是 `REVIEW_SCORE >= 0.8` 与后端的 `panel_rejection()`，
+ * 两者一行未改。本面只让「一负一过」这类分歧在不改变 run 终态的前提下可读。
+ * `advisory` 为 null 时 `notes` 逐条点名成因（单评审 / 平票 / 无可归因票）。
+ */
+export interface PanelAdviceDto {
+  phase_id: string;
+  voters: number;
+  votes: Record<string, number>;
+  advisory: string | null;
+  dissent: string[];
+  ineligible: string[];
+  targets: string[];
+  independent: boolean;
+  independence_notes: string[];
+  notes: string[];
+}
+
 // GOAL-20261101-103 EC-02：**编辑决定**的读面形状。它**不是**一条路由：
 // 决定块作为 `editorial_decision` 制品落在 canonical（`Artifact.id` 后缀
 // `editorial_decision`），前端经制品内容读出它的 JSON 再按本接口消费。
