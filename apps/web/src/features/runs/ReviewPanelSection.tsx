@@ -58,7 +58,12 @@ function ReviewRow({ finding, zh }: { finding: ReviewFindingDto; zh: boolean }) 
   );
 }
 
-/** 票型 → `PASS×1 / REJECT×1`（键序稳定，空表说「无」）。 */
+/** 票型 → `判词×票数`（键序稳定，空表说「无」）。
+ *
+ * **不写判词字面量**：`tests/architecture/typescript/production-boundaries.test.mjs`
+ * 禁止 `apps/web/src/features` 出现验收判词词表 —— 前端不该自造判词词汇，
+ * 只渲染后端发来的取值。本条注释此前写了一个词表里的字面量，被判据抓到。
+ */
 function votesText(votes: Record<string, number>, zh: boolean): string {
   const parts = Object.entries(votes).map(([verdict, count]) => `${verdict}×${String(count)}`);
   return parts.length === 0 ? (zh ? "无" : "none") : parts.join(" / ");
