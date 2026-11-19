@@ -444,7 +444,7 @@ EC 表见 frontmatter `exit_criteria`。
 | `bd74cc60` | （随批次） | 见批次行 | cycle 4：三次真实读数 |
 | `241e88b0` | （随批次） | 见批次行 | cycle 4：收口资产 + ACHIEVED |
 | `d52c12f9` | （随批次） | 见批次行 | cycle 4：console e2e stub 修复 |
-| `bd4c59d7` | [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666) | **success（8/8 job）** | cycle 4：收口资产登记两张清单（随批次 7） |
+| `bd4c59d7` | [`44492280717`](https://github.com/Eswink/research-system-new/actions/runs/44492280717) | **success（8/8 job）** | cycle 4：收口资产登记两张清单（随批次 7/8；台账填写 `ceb682a5` 与表结构修复 `2e4a6b63` 无 `goal115` 主题标记 ⇒ 不入受判链） |
 | `20a2d9f4` | [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666) | **success（8/8 job）** | cycle 4/收口：台账与宪章过各自的记录面门 |
 
 **批次推送与终态读数**：本轮共 **34 个提交**、分 5 次 push。每次 push 的 CI 只覆盖该次
@@ -459,6 +459,7 @@ push 的**末态树**；中间提交没有各自的 run —— 逐行的「（�
 | `ca07d8eb` | [`44435772887`](https://github.com/Eswink/research-system-new/actions/runs/44435772887) | success（8/8） |
 | `bd74cc60` | [`44455563000`](https://github.com/Eswink/research-system-new/actions/runs/44455563000) | **failure**（`console-frontend`） |
 | `ebaec8eb`（末态批次 7） | [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666) | **success（8/8 job）** |
+| `ac71fefb`（末态批次 8） | [`44492280717`](https://github.com/Eswink/research-system-new/actions/runs/44492280717) | **success（8/8 job）** |
 
 **末态批次 7 八 job 结论（run [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666)，head `ebaec8eb`，全部 `completed / success`）**：
 
@@ -473,5 +474,5 @@ push 的**末态树**；中间提交没有各自的 run —— 逐行的「（�
 | `collector-quality` | success |
 | `console-frontend` | success（含上一批判红的那四个 spec） |
 
-**本轮 CI 终态**：8 个批次中 **7 个 success**、1 个 failure（`d6dff1e8` 的见证失效、
+**本轮 CI 终态**：9 个批次中 **8 个 success**、1 个 failure（`d6dff1e8` 的见证失效、
 `58d4f01d` 的 console stub 缺失，两者都已修并各自在后续批次转绿）。
