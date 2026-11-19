@@ -274,9 +274,13 @@ def main(argv: Iterable[str] | None = None) -> int:
     verdicts = verdicts_for(root)
     # `verdict_line` 属**标准断言集**（判词行格式的唯一来源），不在 toolbox 里。
     standard = load_standard(root)
-    format_line = (
-        standard.verdict_line if standard is not None else (lambda item: f"{'PASS' if item.ok else 'FAIL'} {item.name}")
-    )
+    if standard is not None:
+        format_line = standard.verdict_line
+    else:  # 标准集缺席时的退化格式（两树复检仍可比）
+
+        def format_line(item: Any) -> str:
+            return f"{'PASS' if item.ok else 'FAIL'} {item.name}"
+
     lines: list[str] = [format_line(verdict) for verdict in verdicts]
     failed = [item for item in verdicts if not item.ok]
     if not args.verdict_only:

@@ -232,7 +232,6 @@ def _evidence_verdicts(root: Path, toolbox: Any) -> list[Any]:
     return verdicts
 
 
-
 def _imports_decision(source: str) -> bool:
     """模块**真的** import 了 `Decision` 吗（AST 判，不看注释/文档串）。
 

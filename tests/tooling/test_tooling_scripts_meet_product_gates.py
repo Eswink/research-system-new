@@ -208,6 +208,9 @@ IN_SCOPE: tuple[str, ...] = (
     # 它被 `goal098_closeout_assertions.py` 按路径加载并调用，所以必须同在这张清单里
     # —— 否则「纳入射程」这件事会在拆分时被静默跳过（本判据正是为此存在）。
     "tools/goal098_model_independence.py",
+    # GOAL-20261119-115 EC-08：收口断言集（换站 / 零价 / 四类失败模式 / 三次读数 / advisory）
+    "tools/goal115_closeout_assertions.py",
+    "tools/verify_goal115_closeout.py",
     "tools/verify_goal098_closeout.py",
     "tools/goal099_closeout_assertions.py",  # GOAL-099 EC-05（纯收紧）
     "tools/verify_goal099_closeout.py",
