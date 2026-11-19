@@ -159,6 +159,13 @@ export const INTEGRATION_ROUTES: readonly StubRoute[] = [
     pattern: /^\/runs\/[^/]+\/reviews$/,
     handler: () => ({ status: 200, body: [REVIEW] }),
   },
+  // ── 面板建议（GET /runs/{id}/panel-advice，GOAL-20261119-115 EC-05）──
+  // 空数组 = 该 run 没有形成小组（单评审不聚合）；UI 因此不渲染建议块。
+  {
+    method: "GET",
+    pattern: /^\/runs\/[^/]+\/panel-advice$/,
+    handler: () => ({ status: 200, body: [] }),
+  },
   // ── 三条「只加 client + 白名单登记」的路由：替身在场，但 UI 并不调用 ──
   {
     method: "GET",
