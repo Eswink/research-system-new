@@ -330,7 +330,7 @@ EC 表见 frontmatter `exit_criteria`。
 | 1 | `PLAN-20261120-116`（换站 + 零价纪律 + 会话头缝） | `aad730b3` / `a262323a` / `ad550bff` / `727659b1` / `2757edd8` / `d7ad8547` / `28b2e65c` / `9aaea0d1` / `e5b3bcf9` / `c3c9c508` / `451b4e7e` / `18a0668f` | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 绿；`tests/{architecture,application/preflight,api}` 1102 passed / 4 skipped；`verify_goal108` 87/0；`verify_goal098` 104/0；**全量 m0 = `PASS: profile=m0; 23 deterministic checks`（exit 0，`tree changed during the run: False`，head `28b2e65c`）**；新判据反证臂逐条咬合 | 见「CI 台账」 | — | **EC-01 PASS**（四模型 `tool_calls` 实测 + probe ok=True + 零价判据 + 双反证）；**EC-02 PASS**（旧站标识在产品/判据面零命中，白名单逐条给理由）；**EC-07 PASS**（四节 + 23 条去重 `file:line` + INDEX 登记 + 非 ZDR 事实） | cycle 2 = EC-03（四类失败模式各一条判据） |
 | 2 | `PLAN-20261120-117`（四类失败模式 + 上游可重试性） | `b8c2f293` / `08330fd8` / `8e0fd15a` / `7a0d5d74` / `c7b2e44d` / `28f389db` / `14e9e6c4` | 四份新判据 45 passed（9+8+7+21），四条反证臂逐条按压；`tests/{adapters/openhands,application/run_orchestration,contracts,loaders}` 1209 passed / 73 skipped；ruff + format + mypy 全清 | 见「CI 台账」 | — | **EC-03 PASS**（四类各一条判据 + 按压；④ 的真跑取证仍 PENDING）；**EC-06 PASS**（四份上游合约可重试，硬门逐字未动） | cycle 3 = EC-04（三次真实双评审读数） |
 | 3 | `PLAN-20261120-118`（advisory 并存只读读面） | `43f10d59` / `0bebf327` / `521a3e1f` / `f57d8981` / `b6d3c1c6` / `cda60a68` / `e3dcc03d` | 13 + 7 条新判据；受影响套件 418 passed；ruff + format 全清；治理 `validate.py` 绿 | 见「CI 台账」 | — | **EC-05 PASS**（两级读面、硬门逐字未动、两向反证咬合）；本轮修正**三条判据自身的假红**（宽 Write 判 / `route.path` 读不出 / 405 vs 422），产品断言一条未放宽 | cycle 4 = EC-04（三次真实双评审读数）+ EC-08（收口） |
-| 4 | （无新 PLAN：EC-04 + EC-08 收口） | `bd74cc60` / `241e88b0` / `d52c12f9` / `bd4c59d7` | 三次真实双评审：1 passed ×3（120s / 107s / 88s）；收口验证器 69 判词 0 FAIL；两树 sha256 相同（`11a379a0`）；全量 m0 待本轮末态 | 见「CI 台账」 | — | **EC-04 PASS** + **EC-08 PASS** ⇒ 八条 EC 全 PASS，GOAL 置 **ACHIEVED**；四个真实缺陷已修（会话头 / repr 当正文 / 拒冻重复发事件 / 新读面未过两张登记表） | （终态，无下一轮） |
+| 4 | （无新 PLAN：EC-04 + EC-08 收口） | `bd74cc60` / `241e88b0` / `d52c12f9` / `bd4c59d7` / `20a2d9f4` | 三次真实双评审：1 passed ×3（120s / 107s / 88s）；收口验证器 69 判词 0 FAIL；两树 sha256 相同（`11a379a0`）；全量 m0 待本轮末态 | 见「CI 台账」 | — | **EC-04 PASS** + **EC-08 PASS** ⇒ 八条 EC 全 PASS，GOAL 置 **ACHIEVED**；四个真实缺陷已修（会话头 / repr 当正文 / 拒冻重复发事件 / 新读面未过两张登记表） | （终态，无下一轮） |
 
 **cycle 1 的实测发现（写进记录，不得只留在会话里）**：
 
@@ -445,6 +445,7 @@ EC 表见 frontmatter `exit_criteria`。
 | `241e88b0` | （随批次） | 见批次行 | cycle 4：收口资产 + ACHIEVED |
 | `d52c12f9` | （随批次） | 见批次行 | cycle 4：console e2e stub 修复 |
 | `bd4c59d7` | 见「末态批次」行 | 待回填 | cycle 4：收口资产登记两张清单 |
+| `20a2d9f4` | 见「末态批次」行 | 待回填 | cycle 4/收口：台账与宪章过各自的记录面门 |
 
 **批次推送与终态读数**：本轮共 **34 个提交**、分 5 次 push。每次 push 的 CI 只覆盖该次
 push 的**末态树**；中间提交没有各自的 run —— 逐行的「（随批次）」即此意，不写成"逐提交全绿"。
