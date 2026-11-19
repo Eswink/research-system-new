@@ -85,6 +85,29 @@ class ReviewFindingDto(BaseModel):
     reviewer_model: str | None = None
 
 
+class PanelAdviceDto(BaseModel):
+    """一个**被评对象**（phase）上的**建议性**读数（GOAL-20261119-115 EC-05）。
+
+    **它不是验收结论**：硬门仍是 `REVIEW_SCORE ≥ 0.8` 与
+    `review_panel_judging.panel_rejection()`，两者一行未改。本面只让「一负一过」这类
+    分歧在不改变 run 终态的前提下可读。
+
+    `advisory is None` 的成因（`notes` 逐条点名）：该组只有一份判词、平票、或没有
+    可归因的票 —— 三者**不合并**成一句"无结论"，否则「没评」与「评了但没多数」不可分。
+    """
+
+    phase_id: str
+    voters: int = 0
+    votes: dict[str, int] = Field(default_factory=dict)
+    advisory: str | None = None
+    dissent: list[str] = Field(default_factory=list)
+    ineligible: list[str] = Field(default_factory=list)
+    targets: list[str] = Field(default_factory=list)
+    independent: bool = False
+    independence_notes: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
 class UsageEntryDto(BaseModel):
     entry_id: str
     resource_type: ResourceTypeValue

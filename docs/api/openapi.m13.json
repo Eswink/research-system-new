@@ -4626,6 +4626,82 @@
         "title": "NotificationsViewDto",
         "type": "object"
       },
+      "PanelAdviceDto": {
+        "additionalProperties": false,
+        "description": "一个**被评对象**（phase）上的**建议性**读数（GOAL-20261119-115 EC-05）。\n\n**它不是验收结论**：硬门仍是 `REVIEW_SCORE ≥ 0.8` 与\n`review_panel_judging.panel_rejection()`，两者一行未改。本面只让「一负一过」这类\n分歧在不改变 run 终态的前提下可读。\n\n`advisory is None` 的成因（`notes` 逐条点名）：该组只有一份判词、平票、或没有\n可归因的票 —— 三者**不合并**成一句\"无结论\"，否则「没评」与「评了但没多数」不可分。",
+        "properties": {
+          "advisory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Advisory"
+          },
+          "dissent": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dissent",
+            "type": "array"
+          },
+          "independence_notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Independence Notes",
+            "type": "array"
+          },
+          "independent": {
+            "default": false,
+            "title": "Independent",
+            "type": "boolean"
+          },
+          "ineligible": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ineligible",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "phase_id": {
+            "title": "Phase Id",
+            "type": "string"
+          },
+          "targets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Targets",
+            "type": "array"
+          },
+          "voters": {
+            "default": 0,
+            "title": "Voters",
+            "type": "integer"
+          },
+          "votes": {
+            "additionalProperties": false,
+            "title": "Votes",
+            "type": "object"
+          }
+        },
+        "required": [
+          "phase_id"
+        ],
+        "title": "PanelAdviceDto",
+        "type": "object"
+      },
       "PausedDispatchDto": {
         "additionalProperties": false,
         "description": "`PAUSED` 的派发语义（GOAL-004 cycle 2 = EC-02）。\n\n只由 canonical 事实推出（run 行状态 + 任务行 `RETRY_SCHEDULED`/`retry_at`），\n不是\"停车原因\"字段：没有第二个会被别的状态变更写脏的标志位。\n\n- `kind=RETRY_SCHEDULED`：任务面有重排 ⇒ 守护线程会在到期后自己续跑；\n  `due_now=true` 表示**现在**就已经到期（含\"重建被拒后放回停车\"这一种，\n  拒绝原因不在读面）。\n- `kind=USER_PAUSED`：任务面没有任何重排 ⇒ 只有人工 resume/cancel 会动它。\n- `kind=UNKNOWN`：没有 workflow 读面（或读面读不到）⇒ 不猜。",
@@ -14144,6 +14220,53 @@
           }
         },
         "summary": "Run Lineage",
+        "tags": [
+          "inspection"
+        ]
+      }
+    },
+    "/runs/{run_id}/panel-advice": {
+      "get": {
+        "description": "run 的**评审小组建议**（GOAL-20261119-115 EC-05）—— 只读，**不是**验收结论。\n\n按**被评对象**（`phase_id`）分组后读 `aggregate_panel` 的聚合结果：多数结论、\n逐票分歧、不可投票的那些、以及独立性是否成立。硬门（`REVIEW_SCORE ≥ 0.8` 与\n`panel_rejection()`）**一行未改**，本面**不产生 `Decision`**、**不改 run 终态**。\n\n与 `/runs/{id}/reviews` 的分工：那条是**逐条 finding**（每条判词一行），这条是\n**按被评对象聚合的建议**（一负一过在这里读得出，在逐条面要自己数）。\n\n存储未接 ⇒ 503（与 `/reviews` 同口径，**不假装空结论**）；未知 run ⇒ 404。",
+        "operationId": "run_panel_advice_runs__run_id__panel_advice_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PanelAdviceDto"
+                  },
+                  "title": "Response Run Panel Advice Runs  Run Id  Panel Advice Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Panel Advice",
         "tags": [
           "inspection"
         ]

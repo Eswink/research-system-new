@@ -12,6 +12,7 @@ from fastapi import APIRouter, Request
 
 from packages.application.ports import EvidenceLedger
 from packages.application.ports.budget_ledger import LedgerSnapshot
+from packages.application.run_orchestration.panel_advice import panel_advice
 from packages.domain.budget import LedgerCostStatus, LedgerQuantityStatus, UsageLedgerEntry
 from packages.domain.evidence import Claim, Evidence, EvidenceRelation, SourceRecord
 from services.api.composition import ApiDeps
@@ -22,6 +23,7 @@ from services.api.dto.inspection import (
     ClaimMapDto,
     EvidenceDto,
     ExportBundleDto,
+    PanelAdviceDto,
     RelationDto,
     ReviewFindingDto,
     UsageEntryDto,
@@ -194,6 +196,41 @@ async def run_reviews(run_id: str, request: Request) -> list[ReviewFindingDto]:
             reviewer_model=getattr(item.finding, "reviewer_model", None),
         )
         for item in deps.review_findings.for_run(run_id)
+    ]
+
+
+@router.get("/runs/{run_id}/panel-advice", response_model=list[PanelAdviceDto])
+async def run_panel_advice(run_id: str, request: Request) -> list[PanelAdviceDto]:
+    """run 的**评审小组建议**（GOAL-20261119-115 EC-05）—— 只读，**不是**验收结论。
+
+    按**被评对象**（`phase_id`）分组后读 `aggregate_panel` 的聚合结果：多数结论、
+    逐票分歧、不可投票的那些、以及独立性是否成立。硬门（`REVIEW_SCORE ≥ 0.8` 与
+    `panel_rejection()`）**一行未改**，本面**不产生 `Decision`**、**不改 run 终态**。
+
+    与 `/runs/{id}/reviews` 的分工：那条是**逐条 finding**（每条判词一行），这条是
+    **按被评对象聚合的建议**（一负一过在这里读得出，在逐条面要自己数）。
+
+    存储未接 ⇒ 503（与 `/reviews` 同口径，**不假装空结论**）；未知 run ⇒ 404。
+    """
+    deps: ApiDeps = get_deps(request)
+    if deps.review_findings is None:
+        raise ApiError(503, "Review Findings Unavailable", "review finding store not configured")
+    get_run_or_error(deps, run_id)
+    advices = panel_advice(deps.review_findings.for_run(run_id))
+    return [
+        PanelAdviceDto(
+            phase_id=item.phase_id,
+            voters=item.voters,
+            votes=dict(item.votes),
+            advisory=item.advisory,
+            dissent=list(item.dissent),
+            ineligible=list(item.ineligible),
+            targets=list(item.targets),
+            independent=item.independent,
+            independence_notes=list(item.independence_notes),
+            notes=list(item.notes),
+        )
+        for item in advices
     ]
 
 
