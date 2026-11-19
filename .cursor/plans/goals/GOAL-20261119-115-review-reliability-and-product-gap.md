@@ -462,6 +462,7 @@ push 的**末态树**；中间提交没有各自的 run —— 逐行的「（�
 | `ac71fefb`（末态批次 8） | [`44492280717`](https://github.com/Eswink/research-system-new/actions/runs/44492280717) | **success（8/8 job）** |
 | `b7e85eea`（末态批次 9） | [`44500203647`](https://github.com/Eswink/research-system-new/actions/runs/44500203647) | **success（8/8 job）** |
 | `39f838ad`（末态批次 10） | [`44508371606`](https://github.com/Eswink/research-system-new/actions/runs/44508371606) | **success（8/8 job）** |
+| `1c5c644c`（末态批次 11） | [`44515717943`](https://github.com/Eswink/research-system-new/actions/runs/44515717943) | **success（8/8 job）** |
 
 **末态批次 7 八 job 结论（run [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666)，head `ebaec8eb`，全部 `completed / success`）**：
 
@@ -476,5 +477,5 @@ push 的**末态树**；中间提交没有各自的 run —— 逐行的「（�
 | `collector-quality` | success |
 | `console-frontend` | success（含上一批判红的那四个 spec） |
 
-**本轮 CI 终态**：11 个批次中 **10 个 success**、2 个 failure（`d6dff1e8` 的见证失效、
+**本轮 CI 终态**：12 个批次中 **11 个 success**、2 个 failure（`d6dff1e8` 的见证失效、
 `58d4f01d` 的 console stub 缺失，两者都已修并各自在后续批次转绿）。
