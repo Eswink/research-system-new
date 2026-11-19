@@ -2,14 +2,14 @@
 id: PLAN-20261120-118
 slug: advisory-panel-read-face
 title: GOAL-115 cycle 3 —— advisory 并存只读读面（硬门一行不改）
-status: IN_PROGRESS
+status: DONE
 created_at: 2026-11-20
 updated_at: 2026-11-20
 parent_goal: GOAL-20261119-115
 owners:
   - root-agent
 subagent_parallel_limit: 3
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261120-118-advisory-panel-read-face.md
 memory_entries: []
 ---
 
@@ -37,11 +37,11 @@ EC-05：新增一个**只读**的「面板建议」读面（HTTP + 编排两级�
 
 ## 交付面（checkbox）
 
-- [ ] WP-1 编排级只读取数：按 `phase_id` 分组 → `aggregate_panel`（不产生 `Decision`）
-- [ ] WP-2 HTTP 只读端点 `GET /runs/{run_id}/panel-advice`
-- [ ] WP-3 两向反证：把 advisory 接进 `panel_rejection` ⇒ 判红；摘掉读面 ⇒ 判红
-- [ ] WP-4 同一份判词下：硬门 `FAILED` **且** advisory 可读「1 负 1 过」
-- [ ] WP-5 逐字守卫：`REVIEW_SCORE ≥ 0.8` / `panel_rejection()` / `NOT_JUDGED` 五项不变
+- [x] WP-1 编排级只读取数：按 `phase_id` 分组 → `aggregate_panel`（不产生 `Decision`）
+- [x] WP-2 HTTP 只读端点 `GET /runs/{run_id}/panel-advice`
+- [x] WP-3 两向反证：把 advisory 接进 `panel_rejection` ⇒ 判红；摘掉读面 ⇒ 判红
+- [x] WP-4 同一份判词下：硬门 `FAILED` **且** advisory 可读「1 负 1 过」
+- [x] WP-5 逐字守卫：`REVIEW_SCORE ≥ 0.8` / `panel_rejection()` / `NOT_JUDGED` 五项不变
 
 ## 实施清单
 
@@ -104,11 +104,11 @@ uv run --frozen --no-sync python -B tools/run_m0_with_witness.py
 
 | ID | 对应项 | 类型 | 引用或命令 | 结果 |
 | --- | --- | --- | --- | --- |
-| EV-01 | WP-1 | test | 按 `phase_id` 分组聚合 | 待填 |
-| EV-02 | WP-2 | test | `GET /runs/{id}/panel-advice` | 待填 |
-| EV-03 | WP-3 | test | 两向反证 | 待填 |
-| EV-04 | WP-4 | test | 硬门 + advisory 并存 | 待填 |
-| EV-05 | WP-5 | test | 逐字守卫 | 待填 |
+| EV-01 | WP-1 | test | 按 `phase_id` 分组聚合 | 13 passed；`phase_id=None` 点名不并组 |
+| EV-02 | WP-2 | test | `GET /runs/{id}/panel-advice` | 7 passed；OpenAPI 方法集恰为 `[GET]` |
+| EV-03 | WP-3 | test | 两向反证 | 假想多数实现放行 2过1负，硬门判负 ⇒ 两者相反 |
+| EV-04 | WP-4 | test | 硬门 + advisory 并存 | 同一份判词：硬门判负 且 `votes={PASS:1,REJECT:1}` |
+| EV-05 | WP-5 | test | 逐字守卫 | `threshold: 0.8` / `!= "PASS"` 行 / `NOT_JUDGED` 5 项全在 |
 
 ## 验收条件
 
@@ -120,6 +120,9 @@ uv run --frozen --no-sync python -B tools/run_m0_with_witness.py
 ## 状态历史
 
 - 2026-11-20：建档。cycle 2 已收口（EC-03/EC-06 PASS）；本轮做**不需出网**的 EC-05。
+- 2026-11-20：**DONE**。两个提交：`43f10d59` 只读读面（编排 + HTTP + OpenAPI 快照）、
+  `0bebf327` 判据（13 + 7 条）。本轮修正**三条判据自身的假红**（宽 Write 判 /
+  读不出 `route.path` / 405 vs 422），产品断言一条未放宽。
 
 ## 影响报告
 

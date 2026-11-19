@@ -25,9 +25,6 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
-from typing import Any
-
-import pytest
 
 from packages.application.evaluation.panel_verdict import aggregate_panel
 from packages.application.ports.review_finding_store import ScopedReviewFinding

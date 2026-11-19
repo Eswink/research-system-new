@@ -132,7 +132,17 @@ exit_criteria:
     verify: >-
       新增定向套件（读面 + 两向反证：把 advisory 结论接进 `panel_rejection` ⇒ 判红；
       摘掉 advisory 读面 ⇒ 判红）；一条 e2e 断言两级读面同源。
-    status: PENDING
+      **证据（2026-11-20 实跑）**：`panel_advice`（编排级，按 `phase_id` 分组）+
+      `GET /runs/{id}/panel-advice`（HTTP 只读，OpenAPI 方法集恰为 `[GET]`）。
+      判据 13 + 7 条：同一份判词下硬门判负（`verdict != "PASS"`）**且** advisory 读出
+      `votes == {"PASS":1,"REJECT":1}` 与 `dissent`；AST 判只读（不 import `Decision`、
+      不调 `fail`/`reject`、不写 store）；`/reviews` 聚合票型 == `/panel-advice` 的 `votes`；
+      未知 run ⇒ 404、存储未接 ⇒ 503。
+      **逐字未动**：`panel_rejection` 的判负行、`threshold: 0.8` + `operator: GTE`、
+      `NOT_JUDGED` 五项 —— 三条都由源码断言钉住。
+      **反证臂**：造「按 advisory 多数放行」的假想实现 ⇒ 2过1负被放行而硬门判负，
+      两者结论相反 ⇒ advisory 不是硬门。
+    status: PASS
   - id: EC-06
     criterion: >-
       **上游失败的可重试性**（十一相链 31 次 FAILED 里 retrieval 9 / experiment 6 / plan 5
@@ -298,6 +308,7 @@ EC 表见 frontmatter `exit_criteria`。
 | 0 | （建档，无子 PLAN） | 见「CI 台账」 | 治理 `validate.py` 绿；记录面判据绿 | 见「CI 台账」 | — | EC-01…08 全 PENDING | cycle 1 = EC-01（换站落地 + 免费模型纪律） |
 | 1 | `PLAN-20261120-116`（换站 + 零价纪律 + 会话头缝） | `aad730b3` 静态路由头两条腿 / `a262323a` 换站 + 两个新判据 + 钉值判据同轮改 / `ad550bff` PRD 判据 + goal098 口径修正 / `727659b1` 记录 / `2757edd8` 判据不自豁免 / `d7ad8547` RECHECK + 首批门修复 / `28b2e65c` live 开关单源 + 工具清单登记 | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 绿；`tests/{architecture,application/preflight,api}` 1102 passed / 4 skipped；`verify_goal108` 87/0；`verify_goal098` 104/0；**全量 m0 = `PASS: profile=m0; 23 deterministic checks`（exit 0，`tree changed during the run: False`，head `28b2e65c`）**；新判据反证臂逐条咬合 | 见「CI 台账」 | — | **EC-01 PASS**（四模型 `tool_calls` 实测 + probe ok=True + 零价判据 + 双反证）；**EC-02 PASS**（旧站标识在产品/判据面零命中，白名单逐条给理由）；**EC-07 PASS**（四节 + 23 条去重 `file:line` + INDEX 登记 + 非 ZDR 事实） | cycle 2 = EC-03（四类失败模式各一条判据） |
 | 2 | `PLAN-20261120-117`（四类失败模式 + 上游可重试性） | `b8c2f293` ① repr 当正文 / `08330fd8` ③ 拒冻落事件 / `8e0fd15a` ②+EC-06 重试策略 / `7a0d5d74` ④ UNDER REVIEW 判据 | 四份新判据 45 passed（9+8+7+21），四条反证臂逐条按压；`tests/{adapters/openhands,application/run_orchestration,contracts,loaders}` 1209 passed / 73 skipped；ruff + format + mypy 全清 | 见「CI 台账」 | — | **EC-03 PASS**（四类各一条判据 + 按压；④ 的真跑取证仍 PENDING）；**EC-06 PASS**（四份上游合约可重试，硬门逐字未动） | cycle 3 = EC-04（三次真实双评审读数） |
+| 3 | `PLAN-20261120-118`（advisory 并存只读读面） | `43f10d59` 只读读面（编排 + HTTP + OpenAPI 快照）/ `0bebf327` 判据 13 条 / `521a3e1f` 兼记 cycle 2 的 CI | 13 + 7 条新判据；受影响套件 418 passed；ruff + format 全清；治理 `validate.py` 绿 | 见「CI 台账」 | — | **EC-05 PASS**（两级读面、硬门逐字未动、两向反证咬合）；本轮修正**三条判据自身的假红**（宽 Write 判 / `route.path` 读不出 / 405 vs 422），产品断言一条未放宽 | cycle 4 = EC-04（三次真实双评审读数）+ EC-08（收口） |
 
 **cycle 1 的实测发现（写进记录，不得只留在会话里）**：
 
@@ -330,6 +341,11 @@ EC 表见 frontmatter `exit_criteria`。
   ① 没有 `content` 时把 Python repr 当正文；③ 拒冻接线第一版**重复发** `run.failed`
   （helper 单测全绿，只有跑通整条路径才暴露）。④ 的真实 run 提示词取证与 ① 的
   「真跑中不再出现」仍需出网，**记 PENDING**。
+- 2026-11-20：cycle 3 收口（`PLAN-20261120-118`）。**EC-05 PASS**。
+  advisory 只读读面落在编排级（`panel_advice`，按 `phase_id` 分组）与 HTTP 级
+  （`GET /runs/{id}/panel-advice`）；硬门（`REVIEW_SCORE ≥ 0.8` 与 `panel_rejection()`）
+  与 `NOT_JUDGED` 五项**逐字未动**，三条都有源码断言钉住。
+  **六条 EC 已 PASS**，剩 EC-04（三次真实双评审读数，需出网）与 EC-08（收口）。
 
 ## 残余与未覆盖范围
 
