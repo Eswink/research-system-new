@@ -2,12 +2,12 @@
 id: GOAL-20261119-115
 slug: review-reliability-and-product-gap
 title: 复检在真实路径上第一次产出可归因读数（硬门不动 + advisory 并存），并落下 PRD 差距分析
-status: ACTIVE
+status: ACHIEVED
 created_at: 2026-11-19
 updated_at: 2026-11-20
 owners:
   - root-agent
-latest_recheck: null
+latest_recheck: .cursor/plans/rechecks/RECHECK-20261119-115-goal-closeout.md
 budget:
   max_cycles: 24
   per_cycle_minutes: 180
@@ -198,7 +198,12 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B tools/run_m0_with_witness.py`；
       `uv run ... python -B tools/verify_goal115_closeout.py`；两树复检脚本。
-    status: PENDING
+      **证据（2026-11-20 实跑）**：`tools/verify_goal115_closeout.py` 实跑
+      **63 条判词、0 FAIL**（本轮断言集 32 条 + 标准断言集 + 记录面）；
+      全量 m0 = `PASS: profile=m0; 23 deterministic checks`（`tree changed: False`）；
+      两树复检判词 `sha256` 相同；收口复检 `RECHECK-20261119-115-goal-closeout` 为
+      `PASS_WITH_WARNINGS`。
+    status: PASS
 fix_policy:
   same_signature_retries: 3
   cycle_fix_retries: 10
@@ -362,6 +367,14 @@ EC 表见 frontmatter `exit_criteria`。
   （`GET /runs/{id}/panel-advice`）；硬门（`REVIEW_SCORE ≥ 0.8` 与 `panel_rejection()`）
   与 `NOT_JUDGED` 五项**逐字未动**，三条都有源码断言钉住。
   **六条 EC 已 PASS**，剩 EC-04（三次真实双评审读数，需出网）与 EC-08（收口）。
+- 2026-11-20：cycle 4 收口 —— **EC-04 PASS**（三次真实双评审读数，k1/k2 `FAILED`、
+  k3 `SUCCEEDED`；每次 2 条可归因判词、两个不同目标、`independent=true`）。
+- 2026-11-20：**GOAL 收口 → ACHIEVED**。八条 EC 全 PASS；收口复检
+  `tools/verify_goal115_closeout.py` 实跑 **63 条判词 0 FAIL**；RECHECK
+  `RECHECK-20261119-115-goal-closeout` 为 `PASS_WITH_WARNINGS`（三条 warning：
+  dissent 三次同向 / `extra_headers` 未投影进读面 / `plan_fallback` 仍是死缝）。
+  本轮共发现并修复**四个真实缺陷**（会话头缺失、repr 当正文、拒冻重复发事件、
+  新读面未过两张登记表）。
 
 ## 残余与未覆盖范围
 
