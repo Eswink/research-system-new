@@ -242,6 +242,16 @@ ZERO_HIT_ROUTES: tuple[ReadRouteRule, ...] = (
         "「按模板不含正文」而非「结构性保证零正文」(GOAL-035 EC-01 登记;本轮金丝雀未命中该类)",
     ),
     ReadRouteRule(
+        "/runs/{run_id}/panel-advice",
+        ZERO_HIT,
+        "`PanelAdviceDto` = 逐票**判词与票数**(verdict 字符串) + 少数意见的"
+        "`reviewer:verdict` 串 + 评审者**目标**(`endpoint/model_name`) + 独立性说明。"
+        "**不含**判词正文、不含被评对象正文、不含提示词 —— 聚合的是已落库的"
+        "`ReviewFinding` 的**结论字段**，不是它的 `findings` 文本。"
+        "**一等边界**:`ineligible` / `independence_notes` 是域函数写的模板句"
+        "(点名 reviewer 目标与「为何无法投票」)，新增模板时须重走本登记。",
+    ),
+    ReadRouteRule(
         "/runs/{run_id}/tasks",
         ZERO_HIT,
         "`TaskDto` 只给 id/契约/代理/状态/尝试次数 —— 任务输入不在这条读面上",
