@@ -470,6 +470,14 @@ EC 表见 frontmatter `exit_criteria`。
 | 10 | `b7e85eea` | [`44500203647`](https://github.com/Eswink/research-system-new/actions/runs/44500203647) | success（8/8） |
 | 11 | `39f838ad` | [`44508371606`](https://github.com/Eswink/research-system-new/actions/runs/44508371606) | success（8/8） |
 | 12 | `1c5c644c` | [`44515717943`](https://github.com/Eswink/research-system-new/actions/runs/44515717943) | success（8/8） |
+| 13（循环修复，**收口后**） | `b8c40111` | 零 run（**尚未推送**；本行是收口后的机制修复，不属本 GOAL 的 EC，读数由下一轮 prep 回填） | — |
+
+**收口后的机制修复（如实登记，不在本 GOAL 的 EC 内）**：`b8c40111` 把「record-only
+提交不欠自己的读数」做成判据 —— `is_record_only` 按**内容**（`git show --name-only`
+全部落在 `.cursor/`）分类，不按主题措辞；并把封口规则写进 `goals/README.md`
+（此前它只是 GOAL-082 的一段散文，之后十轮全部漏写）。该提交点名 `goal115` ⇒ 进链
+⇒ 上表第 13 行就是它的读数格。**这条链到此有界收敛**：本行所在的提交只改 `.cursor/`
+⇒ record-only ⇒ 不再欠新行。
 
 **如实登记这笔债**：批次 9–12 之所以存在，**不是**因为产品有改动，而是因为我把每条记账
 提交都写成 `chore(goal115)` ⇒ 进了提交链 ⇒ 各自要一条读数（GOAL-114 台账尾把同一现象
