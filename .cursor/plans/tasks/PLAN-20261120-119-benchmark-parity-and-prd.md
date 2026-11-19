@@ -30,7 +30,7 @@ memory_entries: []
 
 ## 交付面（checkbox）
 
-- [ ] EC-01 `docs/product/PRD.md` v1.0（九节）+ `tests/tooling/test_prd_claims_match_the_tree.py`
+- [x] EC-01 `docs/product/PRD.md` v1.0（九节）+ `tests/tooling/test_prd_claims_match_the_tree.py`
       + `docs/INDEX.md` 登记 + 旧两份文档指针
 - [ ] EC-02 `tools/rcb_agent.py`（走 `assemble()`，导出 `report/report.md`，
       未产出非 0 退出）+ `tests/benchmarks/test_rcb_agent_contract.py`
@@ -44,6 +44,13 @@ memory_entries: []
 ## 实施清单
 
 ### WP-A：PRD（EC-01）
+
+**状态：DONE（2026-11-20 cycle 1）**。判据三件套落在 `tests/tooling/`：
+`prd_tree_facts.py`（从树里算事实）+ `prd_claim_checks.py`（逐条对拍，每条违反以条号
+开头）+ `prd_claim_arms.py`（20 个条号 × 改文档 / 改树两类反证臂）。
+**关键设计**：断言比较的是「PRD 的写法」与「树算出来的值」，不是写死常数 —— 于是
+改任一侧都会红。写判据时抓到三处真实漂移：后端 108/133 → 109/134、能力
+「13 被协议实际使用」→ 14、R-08 裸 `europe_pmc.py` 与 R-14「全仓无」口径。
 
 本窗口已预落 `docs/product/PRD.md` 与 `docs/benchmarks/RESEARCHCLAWBENCH.md`；
 另一窗口需要补的是**判据**：
@@ -139,7 +146,7 @@ uv run --frozen --no-sync python -B tools/verify_goal116_closeout.py
 | --- | --- | --- | --- | --- |
 | EV-00 | 建档 | survey | 本轮调研（PRD §4 来源） | RCB 40/10、榜首 34.89、`apevon.ai` 更正 |
 | EV-01 | EC-01 | doc | `docs/product/PRD.md` + `docs/benchmarks/RESEARCHCLAWBENCH.md` | 本窗口已落 |
-| EV-02 | EC-01 | test | `tests/tooling/test_prd_claims_match_the_tree.py` | 待填 |
+| EV-02 | EC-01 | test | `tests/tooling/test_prd_claims_match_the_tree.py` | **39 passed**（20 条号 × 双类反证臂，2026-11-20） |
 | EV-03 | EC-02 | test | `tests/benchmarks/test_rcb_agent_contract.py` | 待填 |
 | EV-04 | EC-03 | live | `.cursor/plans/goals/evidence/GOAL-20261120-116-rcb-baseline.json` | 待填 |
 | EV-05 | EC-04 | image | `adapters/execution/sandbox/Dockerfile.analysis`（digest） | 待填 |
@@ -159,6 +166,9 @@ uv run --frozen --no-sync python -B tools/verify_goal116_closeout.py
 
 - 2026-11-20：建档（PLAN + GOAL-116 + PRD v1.0 + RCB 接入说明同轮落树；
   执行在另一窗口）。
+- 2026-11-20（cycle 1）：**WP-A 完成**，`EC-01 PASS`。判据三件套落地；PRD 三处漂移
+  按树的事实改正；邻接面 1494 passed、`docs_consistency_check` PASS、ruff/mypy 全绿。
+  子 PLAN 仍未收口（EC-02…07 未做），下一 cycle 起从 WP-B 推进。
 
 ## 影响报告
 

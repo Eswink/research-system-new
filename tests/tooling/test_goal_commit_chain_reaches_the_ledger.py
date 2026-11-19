@@ -130,6 +130,13 @@ _UNTAGGED_EXEMPT: tuple[tuple[str, str], ...] = (
         "closeout.py`（归档咬「只读活跃面」断言的修法）而主题未点名 GOAL；修复需重写历史"
         "（fix_policy 禁止）。内容归属：GOAL-107 复检资产的伴随修正。",
     ),
+    (
+        "b36031ce",
+        "并发窗口留下的会话工作区默认根修复（`data/session-workspaces/` + `/workspace/` "
+        "守卫 + 判据）；该修改**不属于任何 GOAL**（判据随提交落地），把它挂到 GOAL-116 的"
+        "基准目标上会是假归属 ⇒ 主题不点名 GOAL 才是如实的归属声明。它已在 GOAL-116 的"
+        "「CI 台账」里按「同一批 push 的 tip 读数为准」记账。",
+    ),
 )
 
 

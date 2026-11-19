@@ -57,7 +57,7 @@ exit_criteria:
     verify: >-
       `uv run --frozen --no-sync python -B -m pytest tests/tooling/test_prd_claims_match_the_tree.py -q`
       ⇒ 全绿；每条断言各带**反证臂**（改 PRD 里的数字 / 改树里的事实 ⇒ 判红并点名）。
-    status: PENDING
+    status: PASS
   - id: EC-02
     criterion: >-
       **基准适配器**：`tools/rcb_agent.py` 实现 RCB 的 agent 契约——读 `<PROMPT>` 与
@@ -227,14 +227,26 @@ EC 表见 frontmatter `exit_criteria`。
 
 ## 迭代日志
 
+**cycle 1 owner**：goal-mode 会话（`root-agent`）。**并发事实**（如实登记）：02:02–02:06
+另一驱动编辑过 `MAINLINE.md` 与 `PRD.md`，其 02:04 的全量 m0 见证为红
+（`python/tests=1, framework/docs_consistency_check=1`）。本轮按「一个驱动持有 ACTIVE
+cycle」声明占用；并发风险与处置见残余 `W-4`。
+
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 见「CI 台账」 | 治理 `validate.py` 绿；记录面判据绿 | 见「CI 台账」 | — | EC-01…07 全 PENDING | cycle 1 = EC-01（PRD + 防漂移判据） |
+| 1 | `PLAN-20261120-119`（WP-A） | `b36031ce`（并发窗口的会话工作区默认根，**非本 GOAL**）/ `a07f814b`（PRD v1.0 + 防漂移判据） | 判据 **39 passed**（20 个条号各配反证臂，双向按压真红）；邻接面 **1494 passed**；`docs_consistency_check` PASS；ruff format/check + mypy（4 个新文件）全绿 | 见「CI 台账」（本批 tip 待回填） | 阈值/断言未动；按树的事实改正 PRD 三处漂移（后端 108/133→**109/134**；能力「13 被协议使用」→**14**；R-08 裸文件名、R-14「全仓无」口径） | **EC-01 PASS**（verify 已实跑）；EC-02…07 仍 PENDING | cycle 2 = EC-02（`tools/rcb_agent.py` + 离线契约判据） |
 
 ## 状态历史
 
 - 2026-11-20：建档。四项拍板写进 `authorization.ref`；PRD（v1.0）与
   `docs/benchmarks/RESEARCHCLAWBENCH.md` 同轮落树；旧两份产品文档加指针并入。
+- 2026-11-20（cycle 1）：**EC-01 PASS**。`docs/product/PRD.md` v1.0 与
+  `docs/benchmarks/RESEARCHCLAWBENCH.md` 入树、`docs/INDEX.md` 登记、旧两份文档保留
+  指针；防漂移判据 `tests/tooling/test_prd_claims_match_the_tree.py` 39 passed（事实从树
+  里算，不写死；20 个条号各配反证臂）。**写判据时抓到三处 PRD 漂移并改正**（后端
+  108/133→109/134、能力 13→14、R-08 裸文件名 / R-14 口径）。并发窗口的会话工作区 WIP
+  先以独立提交落库（`b36031ce`，非本 GOAL），使见证能覆盖干净树。
 
 ## 残余与未覆盖范围
 
@@ -245,6 +257,10 @@ EC 表见 frontmatter `exit_criteria`。
 - `W-1`（承接 GOAL-114/115）采集器仍是判据侧驱动，产品面没有「从 run 库自动汇总」的命令。
 - `W-2`（承接 GOAL-114）`plan_fallback` 是死缝：有实现、被 preflight 读、运行期从不切。
 - `W-3`（本轮新增）**外部基准只取 3 个任务**：40 个任务里只跑 3 个 ⇒ 分数不代表全榜。
+- `W-4`（本轮新增）**并发驱动**：02:02–02:06 另一驱动编辑过 `MAINLINE.md` / `PRD.md`
+  并留下一次红见证（02:04）。本轮已把并发窗口的会话工作区 WIP 单独落库以避免脏树，
+  但**两驱动都指向 EC-01** 这一可能性未消除；下一轮进入前须先按入口协议复核
+  「迭代日志末行 + 工作树 + 远端」是否已含有别人写的 EC-01 产物（防重复劳动）。
 
 ### 未覆盖范围
 
@@ -264,4 +280,4 @@ EC 表见 frontmatter `exit_criteria`。
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| （建档提交） | 待回填 | 待回填 | GOAL-116 建档 + PLAN-116 + PRD v1.0 + RCB 接入说明 + MAINLINE 序 84 |
+| `b36031ce` + `a07f814b`（同一批 push） | 待回填（本批 tip 的读数为准） | 待回填 | 建档 + PRD v1.0 + 防漂移判据 + 并发窗口的会话工作区默认根 |
