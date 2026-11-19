@@ -1,0 +1,78 @@
+{
+  "run_id": "9d957636-61fa-40b0-b3d8-267ae2ec5fc2",
+  "state": "FAILED",
+  "protocol_id": "dual_model_review_v1_0_0",
+  "failures": [
+    "review panel rejected the artifact after every reviewer finished: 2 of 2 reviewer(s) rejected (main/beam-free=REJECT, main/longcat-2.5-free=REJECT); panel verdicts: main/beam-free=REJECT, main/longcat-2.5-free=REJECT",
+    "task 454eb204-69c0-422a-a58e-fbf73de98393 rejected by acceptance gate (acceptance gate rejected: REVIEW_SCORE: review score 0.4 GTE 0.8)",
+    "task 9d29acc1-4168-4b2d-a36a-568b8a053349 rejected by acceptance gate (acceptance gate rejected: REVIEW_SCORE: review score 0.6 GTE 0.8)"
+  ],
+  "http_review_count": 3,
+  "reviews": [
+    {
+      "finding_id": "finding:454eb204-69c0-422a-a58e-fbf73de98393:gate",
+      "task_id": "454eb204-69c0-422a-a58e-fbf73de98393",
+      "contract_id": "dual_model_review_deliverable",
+      "phase_id": "review",
+      "review_type": "acceptance_gate",
+      "verdict": "REJECT",
+      "verdicts": [
+        "ARTIFACT_EXISTS: artifact review_decision exists",
+        "REVIEW_SCORE: review score 0.4 GTE 0.8"
+      ],
+      "reviewed_by": "gate:reviewer_a",
+      "reviewer_model": "main/beam-free",
+      "reviewed_at": "2026-11-19T04:05:14.523424+00:00"
+    },
+    {
+      "finding_id": "finding:6a6f07a7-ae8e-4107-aa53-c39b7fef7644:gate",
+      "task_id": "6a6f07a7-ae8e-4107-aa53-c39b7fef7644",
+      "contract_id": "dual_model_review_plan",
+      "phase_id": "author",
+      "review_type": "acceptance_gate",
+      "verdict": "PASS",
+      "verdicts": [
+        "ARTIFACT_EXISTS: artifact research_plan exists"
+      ],
+      "reviewed_by": "gate:director",
+      "reviewer_model": "main/hy4-flash-free",
+      "reviewed_at": "2026-11-19T04:05:01.921703+00:00"
+    },
+    {
+      "finding_id": "finding:9d29acc1-4168-4b2d-a36a-568b8a053349:gate",
+      "task_id": "9d29acc1-4168-4b2d-a36a-568b8a053349",
+      "contract_id": "dual_model_review_deliverable",
+      "phase_id": "review",
+      "review_type": "acceptance_gate",
+      "verdict": "REJECT",
+      "verdicts": [
+        "ARTIFACT_EXISTS: artifact review_decision exists",
+        "REVIEW_SCORE: review score 0.6 GTE 0.8"
+      ],
+      "reviewed_by": "gate:reviewer_b",
+      "reviewer_model": "main/longcat-2.5-free",
+      "reviewed_at": "2026-11-19T04:06:03.976515+00:00"
+    }
+  ],
+  "panels": [
+    {
+      "scope": "PHASE",
+      "contract_id": "dual_model_review_deliverable",
+      "phase_id": "review",
+      "voters": 2,
+      "votes": {
+        "REJECT": 2
+      },
+      "advisory": "REJECT",
+      "dissent": [],
+      "ineligible": [],
+      "targets": [
+        "main/beam-free",
+        "main/longcat-2.5-free"
+      ],
+      "independent": true,
+      "independence_notes": []
+    }
+  ],
+  "review_count": 3
+}

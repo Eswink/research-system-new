@@ -1,0 +1,74 @@
+{
+  "run_id": "f0930f08-699f-4f98-b931-196c34bd15f1",
+  "state": "SUCCEEDED",
+  "protocol_id": "dual_model_review_v1_0_0",
+  "failures": [],
+  "http_review_count": 3,
+  "reviews": [
+    {
+      "finding_id": "finding:04e9cec5-7626-4ff2-bada-d2571a470c54:gate",
+      "task_id": "04e9cec5-7626-4ff2-bada-d2571a470c54",
+      "contract_id": "dual_model_review_deliverable",
+      "phase_id": "review",
+      "review_type": "acceptance_gate",
+      "verdict": "PASS",
+      "verdicts": [
+        "ARTIFACT_EXISTS: artifact review_decision exists",
+        "REVIEW_SCORE: review score 0.85 GTE 0.8"
+      ],
+      "reviewed_by": "gate:reviewer_b",
+      "reviewer_model": "main/longcat-2.5-free",
+      "reviewed_at": "2026-11-19T04:10:05.394994+00:00"
+    },
+    {
+      "finding_id": "finding:58b00257-dc07-48d1-a9c6-0d5fbf32ffb3:gate",
+      "task_id": "58b00257-dc07-48d1-a9c6-0d5fbf32ffb3",
+      "contract_id": "dual_model_review_plan",
+      "phase_id": "author",
+      "review_type": "acceptance_gate",
+      "verdict": "PASS",
+      "verdicts": [
+        "ARTIFACT_EXISTS: artifact research_plan exists"
+      ],
+      "reviewed_by": "gate:director",
+      "reviewer_model": "main/hy4-flash-free",
+      "reviewed_at": "2026-11-19T04:09:14.590526+00:00"
+    },
+    {
+      "finding_id": "finding:74b0ba86-3c35-40af-8ddc-f15957c85eec:gate",
+      "task_id": "74b0ba86-3c35-40af-8ddc-f15957c85eec",
+      "contract_id": "dual_model_review_deliverable",
+      "phase_id": "review",
+      "review_type": "acceptance_gate",
+      "verdict": "PASS",
+      "verdicts": [
+        "ARTIFACT_EXISTS: artifact review_decision exists",
+        "REVIEW_SCORE: review score 0.85 GTE 0.8"
+      ],
+      "reviewed_by": "gate:reviewer_a",
+      "reviewer_model": "main/beam-free",
+      "reviewed_at": "2026-11-19T04:09:45.100373+00:00"
+    }
+  ],
+  "panels": [
+    {
+      "scope": "PHASE",
+      "contract_id": "dual_model_review_deliverable",
+      "phase_id": "review",
+      "voters": 2,
+      "votes": {
+        "PASS": 2
+      },
+      "advisory": "PASS",
+      "dissent": [],
+      "ineligible": [],
+      "targets": [
+        "main/beam-free",
+        "main/longcat-2.5-free"
+      ],
+      "independent": true,
+      "independence_notes": []
+    }
+  ],
+  "review_count": 3
+}

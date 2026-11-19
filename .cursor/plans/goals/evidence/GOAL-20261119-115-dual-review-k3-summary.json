@@ -1,0 +1,63 @@
+{
+  "goal": "GOAL-20261119-115",
+  "criterion": "EC-04",
+  "declared_order": [
+    "k1",
+    "k2",
+    "k3"
+  ],
+  "note": "Three consecutive real dual-model review runs on the opencode relay. Per EC-04 the terminal state is not the criterion: SUCCEEDED and FAILED both count. What counts is two attributable verdicts, distinct reviewer targets, one phase with two task ids, and a readable panel.",
+  "runs": [
+    {
+      "run": 1,
+      "run_id": "9d957636-61fa-40b0-b3d8-267ae2ec5fc2",
+      "state": "FAILED",
+      "review_verdicts": 2,
+      "reviewer_targets": [
+        "main/beam-free",
+        "main/longcat-2.5-free"
+      ],
+      "phase_count": 1,
+      "task_count": 2,
+      "panel_voters": 2,
+      "panel_independent": true,
+      "panel_advisory": "REJECT",
+      "panel_dissent": [],
+      "verdict_text_present": true
+    },
+    {
+      "run": 2,
+      "run_id": "b83f514b-6394-43a4-8903-8a395043152e",
+      "state": "FAILED",
+      "review_verdicts": 2,
+      "reviewer_targets": [
+        "main/beam-free",
+        "main/longcat-2.5-free"
+      ],
+      "phase_count": 1,
+      "task_count": 2,
+      "panel_voters": 2,
+      "panel_independent": true,
+      "panel_advisory": "REJECT",
+      "panel_dissent": [],
+      "verdict_text_present": true
+    },
+    {
+      "run": 3,
+      "run_id": "f0930f08-699f-4f98-b931-196c34bd15f1",
+      "state": "SUCCEEDED",
+      "review_verdicts": 2,
+      "reviewer_targets": [
+        "main/beam-free",
+        "main/longcat-2.5-free"
+      ],
+      "phase_count": 1,
+      "task_count": 2,
+      "panel_voters": 2,
+      "panel_independent": true,
+      "panel_advisory": "PASS",
+      "panel_dissent": [],
+      "verdict_text_present": true
+    }
+  ]
+}

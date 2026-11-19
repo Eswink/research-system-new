@@ -121,7 +121,23 @@ exit_criteria:
       **反证臂**：把两位评审指向同一模型 ⇒ 独立性判据判红。
       **`_EXPECTED_TARGETS` 必须同轮改为新的免费模型目标**（当前仍钉 `main/glm-5.3` /
       `main/kimi-k2.6`，换站后会假红）。
-    status: PENDING
+      **证据（2026-11-20 实跑，三次连续、预先声明的顺序、失败不补跑）**：
+      `.cursor/plans/goals/evidence/GOAL-20261119-115-dual-review-k{1,2,3}.json` +
+      `…-k3-summary.json`。三次读数：
+
+      | run | run 终态 | 评审判词 | 两个目标 | phase/task | voters | independent | advisory |
+      | --- | --- | --- | --- | --- | --- | --- | --- |
+      | k1 | FAILED | 2 | `main/beam-free` + `main/longcat-2.5-free` | 1 / 2 | 2 | true | REJECT |
+      | k2 | FAILED | 2 | 同上 | 1 / 2 | 2 | true | REJECT |
+      | k3 | **SUCCEEDED** | 2 | 同上 | 1 / 2 | 2 | true | **PASS** |
+
+      **三次都没有 dissent**：两位评审每次都给出**同一个**结论（k1/k2 都是 REJECT，k3 都是
+      PASS）⇒ `dissent` 为空是**读数**而不是缺失（判据是「判负则 dissent 非空」，
+      这三次不是"一负一过"，所以空是正确形态）。**三次凑巧同向**如实登记在 `U-1`。
+      `_EXPECTED_TARGETS` 已同轮改为新站的两个免费模型目标（`main/beam-free` /
+      `main/longcat-2.5-free`），否则换站后必假红。
+      终态**既有 FAILED 也有 SUCCEEDED** ⇒ 机制在真实路径上可用，且不是"恒失败"。
+    status: PASS
   - id: EC-05
     criterion: >-
       **advisory 并存面**：新增**只读**的"面板建议"读面（HTTP + 编排两级），
