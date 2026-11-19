@@ -453,12 +453,12 @@ push 的**末态树**；中间提交没有各自的 run —— 逐行的「（�
 | 批次末态 | run | 结论 |
 | --- | --- | --- |
 | `727659b1` | [`44380740088`](https://github.com/Eswink/research-system-new/actions/runs/44380740088) | success（8/8） |
-| （批次 2 末态） | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | success（8/8） |
+| `451b4e7e` | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | success（8/8） |
 | `28b2e65c` | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | success（8/8） |
 | `18a0668f` | [`44423270174`](https://github.com/Eswink/research-system-new/actions/runs/44423270174) | success（8/8） |
 | `ca07d8eb` | [`44435772887`](https://github.com/Eswink/research-system-new/actions/runs/44435772887) | success（8/8） |
 | `bd74cc60` | [`44455563000`](https://github.com/Eswink/research-system-new/actions/runs/44455563000) | **failure**（`console-frontend`） |
-| `ebaec8eb`（末态批次 7） | [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666) | **success（8/8 job）** | cycle 4 收口 + 见证绑定 `e9f9e3a0` |
+| `ebaec8eb`（末态批次 7） | [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666) | **success（8/8 job）** |
 
 **末态批次 7 八 job 结论（run [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666)，head `ebaec8eb`，全部 `completed / success`）**：
 
