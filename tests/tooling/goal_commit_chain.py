@@ -114,14 +114,54 @@ def _matches(sha: str, entry: str) -> bool:
     return len(entry) >= 7 and (sha.startswith(entry) or entry.startswith(sha))
 
 
+def touched_paths(root: Path, sha: str) -> tuple[str, ...]:
+    """该提交改到的文件路径（**全路径**，不含空行）。"""
+    return tuple(
+        line.strip()
+        for line in _git(root, "show", "--name-only", "--format=", sha).splitlines()
+        if line.strip()
+    )
+
+
+def is_record_only(root: Path, sha: str) -> bool:
+    """该提交**只**改了记录面（`.cursor/` 之下）—— 它是簿记，不是产品面动作。
+
+    **为什么必须区分**（GOAL-20261119-115 实测的无界循环）：台账判据要求「链里每个
+    提交都在台账里」，于是「记一条读数」这个动作产生的新提交又进了链、又要求它自己
+    的读数 —— 记一次债一次，永不收敛。实测 31 个链提交里 **11 个**是 record-only。
+
+    分类的**依据是内容，不是主题措辞**：主题写不写 `goal115` 都能绕过（把编号去掉
+    就不进链），而那是靠人记得；「这个提交只动了 `.cursor/`」是 git 可复算的事实。
+
+    边界：**空提交**（没有任何文件改动）**不算** record-only —— 它无法归属，
+    应当暴露出来而不是被这条静默放行。
+    """
+    paths = touched_paths(root, sha)
+    if not paths:
+        return False
+    return all(path.startswith(_RECORD_PREFIX) for path in paths)
+
+
 def unledgered(
-    chain: Sequence[tuple[str, str]], ledger: Sequence[str], head: str
+    chain: Sequence[tuple[str, str]],
+    ledger: Sequence[str],
+    head: str,
+    record_only: Sequence[str] = (),
 ) -> list[tuple[str, str]]:
-    """链里**没进台账**的提交（HEAD 除外 —— 它写不进自己携带的内容）。"""
+    """链里**没进台账**的提交（**HEAD** 与 **record-only** 提交除外）。
+
+    **HEAD 除外**是结构必然：一个提交的哈希写不进它自己携带的内容。
+    **record-only 除外**是自我指涉边界（见 `is_record_only`）：簿记提交若也要自己的
+    台账行，补行又是一个提交 —— 环无终点（GOAL-20261119-115 实测踩到）。
+    两个豁免都只作用于本条判据：不改变链、不改变 `phantom`、不改变祖父条款。
+
+    `record_only` 传这些提交的 sha（调用方用 `is_record_only` 现算）。
+    """
+    skip = set(record_only)
     return [
         (sha, subject)
         for sha, subject in chain
-        if sha != head and not any(_matches(sha, entry) for entry in ledger)
+        if sha != head and sha not in skip and not any(_matches(sha, entry) for entry in ledger)
     ]
 
 
@@ -186,8 +226,10 @@ __all__ = [
     "describe",
     "floor_commit",
     "head_sha",
+    "is_record_only",
     "is_shallow",
     "phantom",
+    "touched_paths",
     "unledgered",
     "untagged_code_commits",
 ]

@@ -72,7 +72,13 @@ def _chains() -> list[tuple[str, str, tuple[tuple[str, str], ...]]]:
 
 
 def test_every_commit_in_a_goal_chain_reaches_that_goals_ledger() -> None:
-    """**核心（反方向）**：主题行点名某终态 GOAL 的每个提交，都在该 GOAL 的台账里。"""
+    """**核心（反方向）**：主题行点名某终态 GOAL 的每个提交，都在该 GOAL 的台账里。
+
+    **record-only 提交除外**（`is_record_only`）：只改 `.cursor/` 的簿记提交不进台账
+    义务 —— 否则「记一条读数」产生的新提交又要求自己的读数，环无终点
+    （GOAL-20261119-115 实测：31 个链提交里 11 个是 record-only，为此多跑了约 8 次
+    全量 m0）。豁免依据是**内容**（git 可复算），不是主题措辞。
+    """
     if goal_commit_chain.is_shallow(_ROOT):
         pytest.skip(_SHALLOW_REASON)
     goals = SCOPE()
@@ -86,12 +92,13 @@ def test_every_commit_in_a_goal_chain_reaches_that_goals_ledger() -> None:
             problems.append(f"{goal_id}（{reason}）：主题行点名 goal{number} 的提交一个都取不到")
             continue
         ledger = LEDGER(text, [])
-        missing = goal_commit_chain.unledgered(chain, ledger, head)
+        record_only = [sha for sha, _ in chain if goal_commit_chain.is_record_only(_ROOT, sha)]
+        missing = goal_commit_chain.unledgered(chain, ledger, head, record_only)
         if missing:
             problems.append(
                 f"{goal_id}（{reason}）：{len(missing)} 个提交不在台账"
-                f"（链 {len(chain)} 个，台账 {len(ledger)} 个）："
-                f"{goal_commit_chain.describe(missing)}"
+                f"（链 {len(chain)} 个，record-only {len(record_only)} 个，"
+                f"台账 {len(ledger)} 个）：{goal_commit_chain.describe(missing)}"
             )
         strays = goal_commit_chain.phantom(chain, ledger)
         if strays:
@@ -191,6 +198,55 @@ def test_the_chain_predicate_bites_both_ways_on_synthetic_chains() -> None:
     assert chain[1][0] not in [sha for sha, _ in missing]
     # 张冠李戴：台账记了别人的提交 ⇒ 判红（行数够了但记错人）。
     assert goal_commit_chain.phantom(chain, ["c" * 8]) == ["c" * 8]
+
+
+def test_the_record_only_exemption_is_bounded_and_bites() -> None:
+    """**自我指涉豁免不是万能开关**：它只放行被点名的那些 sha，其余照红。
+
+    两向都要证明（只断言「现在绿了」会让豁免退化成后门）：
+
+    1. 不传 `record_only` 时该提交**确实被点名**（豁免是必要的，不是陈旧的）；
+    2. 传了之后它消失；
+    3. 只放行**被点名的那一个** —— 同一链里另一个同样漏记的提交仍然判红。
+    """
+    one = ("a" * 40, "chore(goal115): record a reading")
+    two = ("b" * 40, "chore(goal115): record another reading")
+    three = ("c" * 40, "feat(goal115): product change")
+    chain = (one, two, three)
+    head = three[0]
+
+    # 1) 不豁免 ⇒ 两个 record-only 提交都被点名。
+    raw = goal_commit_chain.unledgered(chain, [], head)
+    assert [sha for sha, _ in raw] == [one[0], two[0]], raw
+
+    # 2) 只豁免其中一个 ⇒ 它消失、另一个仍在（豁免的粒度是逐提交，不是整类）。
+    partial = goal_commit_chain.unledgered(chain, [], head, [one[0]])
+    assert [sha for sha, _ in partial] == [two[0]], partial
+
+    # 3) 两个都豁免 ⇒ 全清，但**产品提交仍然受判**（`three` 是 HEAD，换成非 HEAD 再验）。
+    chain4 = (one, two, ("d" * 40, "docs: a"))
+    assert goal_commit_chain.unledgered(chain4, [], head, [one[0], two[0]]) != []
+
+
+def test_record_only_is_decided_by_content_not_by_subject() -> None:
+    """分类依据是**内容**：主题写了编号但只改 `.cursor/` ⇒ record-only；
+    主题没写编号却改了产品面 ⇒ 不是。
+
+    这一条挡的是「靠改主题措辞绕过判据」：把 `goal115` 从主题里删掉确实能让提交
+    不进链，但那是靠人记得；内容判据不依赖措辞。
+    """
+    tool = goal_commit_chain
+    assert tool.is_record_only(_ROOT, goal_commit_chain.head_sha(_ROOT)) in (True, False)
+    # 真树上至少有一个 record-only 提交（本 GOAL 实测 11 个）—— 否则本条空真。
+    chain = tool.chain_for(_ROOT, 115)
+    if not chain:  # 浅克隆
+        pytest.skip(_SHALLOW_REASON)
+    record_only = [sha for sha, _ in chain if tool.is_record_only(_ROOT, sha)]
+    assert record_only, "真树里一个 record-only 提交都没有 ⇒ 本条判据没有受判对象"
+    for sha in record_only:
+        paths = tool.touched_paths(_ROOT, sha)
+        assert paths, f"{sha[:8]} 被判成 record-only 却没有任何改动文件"
+        assert all(p.startswith(".cursor/") for p in paths), (sha[:8], paths)
 
 
 def test_the_attribution_reads_the_subject_line_and_the_goal_number() -> None:

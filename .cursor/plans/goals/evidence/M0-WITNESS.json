@@ -1892,7 +1892,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "3a1948bf814513a3657f0758b517bdfaf181df63"
+        "sha256": "97199426b1dcf1300506f785928c9c5443c60e65"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -1900,7 +1900,7 @@
       },
       {
         "path": ".cursor/plans/goals/README.md",
-        "sha256": "a73635d70e946908a8aef740a9bf283de42c8718"
+        "sha256": "a8306c920c68ac6d48771ee86e038e364ff7825e"
       },
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-12-24-through-29.md",
@@ -19424,7 +19424,7 @@
       },
       {
         "path": "tests/tooling/goal_commit_chain.py",
-        "sha256": "6f34386ba3a2e382e718560b4fd254ee7d715b18"
+        "sha256": "16b5035b3fdb6a64b458f5bbd0399c0fec7b5676"
       },
       {
         "path": "tests/tooling/resume_coverage_declaration.py",
@@ -19508,7 +19508,7 @@
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
-        "sha256": "3e1773c849ccf0b833b7d3566f7b64095243f40d"
+        "sha256": "800eda527270c3f3525ada2509a74b659e0f28e7"
       },
       {
         "path": "tests/tooling/test_goal_ledger_covers_every_commit.py",
@@ -20795,7 +20795,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "05436a2f4100670510b98b86f2e994e0aee486c3"
+    "head": "bb08607715991f0d44277ed5481def92ef0402c6"
   },
   "fingerprint_before": {
     "files": [
@@ -22689,7 +22689,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "3a1948bf814513a3657f0758b517bdfaf181df63"
+        "sha256": "97199426b1dcf1300506f785928c9c5443c60e65"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -22697,7 +22697,7 @@
       },
       {
         "path": ".cursor/plans/goals/README.md",
-        "sha256": "a73635d70e946908a8aef740a9bf283de42c8718"
+        "sha256": "a8306c920c68ac6d48771ee86e038e364ff7825e"
       },
       {
         "path": ".cursor/plans/goals/archive/MAINLINE-2026-10-12-24-through-29.md",
@@ -40221,7 +40221,7 @@
       },
       {
         "path": "tests/tooling/goal_commit_chain.py",
-        "sha256": "6f34386ba3a2e382e718560b4fd254ee7d715b18"
+        "sha256": "16b5035b3fdb6a64b458f5bbd0399c0fec7b5676"
       },
       {
         "path": "tests/tooling/resume_coverage_declaration.py",
@@ -40305,7 +40305,7 @@
       },
       {
         "path": "tests/tooling/test_goal_commit_chain_reaches_the_ledger.py",
-        "sha256": "3e1773c849ccf0b833b7d3566f7b64095243f40d"
+        "sha256": "800eda527270c3f3525ada2509a74b659e0f28e7"
       },
       {
         "path": "tests/tooling/test_goal_ledger_covers_every_commit.py",
@@ -41592,11 +41592,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "05436a2f4100670510b98b86f2e994e0aee486c3"
+    "head": "bb08607715991f0d44277ed5481def92ef0402c6"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "05436a2f4100670510b98b86f2e994e0aee486c3",
+  "ran_at_head": "bb08607715991f0d44277ed5481def92ef0402c6",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
