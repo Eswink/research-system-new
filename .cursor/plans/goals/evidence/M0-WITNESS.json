@@ -1,5 +1,5 @@
 {
-  "exit_code": 0,
+  "exit_code": 1,
   "fingerprint_after": {
     "files": [
       {
@@ -1892,11 +1892,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "c55f1144b165394f4013e3951802f5a041d99c0f"
+        "sha256": "56277cb0d48ac808c44640f08029c518e7fdfba2"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "aa7435b6d58cbb1f00795ff2f7068ad18498f4ec"
+        "sha256": "6bbb21fab142f7cba192080f977646f350509aa1"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -3029,6 +3029,22 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261117-114-ablation-k3.json",
         "sha256": "bae55ccb956699098e06801337c2efc071e66276"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261119-115-dual-review-k1.json",
+        "sha256": "d8290e92d3069f93d6c2101cd0965658435eb234"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261119-115-dual-review-k2.json",
+        "sha256": "c04c49c3d4a24ebb7b5d8ef7880e9f52c5adca44"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261119-115-dual-review-k3-summary.json",
+        "sha256": "0fed10c7146bf8ce2d76073fb0eae2058ff9ebeb"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261119-115-dual-review-k3.json",
+        "sha256": "67dcda9ce9dda790bb8cb2c0e40a72ddcf49b4fd"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -4557,6 +4573,10 @@
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261118-114-paired-ablation-readings.md",
         "sha256": "205f3ae13daa7074c561c9464c6a02fdb57ef07b"
+      },
+      {
+        "path": ".cursor/plans/rechecks/RECHECK-20261119-115-goal-closeout.md",
+        "sha256": "c7a6d4db4033514fd9b84bfc06b3f5c5ca85e511"
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261120-116-relay-switch-and-free-model-discipline.md",
@@ -12408,7 +12428,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-integration.ts",
-        "sha256": "8cbc4cbb7fb6b9278416bc9c32d9b86cd12461ab"
+        "sha256": "34dd7cc5817ddb646ef504f5634cd2d90f017868"
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-lineage.ts",
@@ -19436,7 +19456,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "65aa658317d67137893754f65a568b4f2dc54296"
+        "sha256": "5deaaa8acb4377173c97663386d303b056036225"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -19604,7 +19624,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "d3975c3458192b837bfeb166cfcbfd9b8749049b"
+        "sha256": "90a925c032a312240f83075760d88053e4f9d7c9"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -20259,6 +20279,10 @@
         "sha256": "f77f7f7fa91fdb452d21de5d0f0b253702ed6066"
       },
       {
+        "path": "tools/goal115_closeout_assertions.py",
+        "sha256": "8066f3aee22b8d8c3f4b4e1968c03be740ffb961"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -20755,6 +20779,10 @@
         "sha256": "77faa53057a72b6745f55df1a6e49161f9dbbd9c"
       },
       {
+        "path": "tools/verify_goal115_closeout.py",
+        "sha256": "e6ffc98d34ff2c74a41b066a0d82447eb29e4290"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -20767,7 +20795,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "e3dcc03d79e5942e26709c919c6387c2df45e7b6"
+    "head": "20a2d9f4f12f484bd66012fe12099d8f8e7c5d61"
   },
   "fingerprint_before": {
     "files": [
@@ -22661,11 +22689,11 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "c55f1144b165394f4013e3951802f5a041d99c0f"
+        "sha256": "56277cb0d48ac808c44640f08029c518e7fdfba2"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
-        "sha256": "aa7435b6d58cbb1f00795ff2f7068ad18498f4ec"
+        "sha256": "6bbb21fab142f7cba192080f977646f350509aa1"
       },
       {
         "path": ".cursor/plans/goals/README.md",
@@ -23798,6 +23826,22 @@
       {
         "path": ".cursor/plans/goals/evidence/GOAL-20261117-114-ablation-k3.json",
         "sha256": "bae55ccb956699098e06801337c2efc071e66276"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261119-115-dual-review-k1.json",
+        "sha256": "d8290e92d3069f93d6c2101cd0965658435eb234"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261119-115-dual-review-k2.json",
+        "sha256": "c04c49c3d4a24ebb7b5d8ef7880e9f52c5adca44"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261119-115-dual-review-k3-summary.json",
+        "sha256": "0fed10c7146bf8ce2d76073fb0eae2058ff9ebeb"
+      },
+      {
+        "path": ".cursor/plans/goals/evidence/GOAL-20261119-115-dual-review-k3.json",
+        "sha256": "67dcda9ce9dda790bb8cb2c0e40a72ddcf49b4fd"
       },
       {
         "path": ".cursor/plans/m12-r1_remediation_plan_aaca9616.plan.md",
@@ -25326,6 +25370,10 @@
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261118-114-paired-ablation-readings.md",
         "sha256": "205f3ae13daa7074c561c9464c6a02fdb57ef07b"
+      },
+      {
+        "path": ".cursor/plans/rechecks/RECHECK-20261119-115-goal-closeout.md",
+        "sha256": "c7a6d4db4033514fd9b84bfc06b3f5c5ca85e511"
       },
       {
         "path": ".cursor/plans/rechecks/RECHECK-20261120-116-relay-switch-and-free-model-discipline.md",
@@ -33177,7 +33225,7 @@
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-integration.ts",
-        "sha256": "8cbc4cbb7fb6b9278416bc9c32d9b86cd12461ab"
+        "sha256": "34dd7cc5817ddb646ef504f5634cd2d90f017868"
       },
       {
         "path": "apps/web/tests/e2e/stub-routes-lineage.ts",
@@ -40205,7 +40253,7 @@
       },
       {
         "path": "tests/tooling/test_closeout_verifiers_run_their_own_assertions.py",
-        "sha256": "65aa658317d67137893754f65a568b4f2dc54296"
+        "sha256": "5deaaa8acb4377173c97663386d303b056036225"
       },
       {
         "path": "tests/tooling/test_console_stub_idempotency_parity.py",
@@ -40373,7 +40421,7 @@
       },
       {
         "path": "tests/tooling/test_tooling_scripts_meet_product_gates.py",
-        "sha256": "d3975c3458192b837bfeb166cfcbfd9b8749049b"
+        "sha256": "90a925c032a312240f83075760d88053e4f9d7c9"
       },
       {
         "path": "tests/tooling/test_toolpack_capability_policy_pending.py",
@@ -41028,6 +41076,10 @@
         "sha256": "f77f7f7fa91fdb452d21de5d0f0b253702ed6066"
       },
       {
+        "path": "tools/goal115_closeout_assertions.py",
+        "sha256": "8066f3aee22b8d8c3f4b4e1968c03be740ffb961"
+      },
+      {
         "path": "tools/m12_ncbi_smoke.py",
         "sha256": "44c8ccdd3b83960486ebb0487f1e3364a676e0c7"
       },
@@ -41524,6 +41576,10 @@
         "sha256": "77faa53057a72b6745f55df1a6e49161f9dbbd9c"
       },
       {
+        "path": "tools/verify_goal115_closeout.py",
+        "sha256": "e6ffc98d34ff2c74a41b066a0d82447eb29e4290"
+      },
+      {
         "path": "tools/zcode-hooks/skill_index_context.py",
         "sha256": "3eb6b7291ba98e2b0715b152b3a1108e66e9aca4"
       },
@@ -41536,11 +41592,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "e3dcc03d79e5942e26709c919c6387c2df45e7b6"
+    "head": "20a2d9f4f12f484bd66012fe12099d8f8e7c5d61"
   },
-  "green": true,
+  "green": false,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "e3dcc03d79e5942e26709c919c6387c2df45e7b6",
-  "terminal_line": "PASS: profile=m0; 23 deterministic checks",
+  "ran_at_head": "20a2d9f4f12f484bd66012fe12099d8f8e7c5d61",
+  "terminal_line": "FAILED: 1 check(s): python/tests=1",
   "tree_changed_during_the_run": false
 }
