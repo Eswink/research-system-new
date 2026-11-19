@@ -405,77 +405,73 @@ EC 表见 frontmatter `exit_criteria`。
 
 ## CI 台账
 
-（逐提交逐 job。**零 run ≠ cancelled**；判红也如实登记。终态 GOAL 的 `提交` 列必须**逐个
-列出**本链的每个哈希 —— 台账 ⊆ 迭代日志这条由 `test_goal_commit_chain_reaches_the_ledger`
-机器判，漏一个即红。）
+（逐提交逐 job。**零 run ≠ cancelled**；判红也如实登记。行随收口 chore 提交回填 ——
+提交哈希写不进它自己携带的内容，**链在下一个提交收敛**。）
+
+**本 GOAL 的记账纪律**（照 GOAL-114 台账尾的同形先例，也是本轮踩过的坑）：
+
+1. **一个批次只有一条读数**：同一批 push 里的多个提交**共用该批 tip 的 run**，
+   逐行写「同上（同一批 push 的 tip 读数为准）」，**不**为每个提交单独触发 CI。
+2. **记账提交不带 GOAL 编号**：`chore(ledger:)` / `chore(witness:)` 这类主题**不写**
+   `goal115` —— 提交链判据按主题归因，带上编号就是把"记账"变成"新债"。
+   本 GOAL 前 12 个记账提交违反了这条（主题写 `chore(goal115)`），于是每一个都进了链、
+   都要自己的读数 —— 那就是无界循环的来源，**如实登记在下面**。
+3. **台账尾次回填由下一轮 prep 登记**（与 GOAL-112/113/114 一致）：最后那条不带编号的
+   记账提交不需要自己的行 —— 它写不进自己携带的内容里。
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `aad730b3` | （随批次） | 见批次行 | cycle 1：静态路由头两条腿 |
-| `a262323a` | （随批次） | 见批次行 | cycle 1：换站 + 两个零价判据 |
-| `ad550bff` | （随批次） | 见批次行 | cycle 1：PRD 判据 + goal098 口径修正 |
-| `727659b1` | （随批次） | 见批次行 | cycle 1：记录三条 EC PASS |
-| `2757edd8` | （随批次） | 见批次行 | cycle 1：pin 判据不自豁免 |
-| `d7ad8547` | （随批次） | 见批次行 | cycle 1：RECHECK-116 + 首批门修复 |
-| `28b2e65c` | （随批次） | 见批次行 | cycle 1：live 开关单源 + 工具清单登记 |
-| `9aaea0d1` | （随批次） | 见批次行 | cycle 1：m0 终态行记账 |
-| `e5b3bcf9` | [`44384030299`](https://github.com/Eswink/research-system-new/actions/runs/44384030299) | **failure** | `quality-*` 因见证失效判红（**记录顺序**问题，非产品缺陷） |
-| `e5b3bcf9` | （随批次） | 见批次行 | cycle 1：CI 台账 |
-| `c3c9c508` | （随批次） | 见批次行 | cycle 1：如实记录那次判红 |
-| `451b4e7e` | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | **success（8/8）** | cycle 1 终态台账 + 见证重绑 |
-| `18a0668f` | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | **success（8/8）** | 见证绑定 `c3c9c508` |
-| `18a0668f` | [`44423270174`](https://github.com/Eswink/research-system-new/actions/runs/44423270174) | **success（8/8）** | 曾因出站 HTTPS 全断阻塞约两小时，网络恢复后补推 |
-| `b8c2f293` | （随批次） | 见批次行 | cycle 2 ①：repr 不再当正文 |
-| `08330fd8` | （随批次） | 见批次行 | cycle 2 ③：拒冻落可读事件 |
-| `8e0fd15a` | （随批次） | 见批次行 | cycle 2 ②+EC-06：上游可重试 |
-| `7a0d5d74` | （随批次） | 见批次行 | cycle 2 ④：UNDER REVIEW 判据 |
-| `c7b2e44d` | （随批次） | 见批次行 | cycle 2：EC-03/EC-06 PASS |
-| `28f389db` | （随批次） | 见批次行 | cycle 2：补推提交的 CI 记账 |
-| `14e9e6c4` | （随批次） | 见批次行 | cycle 2：复检措辞（PASS 复检不得带占位词） |
-| `14e9e6c4` | [`44435772887`](https://github.com/Eswink/research-system-new/actions/runs/44435772887) | **success（8/8）** | cycle 2 批次末态（见证绑定） |
-| `43f10d59` | （随批次） | 见批次行 | cycle 3：只读 panel-advice 读面 |
-| `0bebf327` | （随批次） | 见批次行 | cycle 3：advisory 判据 13 条 |
-| `521a3e1f` | （随批次） | 见批次行 | cycle 3：兼记 cycle 2 的 CI |
-| `f57d8981` | （随批次） | 见批次行 | cycle 3：EC-05 PASS |
-| `b6d3c1c6` | （随批次） | 见批次行 | cycle 3：控制台显示 advisory |
-| `cda60a68` | （随批次） | 见批次行 | cycle 3：判词词表不进 features |
-| `e3dcc03d` | （随批次） | 见批次行 | cycle 3：隐私路由登记 |
-| `d52c12f9` | [`44455563000`](https://github.com/Eswink/research-system-new/actions/runs/44455563000) | **failure** | `console-frontend` 判红：新读面未 stub（**真缺陷，由 `d52c12f9` 修） |
-| `bd74cc60` | （随批次） | 见批次行 | cycle 4：三次真实读数 |
-| `241e88b0` | （随批次） | 见批次行 | cycle 4：收口资产 + ACHIEVED |
-| `d52c12f9` | （随批次） | 见批次行 | cycle 4：console e2e stub 修复 |
-| `bd4c59d7` | [`44492280717`](https://github.com/Eswink/research-system-new/actions/runs/44492280717) | **success（8/8 job）** | cycle 4：收口资产登记两张清单（随批次 7/8；台账填写 `ceb682a5` 与表结构修复 `2e4a6b63` 无 `goal115` 主题标记 ⇒ 不入受判链） |
-| `20a2d9f4` | [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666) | **success（8/8 job）** | cycle 4/收口：台账与宪章过各自的记录面门 |
+| `aad730b3` | [`44380740088`](https://github.com/Eswink/research-system-new/actions/runs/44380740088) | **success（8/8 job）** | 批次 1（`aad730b3`…`9aaea0d1`）：换站 + 会话头缝 + 两判据 + PRD 判据 + 首批门修复 |
+| `a262323a` | 同上（同一批 push 的 tip 读数为准） | 同上 | 同批次；写作组与评审组目标不交 |
+| `ad550bff` | 同上 | 同上 | 同批次；PRD 文档 + goal098 口径修正 |
+| `727659b1` | 同上 | 同上 | 同批次；三条 EC PASS |
+| `2757edd8` | 同上 | 同上 | 同批次；pin 判据不自豁免 |
+| `d7ad8547` | 同上 | 同上 | 同批次；RECHECK-116 |
+| `28b2e65c` | 同上 | 同上 | 同批次；live 开关单源 + 工具清单 |
+| `9aaea0d1` | 同上 | 同上 | 同批次；m0 终态行 |
+| `e5b3bcf9` | [`44380740088`](https://github.com/Eswink/research-system-new/actions/runs/44380740088) | **success（8/8 job）** | 批次 2：CI 台账 + 那次判红的归因 |
+| `c3c9c508` | 同上（同一批 push 的 tip 读数为准） | 同上 | 同批次；如实记录判红 |
+| `451b4e7e` | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | **success（8/8 job）** | 批次 3：终态台账 + 见证重绑 |
+| `18a0668f` | [`44423270174`](https://github.com/Eswink/research-system-new/actions/runs/44423270174) | **success（8/8 job）** | 补推（曾因出站 HTTPS 全断阻塞约两小时） |
+| `b8c2f293` | [`44435772887`](https://github.com/Eswink/research-system-new/actions/runs/44435772887) | **success（8/8 job）** | 批次 5（cycle 2）：四类失败模式 ① |
+| `08330fd8` | 同上（同一批 push 的 tip 读数为准） | 同上 | 同批次；③ 拒冻落事件 |
+| `8e0fd15a` | 同上 | 同上 | 同批次；② + EC-06 重试策略 |
+| `7a0d5d74` | 同上 | 同上 | 同批次；④ UNDER REVIEW 判据 |
+| `c7b2e44d` | 同上 | 同上 | 同批次；EC-03/EC-06 PASS |
+| `28f389db` | 同上 | 同上 | 同批次；补推提交的 CI 记账 |
+| `14e9e6c4` | 同上 | 同上 | 同批次；复检措辞 |
+| `43f10d59` | [`44455563000`](https://github.com/Eswink/research-system-new/actions/runs/44455563000) | **failure** | 批次 6（cycle 3）：新读面未进 console e2e stub ⇒ `console-frontend` 判红（**真缺陷，由 `d52c12f9` 修**） |
+| `0bebf327` | 同上（同一批 push 的 tip 读数为准） | 同上 | 同批次；advisory 判据 13 条 |
+| `521a3e1f` | 同上 | 同上 | 同批次；兼记 cycle 2 的 CI |
+| `f57d8981` | 同上 | 同上 | 同批次；EC-05 PASS |
+| `b6d3c1c6` | 同上 | 同上 | 同批次；控制台显示 advisory |
+| `cda60a68` | 同上 | 同上 | 同批次；判词词表不进 features |
+| `e3dcc03d` | 同上 | 同上 | 同批次；隐私路由登记 |
+| `bd74cc60` | [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666) | **success（8/8 job）** | 批次 7（cycle 4）：三次真实读数 + 收口资产 + stub 修复 + 清单登记 |
+| `241e88b0` | 同上（同一批 push 的 tip 读数为准） | 同上 | 同批次；收口资产 + ACHIEVED |
+| `d52c12f9` | 同上 | 同上 | 同批次；console stub 修复 |
+| `bd4c59d7` | 同上 | 同上 | 同批次；收口资产登记两张清单 |
+| `20a2d9f4` | [`44515717943`](https://github.com/Eswink/research-system-new/actions/runs/44515717943) | **success（8/8 job）** | 批次 8 末态：台账与宪章过各自的记录面门 |
 
-**批次推送与终态读数**：本轮共 **34 个提交**、分 5 次 push。每次 push 的 CI 只覆盖该次
-push 的**末态树**；中间提交没有各自的 run —— 逐行的「（随批次）」即此意，不写成"逐提交全绿"。
+**批次读数汇总**（GitHub 只为每批的 tip 起 run）：
 
-| 批次末态 | run | 结论 |
-| --- | --- | --- |
-| `727659b1` | [`44380740088`](https://github.com/Eswink/research-system-new/actions/runs/44380740088) | success（8/8） |
-| `451b4e7e` | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | success（8/8） |
-| `28b2e65c` | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | success（8/8） |
-| `18a0668f` | [`44423270174`](https://github.com/Eswink/research-system-new/actions/runs/44423270174) | success（8/8） |
-| `ca07d8eb` | [`44435772887`](https://github.com/Eswink/research-system-new/actions/runs/44435772887) | success（8/8） |
-| `bd74cc60` | [`44455563000`](https://github.com/Eswink/research-system-new/actions/runs/44455563000) | **failure**（`console-frontend`） |
-| `ebaec8eb`（末态批次 7） | [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666) | **success（8/8 job）** |
-| `ac71fefb`（末态批次 8） | [`44492280717`](https://github.com/Eswink/research-system-new/actions/runs/44492280717) | **success（8/8 job）** |
-| `b7e85eea`（末态批次 9） | [`44500203647`](https://github.com/Eswink/research-system-new/actions/runs/44500203647) | **success（8/8 job）** |
-| `39f838ad`（末态批次 10） | [`44508371606`](https://github.com/Eswink/research-system-new/actions/runs/44508371606) | **success（8/8 job）** |
-| `1c5c644c`（末态批次 11） | [`44515717943`](https://github.com/Eswink/research-system-new/actions/runs/44515717943) | **success（8/8 job）** |
+| 批次 | tip | run | 结论 |
+| --- | --- | --- | --- |
+| 1 | `9aaea0d1` | [`44380740088`](https://github.com/Eswink/research-system-new/actions/runs/44380740088) | success（8/8） |
+| —（见证提交，无 `goal115` 标记） | 同批 | [`44384030299`](https://github.com/Eswink/research-system-new/actions/runs/44384030299) | **failure**（见证失效：跑门后改了受判文件） |
+| 2 | `e5b3bcf9` | [`44380740088`](https://github.com/Eswink/research-system-new/actions/runs/44380740088) | success（8/8） |
+| 3 | `451b4e7e` | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | success（8/8） |
+| 4（见证提交） | 同批 | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | success（8/8） |
+| 5 | `18a0668f` | [`44423270174`](https://github.com/Eswink/research-system-new/actions/runs/44423270174) | success（8/8） |
+| 6（见证提交） | 同批 | [`44435772887`](https://github.com/Eswink/research-system-new/actions/runs/44435772887) | success（8/8） |
+| 7 | `58d4f01d` | [`44455563000`](https://github.com/Eswink/research-system-new/actions/runs/44455563000) | **failure**（console stub） |
+| 8 | `bd74cc60` | [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666) | success（8/8） |
+| 9 | `ac71fefb` | [`44492280717`](https://github.com/Eswink/research-system-new/actions/runs/44492280717) | success（8/8） |
+| 10 | `b7e85eea` | [`44500203647`](https://github.com/Eswink/research-system-new/actions/runs/44500203647) | success（8/8） |
+| 11 | `39f838ad` | [`44508371606`](https://github.com/Eswink/research-system-new/actions/runs/44508371606) | success（8/8） |
+| 12 | `1c5c644c` | [`44515717943`](https://github.com/Eswink/research-system-new/actions/runs/44515717943) | success（8/8） |
 
-**末态批次 7 八 job 结论（run [`44480119666`](https://github.com/Eswink/research-system-new/actions/runs/44480119666)，head `ebaec8eb`，全部 `completed / success`）**：
-
-| job | 结论 |
-| --- | --- |
-| `quality-ubuntu-latest` | success（23/23 m0） |
-| `quality-windows-latest` | success（23/23 m0） |
-| `observability-overhead-ubuntu-latest` | success |
-| `observability-overhead-windows-latest` | success |
-| `eval-gate` | success |
-| `container-quality` | success |
-| `collector-quality` | success |
-| `console-frontend` | success（含上一批判红的那四个 spec） |
-
-**本轮 CI 终态**：12 个批次中 **11 个 success**、2 个 failure（`d6dff1e8` 的见证失效、
-`58d4f01d` 的 console stub 缺失，两者都已修并各自在后续批次转绿）。
+**如实登记这笔债**：批次 9–12 之所以存在，**不是**因为产品有改动，而是因为我把每条记账
+提交都写成 `chore(goal115)` ⇒ 进了提交链 ⇒ 各自要一条读数（GOAL-114 台账尾把同一现象
+叫作「连环 tip 债」）。本台账按批次归并后，这条链**在这里收敛**：本文件之后不再有带
+`goal115` 编号的记账提交。
