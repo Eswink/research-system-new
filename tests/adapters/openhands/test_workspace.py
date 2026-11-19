@@ -57,3 +57,14 @@ class TestLocalWorkspace:
         build_local_workspace(_lease(), "s-2", allow_host_shell=True, base_dir=str(tmp_path))
         entries = list(tmp_path.iterdir())
         assert len(entries) >= 0  # 目录可写且隔离
+
+    def test_default_root_is_an_ignored_runtime_dir(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # 会话目录不自动回收：缺省根必须在 `.gitignore` 覆盖的运行时目录下，
+        # 否则每个会话一个目录会把未跟踪扫描拖慢（2026-11-19 的 183k 空目录）。
+        monkeypatch.chdir(tmp_path)
+        workspace = build_local_workspace(_lease(), "s-default", allow_host_shell=True)
+        expected = tmp_path / "data" / "session-workspaces" / "s-default"
+        assert workspace.working_dir == str(expected.resolve())
+        assert expected.is_dir()

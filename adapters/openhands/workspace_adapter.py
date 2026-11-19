@@ -20,6 +20,11 @@ from packages.application.ports.errors import PermanentPortError
 from packages.domain.enums import FailureCategory
 from packages.domain.workspace import WorkspaceLease
 
+# 会话工作区缺省根：必须是**已忽略**的运行时目录。每个会话一个目录且不自动回收，
+# 放在仓库根会让 `git status` 的未跟踪扫描随会话数线性变慢（2026-11-19 实测
+# 183,280 个空目录 ⇒ 完整 status 19s，桌面端 15s 超时）。
+_DEFAULT_WORKSPACE_ROOT = Path("data") / "session-workspaces"
+
 
 class HostShellDeniedError(PermanentPortError):
     """LocalWorkspace（host shell）被策略禁用（AGENTS.md §9 默认 deny）。"""
@@ -50,16 +55,21 @@ def build_local_workspace(
     allow_host_shell: bool = False,
     base_dir: str | None = None,
 ) -> LocalWorkspace:
-    """构造 LocalWorkspace（M6 主路径：隔离临时目录）。
+    """构造 LocalWorkspace（M6 主路径：会话级隔离目录）。
 
     - host shell 默认 deny：allow_host_shell=False 时抛 HostShellDeniedError；
     - working_dir 使用会话级隔离目录（base_dir 可注入，测试确定性）；
+    - 缺省根在已忽略的运行时目录 `data/session-workspaces/<session_id>` 下——
+      会话目录不自动回收，放在仓库根会污染未跟踪扫描；
     - workspace 生命周期由 Conversation/close 管理（SDK LocalWorkspace
       working_dir 即根目录，adapter 不做路径转发）。
     """
     if not allow_host_shell:
         raise HostShellDeniedError("LocalWorkspace host shell is denied by default (AGENTS.md §9)")
-    root = Path(base_dir or f"workspace/{session_id}").resolve()
+    if base_dir is not None:
+        root = Path(base_dir).resolve()
+    else:
+        root = (_DEFAULT_WORKSPACE_ROOT / session_id).resolve()
     root.mkdir(parents=True, exist_ok=True)
     return LocalWorkspace(working_dir=str(root))
 

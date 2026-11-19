@@ -38,6 +38,11 @@ secrets/
 # (`services/api/assembly.py` resolves it next to the DB, i.e. the repo root
 # when the DB is `:memory:`); runtime bytes, never source.
 /artifact-blobs/
+# legacy per-session workspace root (the pre-2026-11-19 default; sessions now
+# use `data/session-workspaces/`, covered by `data/` above). Kept as a guard so
+# stale processes or explicit `base_dir="workspace/..."` callers cannot
+# reintroduce the 183k-dir tree walk that timed out `git status`.
+/workspace/
 # local scratch space: ad-hoc debug scripts and throwaway databases.
 # Audit probes cited by rechecks live in tools/probes/ and are tracked.
 scratch/
