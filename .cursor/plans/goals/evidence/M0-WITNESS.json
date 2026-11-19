@@ -1400,7 +1400,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "57075218de1c754121009ebadbb14c9b43d805c1"
+        "sha256": "9fe10d5ad72f6168244fea71d54c0f66accadaa6"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1892,7 +1892,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "6ac9983c8f39276f183cce055d775f1e5704c770"
+        "sha256": "3abf5aed7834dcc7b16107af96b55ab2621bbc02"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4563,6 +4563,10 @@
         "sha256": "49591be3178fd258369758d8a9c7899b517d8fc5"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261120-117-four-failure-modes-and-retryability.md",
+        "sha256": "ccfb53d301a7ba4ed5b5faa283f6d3ba6a9325b0"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -6027,6 +6031,10 @@
         "sha256": "25037da6a77dbca17887238400778d338929360a"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261120-117-four-failure-modes-and-retryability.md",
+        "sha256": "8ded15b9fed13b41dc0f57fbef3a7339168f848f"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -6560,7 +6568,7 @@
       },
       {
         "path": "adapters/openhands/event_mapping.py",
-        "sha256": "671985810a8bc0b07c16936eff30a5bc548d2cf4"
+        "sha256": "a2567c34e62063302a43abfbbc600afc85e58355"
       },
       {
         "path": "adapters/openhands/llm_factory.py",
@@ -14152,7 +14160,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "e72255863d7a7e2a41ed2ba623a5d766d6fb5e4c"
+        "sha256": "4b95709d0cfccd68a45568499c07c91d5b9e8d35"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -15135,6 +15143,10 @@
         "sha256": "3a1b7222c566cfd2695f3eccf13170390907f056"
       },
       {
+        "path": "packages/application/run_orchestration/manifest_freeze_events.py",
+        "sha256": "251e40b18d1802f5e8b57a64fea966daee7a7656"
+      },
+      {
         "path": "packages/application/run_orchestration/manuscript_assembly.py",
         "sha256": "8a9e2eb460a386a22f0c3cb48114fde4dbb92eaa"
       },
@@ -15308,7 +15320,7 @@
       },
       {
         "path": "packages/application/run_orchestration/service.py",
-        "sha256": "898a5bf454a4d72dea95d7f13e1ece7c39b2d550"
+        "sha256": "ad262e4c46be2ed5273c6bd22a3bfd9fb5137986"
       },
       {
         "path": "packages/application/run_orchestration/session_carry.py",
@@ -16407,6 +16419,10 @@
         "sha256": "65b461f842037d7bb900d0a07eac1a48a1c696bb"
       },
       {
+        "path": "tests/adapters/openhands/test_event_mapping_missing_content.py",
+        "sha256": "7d48e058e5126cea2016b906d207984aeb1185e5"
+      },
+      {
         "path": "tests/adapters/openhands/test_fault_injection.py",
         "sha256": "59f57a1b6ec1cdc4f60b97bb33d08356d4584c14"
       },
@@ -17387,6 +17403,10 @@
         "sha256": "8f5547343a980f0b053818325f530d1c759f8097"
       },
       {
+        "path": "tests/application/run_orchestration/test_manifest_freeze_refusal_event.py",
+        "sha256": "87e3b7b5b162f39c0ceaba2639ad71abbd2f96b1"
+      },
+      {
         "path": "tests/application/run_orchestration/test_memory_export_declaration.py",
         "sha256": "d6922925c6e31c70432b73c7d5767f5d8aa7f56c"
       },
@@ -17493,6 +17513,10 @@
       {
         "path": "tests/application/run_orchestration/test_snapshot_migration.py",
         "sha256": "4dd739ff4f396b8c3064e58bd76c9313dce98cc3"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_under_review_segment_is_present.py",
+        "sha256": "7e53aad536191156c4562d964a87e84e7bb55d76"
       },
       {
         "path": "tests/application/subprocess_press_support.py",
@@ -18301,6 +18325,10 @@
       {
         "path": "tests/contracts/test_tool_provider_contract.py",
         "sha256": "573760daa1dda7662c097c97ab1f0a47a2d4c50e"
+      },
+      {
+        "path": "tests/contracts/test_upstream_failures_are_retryable.py",
+        "sha256": "a3d136d8937c17460cca68a41795f82b575b3f8c"
       },
       {
         "path": "tests/contracts/test_worker_registry_contract.py",
@@ -20719,7 +20747,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "451b4e7e03d07a6212def79db19f1f0fb17facf7"
+    "head": "14e9e6c461ec96467ec0f20b97222268c2661c04"
   },
   "fingerprint_before": {
     "files": [
@@ -22121,7 +22149,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "57075218de1c754121009ebadbb14c9b43d805c1"
+        "sha256": "9fe10d5ad72f6168244fea71d54c0f66accadaa6"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22613,7 +22641,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "6ac9983c8f39276f183cce055d775f1e5704c770"
+        "sha256": "3abf5aed7834dcc7b16107af96b55ab2621bbc02"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -25284,6 +25312,10 @@
         "sha256": "49591be3178fd258369758d8a9c7899b517d8fc5"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261120-117-four-failure-modes-and-retryability.md",
+        "sha256": "ccfb53d301a7ba4ed5b5faa283f6d3ba6a9325b0"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26748,6 +26780,10 @@
         "sha256": "25037da6a77dbca17887238400778d338929360a"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261120-117-four-failure-modes-and-retryability.md",
+        "sha256": "8ded15b9fed13b41dc0f57fbef3a7339168f848f"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -27281,7 +27317,7 @@
       },
       {
         "path": "adapters/openhands/event_mapping.py",
-        "sha256": "671985810a8bc0b07c16936eff30a5bc548d2cf4"
+        "sha256": "a2567c34e62063302a43abfbbc600afc85e58355"
       },
       {
         "path": "adapters/openhands/llm_factory.py",
@@ -34873,7 +34909,7 @@
       },
       {
         "path": "examples/contracts/task_contracts.yaml",
-        "sha256": "e72255863d7a7e2a41ed2ba623a5d766d6fb5e4c"
+        "sha256": "4b95709d0cfccd68a45568499c07c91d5b9e8d35"
       },
       {
         "path": "examples/contracts/toolpack_europe_pmc.yaml",
@@ -35856,6 +35892,10 @@
         "sha256": "3a1b7222c566cfd2695f3eccf13170390907f056"
       },
       {
+        "path": "packages/application/run_orchestration/manifest_freeze_events.py",
+        "sha256": "251e40b18d1802f5e8b57a64fea966daee7a7656"
+      },
+      {
         "path": "packages/application/run_orchestration/manuscript_assembly.py",
         "sha256": "8a9e2eb460a386a22f0c3cb48114fde4dbb92eaa"
       },
@@ -36029,7 +36069,7 @@
       },
       {
         "path": "packages/application/run_orchestration/service.py",
-        "sha256": "898a5bf454a4d72dea95d7f13e1ece7c39b2d550"
+        "sha256": "ad262e4c46be2ed5273c6bd22a3bfd9fb5137986"
       },
       {
         "path": "packages/application/run_orchestration/session_carry.py",
@@ -37128,6 +37168,10 @@
         "sha256": "65b461f842037d7bb900d0a07eac1a48a1c696bb"
       },
       {
+        "path": "tests/adapters/openhands/test_event_mapping_missing_content.py",
+        "sha256": "7d48e058e5126cea2016b906d207984aeb1185e5"
+      },
+      {
         "path": "tests/adapters/openhands/test_fault_injection.py",
         "sha256": "59f57a1b6ec1cdc4f60b97bb33d08356d4584c14"
       },
@@ -38108,6 +38152,10 @@
         "sha256": "8f5547343a980f0b053818325f530d1c759f8097"
       },
       {
+        "path": "tests/application/run_orchestration/test_manifest_freeze_refusal_event.py",
+        "sha256": "87e3b7b5b162f39c0ceaba2639ad71abbd2f96b1"
+      },
+      {
         "path": "tests/application/run_orchestration/test_memory_export_declaration.py",
         "sha256": "d6922925c6e31c70432b73c7d5767f5d8aa7f56c"
       },
@@ -38214,6 +38262,10 @@
       {
         "path": "tests/application/run_orchestration/test_snapshot_migration.py",
         "sha256": "4dd739ff4f396b8c3064e58bd76c9313dce98cc3"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_under_review_segment_is_present.py",
+        "sha256": "7e53aad536191156c4562d964a87e84e7bb55d76"
       },
       {
         "path": "tests/application/subprocess_press_support.py",
@@ -39022,6 +39074,10 @@
       {
         "path": "tests/contracts/test_tool_provider_contract.py",
         "sha256": "573760daa1dda7662c097c97ab1f0a47a2d4c50e"
+      },
+      {
+        "path": "tests/contracts/test_upstream_failures_are_retryable.py",
+        "sha256": "a3d136d8937c17460cca68a41795f82b575b3f8c"
       },
       {
         "path": "tests/contracts/test_worker_registry_contract.py",
@@ -41440,11 +41496,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "451b4e7e03d07a6212def79db19f1f0fb17facf7"
+    "head": "14e9e6c461ec96467ec0f20b97222268c2661c04"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "451b4e7e03d07a6212def79db19f1f0fb17facf7",
+  "ran_at_head": "14e9e6c461ec96467ec0f20b97222268c2661c04",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
