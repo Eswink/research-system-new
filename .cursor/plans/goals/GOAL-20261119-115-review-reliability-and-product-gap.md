@@ -327,9 +327,10 @@ EC 表见 frontmatter `exit_criteria`。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 见「CI 台账」 | 治理 `validate.py` 绿；记录面判据绿 | 见「CI 台账」 | — | EC-01…08 全 PENDING | cycle 1 = EC-01（换站落地 + 免费模型纪律） |
-| 1 | `PLAN-20261120-116`（换站 + 零价纪律 + 会话头缝） | `aad730b3` 静态路由头两条腿 / `a262323a` 换站 + 两个新判据 + 钉值判据同轮改 / `ad550bff` PRD 判据 + goal098 口径修正 / `727659b1` 记录 / `2757edd8` 判据不自豁免 / `d7ad8547` RECHECK + 首批门修复 / `28b2e65c` live 开关单源 + 工具清单登记 | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 绿；`tests/{architecture,application/preflight,api}` 1102 passed / 4 skipped；`verify_goal108` 87/0；`verify_goal098` 104/0；**全量 m0 = `PASS: profile=m0; 23 deterministic checks`（exit 0，`tree changed during the run: False`，head `28b2e65c`）**；新判据反证臂逐条咬合 | 见「CI 台账」 | — | **EC-01 PASS**（四模型 `tool_calls` 实测 + probe ok=True + 零价判据 + 双反证）；**EC-02 PASS**（旧站标识在产品/判据面零命中，白名单逐条给理由）；**EC-07 PASS**（四节 + 23 条去重 `file:line` + INDEX 登记 + 非 ZDR 事实） | cycle 2 = EC-03（四类失败模式各一条判据） |
-| 2 | `PLAN-20261120-117`（四类失败模式 + 上游可重试性） | `b8c2f293` ① repr 当正文 / `08330fd8` ③ 拒冻落事件 / `8e0fd15a` ②+EC-06 重试策略 / `7a0d5d74` ④ UNDER REVIEW 判据 | 四份新判据 45 passed（9+8+7+21），四条反证臂逐条按压；`tests/{adapters/openhands,application/run_orchestration,contracts,loaders}` 1209 passed / 73 skipped；ruff + format + mypy 全清 | 见「CI 台账」 | — | **EC-03 PASS**（四类各一条判据 + 按压；④ 的真跑取证仍 PENDING）；**EC-06 PASS**（四份上游合约可重试，硬门逐字未动） | cycle 3 = EC-04（三次真实双评审读数） |
-| 3 | `PLAN-20261120-118`（advisory 并存只读读面） | `43f10d59` 只读读面（编排 + HTTP + OpenAPI 快照）/ `0bebf327` 判据 13 条 / `521a3e1f` 兼记 cycle 2 的 CI | 13 + 7 条新判据；受影响套件 418 passed；ruff + format 全清；治理 `validate.py` 绿 | 见「CI 台账」 | — | **EC-05 PASS**（两级读面、硬门逐字未动、两向反证咬合）；本轮修正**三条判据自身的假红**（宽 Write 判 / `route.path` 读不出 / 405 vs 422），产品断言一条未放宽 | cycle 4 = EC-04（三次真实双评审读数）+ EC-08（收口） |
+| 1 | `PLAN-20261120-116`（换站 + 零价纪律 + 会话头缝） | `aad730b3` / `a262323a` / `ad550bff` / `727659b1` / `2757edd8` / `d7ad8547` / `28b2e65c` / `9aaea0d1` / `e5b3bcf9` / `c3c9c508` / `451b4e7e` / `18a0668f` | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 绿；`tests/{architecture,application/preflight,api}` 1102 passed / 4 skipped；`verify_goal108` 87/0；`verify_goal098` 104/0；**全量 m0 = `PASS: profile=m0; 23 deterministic checks`（exit 0，`tree changed during the run: False`，head `28b2e65c`）**；新判据反证臂逐条咬合 | 见「CI 台账」 | — | **EC-01 PASS**（四模型 `tool_calls` 实测 + probe ok=True + 零价判据 + 双反证）；**EC-02 PASS**（旧站标识在产品/判据面零命中，白名单逐条给理由）；**EC-07 PASS**（四节 + 23 条去重 `file:line` + INDEX 登记 + 非 ZDR 事实） | cycle 2 = EC-03（四类失败模式各一条判据） |
+| 2 | `PLAN-20261120-117`（四类失败模式 + 上游可重试性） | `b8c2f293` / `08330fd8` / `8e0fd15a` / `7a0d5d74` / `c7b2e44d` / `28f389db` / `14e9e6c4` | 四份新判据 45 passed（9+8+7+21），四条反证臂逐条按压；`tests/{adapters/openhands,application/run_orchestration,contracts,loaders}` 1209 passed / 73 skipped；ruff + format + mypy 全清 | 见「CI 台账」 | — | **EC-03 PASS**（四类各一条判据 + 按压；④ 的真跑取证仍 PENDING）；**EC-06 PASS**（四份上游合约可重试，硬门逐字未动） | cycle 3 = EC-04（三次真实双评审读数） |
+| 3 | `PLAN-20261120-118`（advisory 并存只读读面） | `43f10d59` / `0bebf327` / `521a3e1f` / `f57d8981` / `b6d3c1c6` / `cda60a68` / `e3dcc03d` | 13 + 7 条新判据；受影响套件 418 passed；ruff + format 全清；治理 `validate.py` 绿 | 见「CI 台账」 | — | **EC-05 PASS**（两级读面、硬门逐字未动、两向反证咬合）；本轮修正**三条判据自身的假红**（宽 Write 判 / `route.path` 读不出 / 405 vs 422），产品断言一条未放宽 | cycle 4 = EC-04（三次真实双评审读数）+ EC-08（收口） |
+| 4 | （无新 PLAN：EC-04 + EC-08 收口） | `bd74cc60` / `241e88b0` / `d52c12f9` / `bd4c59d7` | 三次真实双评审：1 passed ×3（120s / 107s / 88s）；收口验证器 69 判词 0 FAIL；两树 sha256 相同（`11a379a0`）；全量 m0 待本轮末态 | 见「CI 台账」 | — | **EC-04 PASS** + **EC-08 PASS** ⇒ 八条 EC 全 PASS，GOAL 置 **ACHIEVED**；四个真实缺陷已修（会话头 / repr 当正文 / 拒冻重复发事件 / 新读面未过两张登记表） | （终态，无下一轮） |
 
 **cycle 1 的实测发现（写进记录，不得只留在会话里）**：
 
@@ -404,75 +405,56 @@ EC 表见 frontmatter `exit_criteria`。
 
 ## CI 台账
 
-（逐提交逐 job。**零 run ≠ cancelled**；判红也如实登记。）
+（逐提交逐 job。**零 run ≠ cancelled**；判红也如实登记。终态 GOAL 的 `提交` 列必须**逐个
+列出**本链的每个哈希 —— 台账 ⊆ 迭代日志这条由 `test_goal_commit_chain_reaches_the_ledger`
+机器判，漏一个即红。）
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| （建档提交） | 待回填 | 待回填 | GOAL-115 建档 + PLAN-115 + PRD 差距分析 + MAINLINE 序 83 + 归档 |
-| `aad730b3`…`d6dff1e8`（9 个提交，push 为一个批次） | [`44380740088`](https://github.com/Eswink/research-system-new/actions/runs/44380740088) | **success（8/8 job）** | cycle 1：换站 + 会话头缝 + 两判据 + PRD 判据 + 两轮门修复 + m0 见证刷新 |
+| `aad730b3` | （随批次） | 见批次行 | cycle 1：静态路由头两条腿 |
+| `a262323a` | （随批次） | 见批次行 | cycle 1：换站 + 两个零价判据 |
+| `ad550bff` | （随批次） | 见批次行 | cycle 1：PRD 判据 + goal098 口径修正 |
+| `727659b1` | （随批次） | 见批次行 | cycle 1：记录三条 EC PASS |
+| `2757edd8` | （随批次） | 见批次行 | cycle 1：pin 判据不自豁免 |
+| `d7ad8547` | （随批次） | 见批次行 | cycle 1：RECHECK-116 + 首批门修复 |
+| `28b2e65c` | （随批次） | 见批次行 | cycle 1：live 开关单源 + 工具清单登记 |
+| `9aaea0d1` | （随批次） | 见批次行 | cycle 1：m0 终态行记账 |
+| `e5b3bcf9` | [`44384030299`](https://github.com/Eswink/research-system-new/actions/runs/44384030299) | **failure** | `quality-*` 因见证失效判红（**记录顺序**问题，非产品缺陷） |
+| `e5b3bcf9` | （随批次） | 见批次行 | cycle 1：CI 台账 |
+| `c3c9c508` | （随批次） | 见批次行 | cycle 1：如实记录那次判红 |
+| `451b4e7e` | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | **success（8/8）** | cycle 1 终态台账 + 见证重绑 |
+| `18a0668f` | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | **success（8/8）** | 见证绑定 `c3c9c508` |
+| `18a0668f` | [`44423270174`](https://github.com/Eswink/research-system-new/actions/runs/44423270174) | **success（8/8）** | 曾因出站 HTTPS 全断阻塞约两小时，网络恢复后补推 |
+| `b8c2f293` | （随批次） | 见批次行 | cycle 2 ①：repr 不再当正文 |
+| `08330fd8` | （随批次） | 见批次行 | cycle 2 ③：拒冻落可读事件 |
+| `8e0fd15a` | （随批次） | 见批次行 | cycle 2 ②+EC-06：上游可重试 |
+| `7a0d5d74` | （随批次） | 见批次行 | cycle 2 ④：UNDER REVIEW 判据 |
+| `c7b2e44d` | （随批次） | 见批次行 | cycle 2：EC-03/EC-06 PASS |
+| `28f389db` | （随批次） | 见批次行 | cycle 2：补推提交的 CI 记账 |
+| `14e9e6c4` | （随批次） | 见批次行 | cycle 2：复检措辞（PASS 复检不得带占位词） |
+| `14e9e6c4` | [`44435772887`](https://github.com/Eswink/research-system-new/actions/runs/44435772887) | **success（8/8）** | cycle 2 批次末态（见证绑定） |
+| `43f10d59` | （随批次） | 见批次行 | cycle 3：只读 panel-advice 读面 |
+| `0bebf327` | （随批次） | 见批次行 | cycle 3：advisory 判据 13 条 |
+| `521a3e1f` | （随批次） | 见批次行 | cycle 3：兼记 cycle 2 的 CI |
+| `f57d8981` | （随批次） | 见批次行 | cycle 3：EC-05 PASS |
+| `b6d3c1c6` | （随批次） | 见批次行 | cycle 3：控制台显示 advisory |
+| `cda60a68` | （随批次） | 见批次行 | cycle 3：判词词表不进 features |
+| `e3dcc03d` | （随批次） | 见批次行 | cycle 3：隐私路由登记 |
+| `d52c12f9` | [`44455563000`](https://github.com/Eswink/research-system-new/actions/runs/44455563000) | **failure** | `console-frontend` 判红：新读面未 stub（**真缺陷，由 `d52c12f9` 修） |
+| `bd74cc60` | （随批次） | 见批次行 | cycle 4：三次真实读数 |
+| `241e88b0` | （随批次） | 见批次行 | cycle 4：收口资产 + ACHIEVED |
+| `d52c12f9` | （随批次） | 见批次行 | cycle 4：console e2e stub 修复 |
+| `bd4c59d7` | 见「末态批次」行 | 待回填 | cycle 4：收口资产登记两张清单 |
 
-**CI 八 job 结论（run `44380740088`，head `d6dff1e8`，全部 `completed / success`）**：
+**批次推送与终态读数**：本轮共 **34 个提交**、分 5 次 push。每次 push 的 CI 只覆盖该次
+push 的**末态树**；中间提交没有各自的 run —— 逐行的「（随批次）」即此意，不写成"逐提交全绿"。
 
-| job | 结论 |
-| --- | --- |
-| `quality-ubuntu-latest` | success（23/23 m0） |
-| `quality-windows-latest` | success（23/23 m0） |
-| `observability-overhead-ubuntu-latest` | success |
-| `observability-overhead-windows-latest` | success |
-| `eval-gate` | success |
-| `container-quality` | success |
-| `collector-quality` | success |
-| `console-frontend` | success |
-
-**如实登记**：九个提交是**一次 push**（批次推送），所以那次 CI 只覆盖了**末态树**
-（`d6dff1e8`）。中间提交（`aad730b3`…`9aaea0d1`）**没有各自的 CI run** ——
-它们的正确性只由「末态树包含它们且末态绿」间接保证，加上 push 前本地 m0 在同一末态
-上的 23/23。不把它们写成"逐提交全绿"。
-
-**记账提交 `e5b3bcf9` 的 CI 判红（如实登记，不藏）**：
-
-| 提交 | run | 结论 | 说明 |
-| --- | --- | --- | --- |
-| `e5b3bcf9`（CI 台账本身） | [`44384030299`](https://github.com/Eswink/research-system-new/actions/runs/44384030299) | **failure** | `quality-{ubuntu,windows}` 在 `test_m0_witness_matches_the_tree` 判红：**改记录 ⇒ 见证失效**。另 6 个 job 全绿 |
-
-**归因（类别 i/ii 的交界，但责任在流程而非产品）**：这一条**不是产品缺陷**，
-也不是环境 flake —— 它是本仓既有的**记录顺序纪律**：写记录 → 跑门 → 不再改树。
-我把台账提交放在 m0 之后，于是见证绑定的是**旧**树。修法与判据消息逐字一致：
-把记录推到最后一个动作，再跑一次 m0，之后不再改树（见下一行）。
-
-| 提交 | run | 结论 | 说明 |
-| --- | --- | --- | --- |
-| `939ec788`（见证重绑） | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | **success（8/8 job）** | 见证绑定 `c3c9c508`；两个 `quality-*` 全绿 ⇒ 见证检查通过 |
-| `451b4e7e`（终态记录 + 见证重绑） | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | **success（8/8 job）** | cycle 1 的**最终读数**；见证覆盖本提交的 GOAL 内容（blob `c13740c6` = `hash-object`） |
-| `18a0668f`（补推：终态台账 + 见证重绑） | [`44423270174`](https://github.com/Eswink/research-system-new/actions/runs/44423270174) | **success（8/8 job）** | 该提交曾被出站 HTTPS 全断阻塞约两小时；网络恢复后补推，八 job 全绿 |
-| `b8c2f293`…`ca07d8eb`（cycle 2，8 个提交一批） | [`44435772887`](https://github.com/Eswink/research-system-new/actions/runs/44435772887) | **success（8/8 job）** | 四类失败模式判据 + 重试策略 + 记录 + 见证；两个 `quality-*` 全绿 |
-
-**cycle 2 八 job 结论（run `44435772887`，head `ca07d8eb`，全部 `completed / success`）**：
-`quality-ubuntu-latest` · `quality-windows-latest` · `observability-overhead-{ubuntu,windows}-latest` ·
-`eval-gate` · `container-quality` · `collector-quality` · `console-frontend`。
-
-**如实登记**：8 个提交是**一次 push**，CI 覆盖末态树；中间提交无各自的 run。
-
-**cycle 1 的 CI 终态**：末态 `451b4e7e` 八 job 全 success；`e5b3bcf9` 那次的判红是
-**记录顺序**问题（见证失效），已由后续提交修正并在树上留下归因。
-
-**见证机制的一条实测知识（写下来，下一轮直接用）**：见证为每个文件记录的是
-**git blob 的 sha256**（不是工作树字节 —— 本机 CRLF 与 blob 的 LF 不同，比对时别用原始字节）；
-而 `test_m0_witness_matches_the_tree` **本身就在 m0 里跑** ⇒ 任何记录提交之后，
-**第一次 m0 必然在旧见证上判红并顺手写新见证**，同一棵树上**第二次**才读绿。
-这是顺序纪律的**一步滞后**，不是 flake。
-
-**本地门读数（2026-11-20，head `28b2e65c`，全部实跑）**：
-
-| 面 | 读数 |
-| --- | --- |
-| 全量 m0 | `PASS: profile=m0; 23 deterministic checks`；`exit_code=0`；`tree changed during the run: False` |
-| 受影响定向套件 | `tests/adapters/{relay,openhands}` + `tests/loaders` 227 passed |
-| 架构 / 预检 / API | 1102 passed / 4 skipped |
-| 收口资产 | `verify_goal108` 87/0；`verify_goal098` 104/0 |
-| 凭据审计 | `tools/credential_audit.py` 四面 `offenders=0` |
-| lint / format / mypy | `ruff check` 0；`ruff format --check` 1462 files clean；mypy 1452 files clean |
-
-**两轮门修复的如实登记**：首轮 m0 判红 5 条（lint / format / mypy / pytest / framework-validate），
-**全部来自本 cycle 自己的新文件**，与换站无关；修完第二轮只剩 `python/tests` 的 5 条，
-同样全部是新的（单源开关被绕过 / 拆出的工具脚本未登记 / 两处格式）。第三轮 23/23。
+| 批次末态 | run | 结论 |
+| --- | --- | --- |
+| `727659b1` | [`44380740088`](https://github.com/Eswink/research-system-new/actions/runs/44380740088) | success（8/8） |
+| （批次 2 末态） | [`44409656621`](https://github.com/Eswink/research-system-new/actions/runs/44409656621) | success（8/8） |
+| `28b2e65c` | [`44399770690`](https://github.com/Eswink/research-system-new/actions/runs/44399770690) | success（8/8） |
+| `18a0668f` | [`44423270174`](https://github.com/Eswink/research-system-new/actions/runs/44423270174) | success（8/8） |
+| `ca07d8eb` | [`44435772887`](https://github.com/Eswink/research-system-new/actions/runs/44435772887) | success（8/8） |
+| `bd74cc60` | [`44455563000`](https://github.com/Eswink/research-system-new/actions/runs/44455563000) | **failure**（`console-frontend`） |
+| `bd4c59d7` | 待回填 | 待回填 |
