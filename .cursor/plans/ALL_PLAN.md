@@ -14,6 +14,7 @@
 | [x] | [PLAN-20261114-113](tasks/PLAN-20261114-113-memory-last-mile.md) | DONE |
 | [x] | [PLAN-20261117-114](tasks/PLAN-20261117-114-paired-ablation-readings.md) | DONE |
 | [ ] | [PLAN-20261119-115](tasks/PLAN-20261119-115-prd-gap-and-review-reliability.md) | IN_PROGRESS |
+| [ ] | [PLAN-20261120-119](tasks/PLAN-20261120-119-benchmark-parity-and-prd.md) | IN_PROGRESS |
 | [x] | [PLAN-20261120-116](tasks/PLAN-20261120-116-relay-switch-and-free-model-discipline.md) | DONE |
 | [x] | [PLAN-20261120-117](tasks/PLAN-20261120-117-four-failure-modes-and-retryability.md) | DONE |
 | [x] | [PLAN-20261120-118](tasks/PLAN-20261120-118-advisory-panel-read-face.md) | DONE |

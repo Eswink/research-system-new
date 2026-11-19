@@ -1,5 +1,9 @@
 # Product Definition v0.4.0
 
+> **历史文档。** 本文内容已并入单一权威 [`product/PRD.md`](product/PRD.md)
+> （v1.0，GOAL-20261120-116）。本文保留为 v0.4.0 的历史档案，**不再单独维护**；
+> 两者冲突时以 `product/PRD.md` 为准。
+
 ## 1. 产品是什么
 
 Research OS 是：
