@@ -69,7 +69,7 @@ D-2 是这一轮最有价值的一格：**helper 的单测不可能发现它** �
 - **`W-1`** ④ 的 `verify:` 要求「一次真实 run 的提示词取证（落 `.cursor/plans/goals/evidence/`）」
   —— 本轮**未取**。取证需要真实出网 run，而本轮网络整段中断（GitHub / opencode.ai /
   pypi 全部不可达，持续约两小时）。判据已把「拼装层不再丢弃该段」钉死；**真实 run 的
-  `content digest:` 与 `{task_id}:review_material` 制品**仍未取，记为 PENDING 而非 PASS。
+  `content digest:` 与 `{task_id}:review_material` 制品**仍未取 —— 这一格记「未取证」，不计入本复检的通过面**。
 - **`W-2`** ① 的 `verify:` 要求「该消息在真实 run 中不再出现」。本轮只证明**代码路径**
   不再产生 repr 且判据咬合；**没有**再做一次真实 run 统计该错误的出现次数。
 
