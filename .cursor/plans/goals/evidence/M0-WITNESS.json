@@ -1400,7 +1400,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "9fe10d5ad72f6168244fea71d54c0f66accadaa6"
+        "sha256": "75e4f67ed4c935bc63cc0debdfe180abf59858cc"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -1892,7 +1892,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "3abf5aed7834dcc7b16107af96b55ab2621bbc02"
+        "sha256": "c55f1144b165394f4013e3951802f5a041d99c0f"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -4567,6 +4567,10 @@
         "sha256": "ccfb53d301a7ba4ed5b5faa283f6d3ba6a9325b0"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261120-118-advisory-panel-read-face.md",
+        "sha256": "7ab44e8a8fd951b0fb1137d0c5b003b14787fe53"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -6035,6 +6039,10 @@
         "sha256": "8ded15b9fed13b41dc0f57fbef3a7339168f848f"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261120-118-advisory-panel-read-face.md",
+        "sha256": "1f2b6f0801ba2210f0012a2d5010e052a2e668db"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -7272,7 +7280,7 @@
       },
       {
         "path": "apps/web/src/api/client.ts",
-        "sha256": "be8105c1be28dfef29af1590be9d2ae145ccfa30"
+        "sha256": "89c281f787375ecb31ad82801f41863087e43ef3"
       },
       {
         "path": "apps/web/src/api/controlPlaneToken.ts",
@@ -7296,7 +7304,7 @@
       },
       {
         "path": "apps/web/src/api/inspectionClient.ts",
-        "sha256": "85478781c5583ec4108f74338f274f64cddaa07e"
+        "sha256": "c1c5757f5b2e48f4b0a0fd390132aa3eee9daa10"
       },
       {
         "path": "apps/web/src/api/legacyShapes.ts",
@@ -7368,7 +7376,7 @@
       },
       {
         "path": "apps/web/src/api/types.ts",
-        "sha256": "98991f60961d0d7c7c4acabe06e9562cb7333249"
+        "sha256": "1dfdee8b967291b02d6674123196083821f1ed3a"
       },
       {
         "path": "apps/web/src/api/workspaceSnapshotClient.ts",
@@ -10544,7 +10552,7 @@
       },
       {
         "path": "apps/web/src/features/runs/ReviewPanelSection.tsx",
-        "sha256": "c27d630cc8b9b20bdee169be84b9918e2065c93f"
+        "sha256": "621af231e3b15ce0762636e38b426ee651b74ec0"
       },
       {
         "path": "apps/web/src/features/runs/RunActionButtonRow.tsx",
@@ -10556,7 +10564,7 @@
       },
       {
         "path": "apps/web/src/features/runs/RunPanel.tsx",
-        "sha256": "0e8361d62c6390eeb5a77fc64a5db664d1a76622"
+        "sha256": "3cc8114a746f50f432ae81e7839646ccb110228e"
       },
       {
         "path": "apps/web/src/features/runs/TimelineView.tsx",
@@ -10580,7 +10588,7 @@
       },
       {
         "path": "apps/web/src/features/runs/useRunTimeline.ts",
-        "sha256": "3d1cbc9326fb1f1bf4dedbce617c54ed2a6b45ed"
+        "sha256": "39beb65fcba58c7e11dabc07bd68a321071fd314"
       },
       {
         "path": "apps/web/src/features/schedules/ScheduleActions.tsx",
@@ -12716,7 +12724,7 @@
       },
       {
         "path": "docs/api/openapi.m13.json",
-        "sha256": "0e64b8915ffc699a2992f33ed6511fca3b50c660"
+        "sha256": "d60323999a9478fbd6f492118b85d2ccd469d36b"
       },
       {
         "path": "docs/architecture/AGENT_BACKENDS.md",
@@ -15179,6 +15187,10 @@
         "sha256": "aa6a0711f42a206bf057fc9e9a4eb041273505a0"
       },
       {
+        "path": "packages/application/run_orchestration/panel_advice.py",
+        "sha256": "a4a88e25d652fae53eb59e429f3f5296510e4ad7"
+      },
+      {
         "path": "packages/application/run_orchestration/phase_call_arguments.py",
         "sha256": "ab78321c3e05d66f9eea9f7fbe7b09edada16510"
       },
@@ -15840,7 +15852,7 @@
       },
       {
         "path": "services/api/dto/inspection.py",
-        "sha256": "0dc2689b0a15e024dc4d46ad98b6bd21c77bc2d4"
+        "sha256": "98c47c0cd4350f7a77e2b1819bf081fd1f19f4f0"
       },
       {
         "path": "services/api/dto/library.py",
@@ -16076,7 +16088,7 @@
       },
       {
         "path": "services/api/routers/inspection.py",
-        "sha256": "2b5c35f6092f9d008742054c046a225ac05108b7"
+        "sha256": "b1da67dc6aafeb98a49c9216d030efb8d0027ff9"
       },
       {
         "path": "services/api/routers/library.py",
@@ -16851,6 +16863,10 @@
         "sha256": "e694c87640d49b6b5dd5c69bb630d37cfcef8856"
       },
       {
+        "path": "tests/api/test_panel_advice_endpoint.py",
+        "sha256": "a8a8634551cd08b783bb7248d06d37749841da47"
+      },
+      {
         "path": "tests/api/test_pause_resume_api.py",
         "sha256": "5f63e3a7c76fc0a518672bc31dc9a3938defe806"
       },
@@ -17349,6 +17365,10 @@
       {
         "path": "tests/application/run_orchestration/test_acceptance_gate_input_face.py",
         "sha256": "145a91b93e51953968691f6f59c804e5a1cc25e4"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_advisory_panel_read_face.py",
+        "sha256": "f533e9e57c532248a622232e1c0da12c0f4d3717"
       },
       {
         "path": "tests/application/run_orchestration/test_cancel_accounting.py",
@@ -19156,7 +19176,7 @@
       },
       {
         "path": "tests/observability/read_face_route_registry.py",
-        "sha256": "11684216437c60f1bb66817280edb54a81565439"
+        "sha256": "339a4fb6037fe918d87e1725889b55bdb9e14e2b"
       },
       {
         "path": "tests/observability/read_face_whitelist_derivation.py",
@@ -20747,7 +20767,7 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "14e9e6c461ec96467ec0f20b97222268c2661c04"
+    "head": "e3dcc03d79e5942e26709c919c6387c2df45e7b6"
   },
   "fingerprint_before": {
     "files": [
@@ -22149,7 +22169,7 @@
       },
       {
         "path": ".cursor/plans/ALL_PLAN.md",
-        "sha256": "9fe10d5ad72f6168244fea71d54c0f66accadaa6"
+        "sha256": "75e4f67ed4c935bc63cc0debdfe180abf59858cc"
       },
       {
         "path": ".cursor/plans/archive/PLAN-20260810-001-cursor-governance-bootstrap.md",
@@ -22641,7 +22661,7 @@
       },
       {
         "path": ".cursor/plans/goals/GOAL-20261119-115-review-reliability-and-product-gap.md",
-        "sha256": "3abf5aed7834dcc7b16107af96b55ab2621bbc02"
+        "sha256": "c55f1144b165394f4013e3951802f5a041d99c0f"
       },
       {
         "path": ".cursor/plans/goals/MAINLINE.md",
@@ -25316,6 +25336,10 @@
         "sha256": "ccfb53d301a7ba4ed5b5faa283f6d3ba6a9325b0"
       },
       {
+        "path": ".cursor/plans/rechecks/RECHECK-20261120-118-advisory-panel-read-face.md",
+        "sha256": "7ab44e8a8fd951b0fb1137d0c5b003b14787fe53"
+      },
+      {
         "path": ".cursor/plans/research_console_全站重建_9c821507.plan.md",
         "sha256": "19ad4a08c9b0062e24bf71781b2edd7591062bd7"
       },
@@ -26784,6 +26808,10 @@
         "sha256": "8ded15b9fed13b41dc0f57fbef3a7339168f848f"
       },
       {
+        "path": ".cursor/plans/tasks/PLAN-20261120-118-advisory-panel-read-face.md",
+        "sha256": "1f2b6f0801ba2210f0012a2d5010e052a2e668db"
+      },
+      {
         "path": ".cursor/plans/控制台高保真重建_9be64bbc.plan.md",
         "sha256": "6e8c5c37a700f6a659d5844060ab0ccb10138101"
       },
@@ -28021,7 +28049,7 @@
       },
       {
         "path": "apps/web/src/api/client.ts",
-        "sha256": "be8105c1be28dfef29af1590be9d2ae145ccfa30"
+        "sha256": "89c281f787375ecb31ad82801f41863087e43ef3"
       },
       {
         "path": "apps/web/src/api/controlPlaneToken.ts",
@@ -28045,7 +28073,7 @@
       },
       {
         "path": "apps/web/src/api/inspectionClient.ts",
-        "sha256": "85478781c5583ec4108f74338f274f64cddaa07e"
+        "sha256": "c1c5757f5b2e48f4b0a0fd390132aa3eee9daa10"
       },
       {
         "path": "apps/web/src/api/legacyShapes.ts",
@@ -28117,7 +28145,7 @@
       },
       {
         "path": "apps/web/src/api/types.ts",
-        "sha256": "98991f60961d0d7c7c4acabe06e9562cb7333249"
+        "sha256": "1dfdee8b967291b02d6674123196083821f1ed3a"
       },
       {
         "path": "apps/web/src/api/workspaceSnapshotClient.ts",
@@ -31293,7 +31321,7 @@
       },
       {
         "path": "apps/web/src/features/runs/ReviewPanelSection.tsx",
-        "sha256": "c27d630cc8b9b20bdee169be84b9918e2065c93f"
+        "sha256": "621af231e3b15ce0762636e38b426ee651b74ec0"
       },
       {
         "path": "apps/web/src/features/runs/RunActionButtonRow.tsx",
@@ -31305,7 +31333,7 @@
       },
       {
         "path": "apps/web/src/features/runs/RunPanel.tsx",
-        "sha256": "0e8361d62c6390eeb5a77fc64a5db664d1a76622"
+        "sha256": "3cc8114a746f50f432ae81e7839646ccb110228e"
       },
       {
         "path": "apps/web/src/features/runs/TimelineView.tsx",
@@ -31329,7 +31357,7 @@
       },
       {
         "path": "apps/web/src/features/runs/useRunTimeline.ts",
-        "sha256": "3d1cbc9326fb1f1bf4dedbce617c54ed2a6b45ed"
+        "sha256": "39beb65fcba58c7e11dabc07bd68a321071fd314"
       },
       {
         "path": "apps/web/src/features/schedules/ScheduleActions.tsx",
@@ -33465,7 +33493,7 @@
       },
       {
         "path": "docs/api/openapi.m13.json",
-        "sha256": "0e64b8915ffc699a2992f33ed6511fca3b50c660"
+        "sha256": "d60323999a9478fbd6f492118b85d2ccd469d36b"
       },
       {
         "path": "docs/architecture/AGENT_BACKENDS.md",
@@ -35928,6 +35956,10 @@
         "sha256": "aa6a0711f42a206bf057fc9e9a4eb041273505a0"
       },
       {
+        "path": "packages/application/run_orchestration/panel_advice.py",
+        "sha256": "a4a88e25d652fae53eb59e429f3f5296510e4ad7"
+      },
+      {
         "path": "packages/application/run_orchestration/phase_call_arguments.py",
         "sha256": "ab78321c3e05d66f9eea9f7fbe7b09edada16510"
       },
@@ -36589,7 +36621,7 @@
       },
       {
         "path": "services/api/dto/inspection.py",
-        "sha256": "0dc2689b0a15e024dc4d46ad98b6bd21c77bc2d4"
+        "sha256": "98c47c0cd4350f7a77e2b1819bf081fd1f19f4f0"
       },
       {
         "path": "services/api/dto/library.py",
@@ -36825,7 +36857,7 @@
       },
       {
         "path": "services/api/routers/inspection.py",
-        "sha256": "2b5c35f6092f9d008742054c046a225ac05108b7"
+        "sha256": "b1da67dc6aafeb98a49c9216d030efb8d0027ff9"
       },
       {
         "path": "services/api/routers/library.py",
@@ -37600,6 +37632,10 @@
         "sha256": "e694c87640d49b6b5dd5c69bb630d37cfcef8856"
       },
       {
+        "path": "tests/api/test_panel_advice_endpoint.py",
+        "sha256": "a8a8634551cd08b783bb7248d06d37749841da47"
+      },
+      {
         "path": "tests/api/test_pause_resume_api.py",
         "sha256": "5f63e3a7c76fc0a518672bc31dc9a3938defe806"
       },
@@ -38098,6 +38134,10 @@
       {
         "path": "tests/application/run_orchestration/test_acceptance_gate_input_face.py",
         "sha256": "145a91b93e51953968691f6f59c804e5a1cc25e4"
+      },
+      {
+        "path": "tests/application/run_orchestration/test_advisory_panel_read_face.py",
+        "sha256": "f533e9e57c532248a622232e1c0da12c0f4d3717"
       },
       {
         "path": "tests/application/run_orchestration/test_cancel_accounting.py",
@@ -39905,7 +39945,7 @@
       },
       {
         "path": "tests/observability/read_face_route_registry.py",
-        "sha256": "11684216437c60f1bb66817280edb54a81565439"
+        "sha256": "339a4fb6037fe918d87e1725889b55bdb9e14e2b"
       },
       {
         "path": "tests/observability/read_face_whitelist_derivation.py",
@@ -41496,11 +41536,11 @@
         "sha256": "73d257d05a4ece925392ad6652f96bcbe0ed9152"
       }
     ],
-    "head": "14e9e6c461ec96467ec0f20b97222268c2661c04"
+    "head": "e3dcc03d79e5942e26709c919c6387c2df45e7b6"
   },
   "green": true,
   "note": "见证绑定的是**跑门那一刻**的树。之后任何受判文件改动都会让 tests/tooling/test_m0_witness_matches_the_tree.py 判红（除非重跑本入口）。",
-  "ran_at_head": "14e9e6c461ec96467ec0f20b97222268c2661c04",
+  "ran_at_head": "e3dcc03d79e5942e26709c919c6387c2df45e7b6",
   "terminal_line": "PASS: profile=m0; 23 deterministic checks",
   "tree_changed_during_the_run": false
 }
