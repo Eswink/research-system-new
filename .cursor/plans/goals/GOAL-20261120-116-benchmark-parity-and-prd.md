@@ -235,7 +235,7 @@ cycle」声明占用；并发风险与处置见残余 `W-4`。
 | # | 子 PLAN | commits | 本地验证 | CI run/结论 | 修复 | 剩余差距 | 下一轮输入 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | （建档，无子 PLAN） | 见「CI 台账」 | 治理 `validate.py` 绿；记录面判据绿 | 见「CI 台账」 | — | EC-01…07 全 PENDING | cycle 1 = EC-01（PRD + 防漂移判据） |
-| 1 | `PLAN-20261120-119`（WP-A） | `b36031ce`（并发窗口的会话工作区默认根，**非本 GOAL**）/ `a07f814b`（PRD v1.0 + 防漂移判据）/ `049892db`（记账）/ `252ec38c`（判据链封口） | 判据 **39 passed**（20 个条号各配反证臂，双向按压真红）；邻接面 **1494 passed**；`docs_consistency_check` PASS；ruff format/check + mypy（4 个新文件）全绿；**全量 m0 第一次红**（`python/tests=1`：记账提交带 `tests/` 改动 ⇒ 内容非 record-only ⇒ 欠归属），修后重跑见见证 | 见「CI 台账」（本批 tip 待回填） | 阈值/断言未动；按树的事实改正 PRD 三处漂移（后端 108/133→**109/134**；能力「13 被协议使用」→**14**；R-08 裸文件名、R-14「全仓无」口径）；判据链按**内容**分类的缺口以有界豁免表登记（两条，理由非空，两向判据仍绿） | **EC-01 PASS**（verify 已实跑）；EC-02…07 仍 PENDING | cycle 2 = EC-02（`tools/rcb_agent.py` + 离线契约判据） |
+| 1 | `PLAN-20261120-119`（WP-A） | `b36031ce`（并发窗口的会话工作区默认根，**非本 GOAL**）/ `a07f814b`（PRD v1.0 + 防漂移判据）/ `049892db`（记账）/ `252ec38c`（判据链封口）/ `b417a44c`（台账）/ `a995fa8a`（见证） | 判据 **39 passed**（20 个条号各配反证臂，双向按压真红）；邻接面 **1494 passed**；`docs_consistency_check` PASS；ruff format/check + mypy（4 个新文件）全绿；**全量 m0 第一次红**（`python/tests=1`：记账提交带 `tests/` 改动 ⇒ 内容非 record-only ⇒ 欠归属），修后重跑 **`PASS: profile=m0; 23 deterministic checks`**、`tree changed: False` | [`44706487751`](https://github.com/Eswink/research-system-new/actions/runs/44706487751) ⇒ **success（8/8 job）** | 阈值/断言未动；按树的事实改正 PRD 三处漂移（后端 108/133→**109/134**；能力「13 被协议使用」→**14**；R-08 裸文件名、R-14「全仓无」口径）；判据链按**内容**分类的缺口以有界豁免表登记（两条，理由非空，两向判据仍绿） | **EC-01 PASS**（本地 verify + m0 + CI 全绿）；EC-02…07 仍 PENDING | cycle 2 = EC-02（`tools/rcb_agent.py` + 离线契约判据） |
 
 ## 状态历史
 
@@ -253,6 +253,11 @@ cycle」声明占用；并发风险与处置见残余 `W-4`。
   而记账主题按纪律不带 GOAL 编号。处置：以**带 `goal116` 的**提交 `252ec38c` 把该提交
   登记进**有界**豁免表（理由非空；两向判据仍绿），并写死「后续记账提交不得再改
   `tests/`」。这是判据链的一次真缺陷（不是环境 flake），如实登记。
+- 2026-11-20（cycle 1，CI 终态）：批次 tip `a995fa8a` 的 run
+  [`44706487751`](https://github.com/Eswink/research-system-new/actions/runs/44706487751)
+  = **success（8/8 job）**；本地见证 `PASS: profile=m0; 23 deterministic checks`、
+  `tree changed: False`。**EC-01 收口读数齐备**（本地判据 39 passed + 邻接 1494 passed
+  + 全量 m0 + CI 八 job 终态）。
 
 ## 残余与未覆盖范围
 
@@ -286,4 +291,4 @@ cycle」声明占用；并发风险与处置见残余 `W-4`。
 
 | 提交 | run | 结论 | 说明 |
 | --- | --- | --- | --- |
-| `b36031ce` + `a07f814b` + `049892db` + `252ec38c`（同一批 push） | 待回填（本批 tip 的读数为准） | 待回填 | 建档 + PRD v1.0 + 防漂移判据 + 并发窗口的会话工作区默认根 + 记账与判据链封口；**本地 m0 第一次红**（链判据），修后重跑 |
+| `b36031ce` + `a07f814b` + `049892db` + `252ec38c` + `b417a44c` + `a995fa8a`（同一批 push，tip = `a995fa8a`） | [`44706487751`](https://github.com/Eswink/research-system-new/actions/runs/44706487751) | **success（8/8 job）**：quality-windows / quality-ubuntu / collector-quality / container-quality / console-frontend / eval-gate / observability-overhead ×2 | 建档 + PRD v1.0 + 防漂移判据 + 并发窗口的会话工作区默认根 + 记账与判据链封口 + 本地 m0 见证（`PASS: profile=m0; 23 deterministic checks`，`tree changed: False`） |
